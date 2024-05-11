@@ -399,8 +399,14 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
+
+.DS_Store
+.gitattributes
+# Rider
+.idea/.idea.ErpaKablo/.idea
+
 # JetBrains Rider
-*.sln.iml!/MiningHQ.sln
+*.sln.iml!/ErpaKablo.sln
 #appsettings
 appsettings.json
 appsettings.Production.json
