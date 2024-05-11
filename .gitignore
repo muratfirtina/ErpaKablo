@@ -403,7 +403,7 @@ FodyWeavers.xsd
 .DS_Store
 .gitattributes
 # Rider
-.idea/.idea.ErpaKablo/.idea
+.idea
 
 # JetBrains Rider
 *.sln.iml!/ErpaKablo.sln
