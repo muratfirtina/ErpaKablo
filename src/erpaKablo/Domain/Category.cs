@@ -9,6 +9,6 @@ public class Category:Entity<int>
     public Category? ParentCategory { get; set; }
     public ICollection<Category>? SubCategories { get; set; }
     public ICollection<Product>? Products { get; set; }
-    public ICollection<CategoryFilter>? Filters { get; set; }
+    public ICollection<CategoryFilter>? CategoryFilters { get; set; }
     
 }

@@ -4,6 +4,8 @@ namespace Domain;
 
 public class CategoryFilter:Entity<int>
 {
-    public string? Name { get; set; }
-    public ICollection<Category>? Categories { get; set; }
+    public int CategoryId { get; set; }
+    public virtual Category Category { get; set; }
+    public int FilterId { get; set; }
+    public virtual UIFilter Filter { get; set; }
 }

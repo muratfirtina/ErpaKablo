@@ -9,7 +9,7 @@ static class Configuration
         get
         {
             ConfigurationManager configurationManager = new();
-            configurationManager.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../../Presentation/Erpa.WebAPI"));
+            configurationManager.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../WebAPI"));
             configurationManager.AddJsonFile("appsettings.json");
             return configurationManager.GetConnectionString("ErpaKabloDbMySQL");
             

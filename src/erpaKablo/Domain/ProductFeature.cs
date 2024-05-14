@@ -4,9 +4,8 @@ namespace Domain;
 
 public class ProductFeature : Entity<int>
 {
-    public string? Name { get; set; }
+    public string FeatureGroupName { get; set; } // Örneğin: "Kablo Yapısı"
     public int ProductId { get; set; }
-    public int FilterId { get; set; }
-    public Product? Product { get; set; }
-    public CategoryFilter? Filter { get; set; }
+    public virtual Product Product { get; set; }
+    public virtual ICollection<Feature> Features { get; set; }
 }

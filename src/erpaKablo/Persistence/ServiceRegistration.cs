@@ -7,7 +7,7 @@ using Persistence.Repositories;
 
 namespace Persistence;
 
-public static class PersistenceServiceRegistration
+public static class ServiceRegistration
 {
     public static IServiceCollection AddPersistenceServices(this IServiceCollection services)
     {
@@ -20,6 +20,10 @@ public static class PersistenceServiceRegistration
         services.AddScoped<ICategoryFilterRepository, CategoryFilterRepository>();
         services.AddScoped<IEndpointRepository, EndpointRepository>();
         services.AddScoped<IACMenuRepository, ACMenuRepository>();
+        services.AddScoped<IImageFileRepository, ImageFileRepository>();
+        services.AddScoped<IFilterRepository, FilterRepository>();
+        services.AddScoped<IEndpointRepository, EndpointRepository>();
+        
         
         return services;
     }

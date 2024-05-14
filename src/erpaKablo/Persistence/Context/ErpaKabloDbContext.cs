@@ -21,8 +21,10 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<Category> Categories { get; set; }
     public DbSet<CategoryFilter> CategoryFilters { get; set; }
     public DbSet<ProductFeature> ProductFeatures { get; set; }
+    public DbSet<Feature> Features { get; set; }
+    public DbSet<UIFilter> Filters { get; set; }
     public DbSet<ProductImageFile> ProductImageFiles { get; set; }
-    public DbSet<ImageFile> Files { get; set; }
+    public DbSet<ImageFile> ImageFiles { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)
@@ -40,16 +42,33 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
             .OnDelete(DeleteBehavior.Restrict);
         
         builder.Entity<Category>()
-            .HasMany(c => c.SubCategories)
-            .WithOne(c => c.ParentCategory)
+            .HasKey(c => c.Id);
+        
+        builder.Entity<Category>()
+            .HasOne(c => c.ParentCategory)
+            .WithMany(c => c.SubCategories)
             .HasForeignKey(c => c.ParentCategoryId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.Entity<CategoryFilter>()
+            .HasKey(cf => new { cf.CategoryId, cf.FilterId });
+        
+        builder.Entity<CategoryFilter>()
+            .HasOne(cf => cf.Category)
+            .WithMany(c => c.CategoryFilters)
+            .HasForeignKey(cf => cf.CategoryId);
+        
+        builder.Entity<CategoryFilter>()
+            .HasOne(cf => cf.Filter)
+            .WithMany(f => f.CategoryFilters)
+            .HasForeignKey(cf => cf.FilterId);
 
         builder.Entity<ProductFeature>()
             .HasOne(p => p.Product)
             .WithMany(pf => pf.ProductFeatures)
             .HasForeignKey(p => p.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
+        
         
         base.OnModelCreating(builder);
     }
