@@ -1,4 +1,4 @@
-namespace Application.Features.Products.Const;
+namespace Application.Features.Products.Consts;
 
 public static class ProductsBusinessMessages
 {

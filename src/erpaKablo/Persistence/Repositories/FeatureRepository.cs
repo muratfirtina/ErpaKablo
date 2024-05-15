@@ -5,7 +5,7 @@ using Persistence.Context;
 
 namespace Persistence.Repositories;
 
-public class FeatureRepository : EfRepositoryBase<Feature, int, ErpaKabloDbContext>, IFeatureRepository
+public class FeatureRepository : EfRepositoryBase<Feature, string, ErpaKabloDbContext>, IFeatureRepository
 {
     public FeatureRepository(ErpaKabloDbContext context) : base(context)
     {

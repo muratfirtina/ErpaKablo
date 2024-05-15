@@ -3,7 +3,7 @@ using Domain;
 
 namespace Application.Repositories;
 
-public interface IFeatureRepository : IAsyncRepository<Feature, int>, IRepository<Feature, int>
+public interface IFeatureRepository : IAsyncRepository<Feature, string>, IRepository<Feature, string>
 {
     
 }

@@ -4,7 +4,7 @@ using Domain;
 
 namespace Application.Repositories;
 
-public interface IProductRepository : IAsyncRepository<Product, int>, IRepository<Product, int>
+public interface IProductRepository : IAsyncRepository<Product, string>, IRepository<Product, string>
 {
     Task<List<GetProductImageFileDto>> GetFilesByProductId(string productId);
     Task ChangeShowcase(string productId, string imageFileId,bool showcase);

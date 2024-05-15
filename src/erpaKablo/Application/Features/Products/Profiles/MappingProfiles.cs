@@ -30,7 +30,7 @@ public class MappingProfiles : Profile
                 => opt.MapFrom(src => src.Brand.Name))
             .ForMember(dest => dest.ProductFeatures, opt 
                 => opt.MapFrom(src => src.ProductFeatures.Select(pf => new ProductFeatureDto {
-                FeatureGroupName = pf.FeatureGroupName,
+                FeatureGroupName = pf.Name,
                 FeatureDetails = pf.Features.Select(f => $"{f.Name}: {f.Value}").ToList()
             }))).ReverseMap();
 

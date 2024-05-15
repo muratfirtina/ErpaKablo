@@ -19,8 +19,7 @@ namespace Persistence.Migrations
                 name: "ACMenus",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
                     Name = table.Column<string>(type: "longtext", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -80,8 +79,7 @@ namespace Persistence.Migrations
                 name: "Brands",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
                     Name = table.Column<string>(type: "longtext", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -97,10 +95,9 @@ namespace Persistence.Migrations
                 name: "Categories",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
                     Name = table.Column<string>(type: "longtext", nullable: true),
-                    ParentCategoryId = table.Column<int>(type: "int", nullable: true),
+                    ParentCategoryId = table.Column<string>(type: "varchar(255)", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -121,8 +118,7 @@ namespace Persistence.Migrations
                 name: "Filters",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
                     Name = table.Column<string>(type: "longtext", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -138,9 +134,8 @@ namespace Persistence.Migrations
                 name: "ImageFiles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    FileName = table.Column<string>(type: "longtext", nullable: false),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Name = table.Column<string>(type: "longtext", nullable: false),
                     Category = table.Column<string>(type: "longtext", nullable: false),
                     Path = table.Column<string>(type: "longtext", nullable: false),
                     Storage = table.Column<string>(type: "longtext", nullable: false),
@@ -161,13 +156,12 @@ namespace Persistence.Migrations
                 name: "Endpoints",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
                     ActionType = table.Column<string>(type: "longtext", nullable: false),
                     HttpType = table.Column<string>(type: "longtext", nullable: false),
                     Definition = table.Column<string>(type: "longtext", nullable: false),
                     Code = table.Column<string>(type: "longtext", nullable: false),
-                    AcMenuId = table.Column<int>(type: "int", nullable: false),
+                    AcMenuId = table.Column<string>(type: "varchar(255)", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -299,14 +293,13 @@ namespace Persistence.Migrations
                 name: "Products",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    Name = table.Column<string>(type: "longtext", nullable: true),
-                    Stock = table.Column<int>(type: "int", nullable: false),
-                    Price = table.Column<float>(type: "float", nullable: false),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Name = table.Column<string>(type: "longtext", nullable: false),
+                    Stock = table.Column<int>(type: "int", nullable: true),
+                    Price = table.Column<float>(type: "float", nullable: true),
                     Description = table.Column<string>(type: "longtext", nullable: true),
-                    CategoryId = table.Column<int>(type: "int", nullable: false),
-                    BrandId = table.Column<int>(type: "int", nullable: false),
+                    CategoryId = table.Column<string>(type: "varchar(255)", nullable: true),
+                    BrandId = table.Column<string>(type: "varchar(255)", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -333,9 +326,10 @@ namespace Persistence.Migrations
                 name: "CategoryFilters",
                 columns: table => new
                 {
-                    CategoryId = table.Column<int>(type: "int", nullable: false),
-                    FilterId = table.Column<int>(type: "int", nullable: false),
-                    Id = table.Column<int>(type: "int", nullable: false),
+                    CategoryId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    FilterId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Name = table.Column<string>(type: "longtext", nullable: false),
+                    Id = table.Column<string>(type: "longtext", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -362,7 +356,7 @@ namespace Persistence.Migrations
                 name: "AppRoleEndpoint",
                 columns: table => new
                 {
-                    EndpointsId = table.Column<int>(type: "int", nullable: false),
+                    EndpointsId = table.Column<string>(type: "varchar(255)", nullable: false),
                     RolesId = table.Column<string>(type: "varchar(255)", nullable: false)
                 },
                 constraints: table =>
@@ -387,10 +381,9 @@ namespace Persistence.Migrations
                 name: "ProductFeatures",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    FeatureGroupName = table.Column<string>(type: "longtext", nullable: false),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Name = table.Column<string>(type: "longtext", nullable: false),
+                    ProductId = table.Column<string>(type: "varchar(255)", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -411,8 +404,8 @@ namespace Persistence.Migrations
                 name: "ProductProductImageFile",
                 columns: table => new
                 {
-                    ProductImageFilesId = table.Column<int>(type: "int", nullable: false),
-                    ProductsId = table.Column<int>(type: "int", nullable: false)
+                    ProductImageFilesId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    ProductsId = table.Column<string>(type: "varchar(255)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -436,11 +429,10 @@ namespace Persistence.Migrations
                 name: "Features",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
                     Name = table.Column<string>(type: "longtext", nullable: false),
                     Value = table.Column<string>(type: "longtext", nullable: false),
-                    ProductFeatureId = table.Column<int>(type: "int", nullable: false),
+                    ProductFeatureId = table.Column<string>(type: "varchar(255)", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)

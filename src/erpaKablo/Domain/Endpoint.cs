@@ -3,7 +3,7 @@ using Domain.Identity;
 
 namespace Domain;
 
-public class Endpoint:Entity<int>
+public class Endpoint:Entity<string>
 {
     public Endpoint()
     {

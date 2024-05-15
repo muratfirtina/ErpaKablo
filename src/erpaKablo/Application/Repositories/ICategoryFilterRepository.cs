@@ -3,7 +3,7 @@ using Domain;
 
 namespace Application.Repositories;
 
-public interface ICategoryFilterRepository : IAsyncRepository<CategoryFilter, int>, IRepository<CategoryFilter, int>
+public interface ICategoryFilterRepository : IAsyncRepository<CategoryFilter, string>, IRepository<CategoryFilter, string>
 {
     
 }

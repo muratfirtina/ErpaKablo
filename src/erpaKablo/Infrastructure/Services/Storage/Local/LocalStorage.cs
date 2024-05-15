@@ -39,8 +39,8 @@ public class LocalStorage : ILocalStorage
         foreach (IFormFile file in files)
         {
             
-            await CopyFileAsync(Path.Combine(employeeFolderPath, file.FileName), file);
-            datas.Add((file.FileName, Path.Combine(path, file.FileName), category));
+            await CopyFileAsync(Path.Combine(employeeFolderPath, file.Name), file);
+            datas.Add((file.Name, Path.Combine(path, file.Name), category));
         }
         return datas;
         
@@ -92,7 +92,7 @@ public class LocalStorage : ILocalStorage
         var files = await _productRepository.GetFilesByProductId(productId);
         return files.Select(file => new T
         {
-            FileName = file.FileName,
+            Name = file.FileName,
             Path = file.Path,
             Category = file.Category,
             Storage = file.Storage,

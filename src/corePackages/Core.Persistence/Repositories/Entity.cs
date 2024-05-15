@@ -1,3 +1,5 @@
+using Core.Persistence.Repositories.Operation;
+
 namespace Core.Persistence.Repositories;
 
 public abstract class Entity<TId> : IEntity<TId>, IEntityTimestamps
@@ -12,8 +14,8 @@ public abstract class Entity<TId> : IEntity<TId>, IEntityTimestamps
         Id = default!;
     }
 
-    public Entity(TId id)
+    protected Entity(string name)
     {
-        Id = id;
+        Id = (TId)(object)IdGenerator.GenerateId(name);
     }
 }

@@ -1,4 +1,4 @@
-using Application.Features.Products.Const;
+using Application.Features.Products.Consts;
 using Application.Repositories;
 using Core.Application.Rules;
 using Core.CrossCuttingConcerns.Exceptions;
@@ -22,7 +22,7 @@ public class ProductBusinessRules : BaseBusinessRules
         return Task.CompletedTask;
     }
 
-    public async Task ProductIdShouldExistWhenSelected(int id, CancellationToken cancellationToken)
+    public async Task ProductIdShouldExistWhenSelected(string id, CancellationToken cancellationToken)
     {
         Product? product = await _productRepository.GetAsync(
             predicate: e => e.Id == id,

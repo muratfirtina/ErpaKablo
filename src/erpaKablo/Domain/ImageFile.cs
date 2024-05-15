@@ -3,12 +3,18 @@ using Core.Persistence.Repositories;
 
 namespace Domain;
 
-public class ImageFile: Entity<int>
+public class ImageFile: Entity<string>
 {
-    public string FileName { get; set; }
+    public string Name { get; set; }
     public string Category { get; set; }
     public string Path { get; set; }
     [NotMapped]
     public string Url { get; set; }
     public string Storage { get; set; }
+    
+    public ImageFile(string name) : base(name)
+    {
+        Name = name;
+    }
+    
 }

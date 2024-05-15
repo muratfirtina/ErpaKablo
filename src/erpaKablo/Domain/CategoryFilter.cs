@@ -2,10 +2,11 @@ using Core.Persistence.Repositories;
 
 namespace Domain;
 
-public class CategoryFilter:Entity<int>
+public class CategoryFilter:Entity<string>
 {
-    public int CategoryId { get; set; }
+    public string Name { get; set; }
+    public string? CategoryId { get; set; }
     public virtual Category Category { get; set; }
-    public int FilterId { get; set; }
+    public string? FilterId { get; set; }
     public virtual UIFilter Filter { get; set; }
 }

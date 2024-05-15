@@ -5,7 +5,7 @@ using Persistence.Context;
 
 namespace Persistence.Repositories;
 
-public class ACMenuRepository : EfRepositoryBase<ACMenu, int, ErpaKabloDbContext>, IACMenuRepository
+public class ACMenuRepository : EfRepositoryBase<ACMenu, string, ErpaKabloDbContext>, IACMenuRepository
 {
     public ACMenuRepository(ErpaKabloDbContext context) : base(context)
     {

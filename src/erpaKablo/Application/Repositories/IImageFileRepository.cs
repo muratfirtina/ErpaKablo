@@ -3,7 +3,7 @@ using Domain;
 
 namespace Application.Repositories;
 
-public interface IImageFileRepository :IAsyncRepository<ImageFile, int>, IRepository<ImageFile, int>
+public interface IImageFileRepository :IAsyncRepository<ImageFile, string>, IRepository<ImageFile, string>
 {
     
 }

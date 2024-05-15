@@ -5,7 +5,7 @@ using Persistence.Context;
 
 namespace Persistence.Repositories;
 
-public class ImageFileRepository : EfRepositoryBase<ImageFile, int, ErpaKabloDbContext>, IImageFileRepository
+public class ImageFileRepository : EfRepositoryBase<ImageFile, string, ErpaKabloDbContext>, IImageFileRepository
 {
     public ImageFileRepository(ErpaKabloDbContext context) : base(context)
     {

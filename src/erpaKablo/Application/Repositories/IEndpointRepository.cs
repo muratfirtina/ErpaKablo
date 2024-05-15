@@ -3,7 +3,7 @@ using Domain;
 
 namespace Application.Repositories;
 
-public interface IEndpointRepository : IAsyncRepository<Endpoint, int>, IRepository<Endpoint, int>
+public interface IEndpointRepository : IAsyncRepository<Endpoint, string>, IRepository<Endpoint, string>
 {
     
 }

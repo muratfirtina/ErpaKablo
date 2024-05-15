@@ -21,8 +21,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("AppRoleEndpoint", b =>
                 {
-                    b.Property<int>("EndpointsId")
-                        .HasColumnType("int");
+                    b.Property<string>("EndpointsId")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("RolesId")
                         .HasColumnType("varchar(255)");
@@ -36,9 +36,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.ACMenu", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
@@ -60,9 +59,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Brand", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
@@ -83,9 +81,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Category", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
@@ -96,8 +93,8 @@ namespace Persistence.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("ParentCategoryId")
-                        .HasColumnType("int");
+                    b.Property<string>("ParentCategoryId")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime(6)");
@@ -111,11 +108,11 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.CategoryFilter", b =>
                 {
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("int");
+                    b.Property<string>("CategoryId")
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<int>("FilterId")
-                        .HasColumnType("int");
+                    b.Property<string>("FilterId")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
@@ -123,8 +120,12 @@ namespace Persistence.Migrations
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime(6)");
@@ -138,12 +139,12 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Endpoint", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<int>("AcMenuId")
-                        .HasColumnType("int");
+                    b.Property<string>("AcMenuId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActionType")
                         .IsRequired()
@@ -179,9 +180,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Feature", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
@@ -193,8 +193,9 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("ProductFeatureId")
-                        .HasColumnType("int");
+                    b.Property<string>("ProductFeatureId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime(6)");
@@ -312,9 +313,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.ImageFile", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Category")
                         .IsRequired()
@@ -331,7 +331,7 @@ namespace Persistence.Migrations
                         .HasMaxLength(21)
                         .HasColumnType("varchar(21)");
 
-                    b.Property<string>("FileName")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -357,15 +357,14 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Product", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<int>("BrandId")
-                        .HasColumnType("int");
+                    b.Property<string>("BrandId")
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("int");
+                    b.Property<string>("CategoryId")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
@@ -377,12 +376,13 @@ namespace Persistence.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<float>("Price")
+                    b.Property<float?>("Price")
                         .HasColumnType("float");
 
-                    b.Property<int>("Stock")
+                    b.Property<int?>("Stock")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
@@ -399,9 +399,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.ProductFeature", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
@@ -409,12 +408,13 @@ namespace Persistence.Migrations
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("FeatureGroupName")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime(6)");
@@ -428,9 +428,8 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.UIFilter", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
@@ -554,11 +553,11 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("ProductProductImageFile", b =>
                 {
-                    b.Property<int>("ProductImageFilesId")
-                        .HasColumnType("int");
+                    b.Property<string>("ProductImageFilesId")
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<int>("ProductsId")
-                        .HasColumnType("int");
+                    b.Property<string>("ProductsId")
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("ProductImageFilesId", "ProductsId");
 
@@ -651,14 +650,12 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Brand", "Brand")
                         .WithMany("Products")
                         .HasForeignKey("BrandId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Domain.Category", "Category")
                         .WithMany("Products")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Brand");
 

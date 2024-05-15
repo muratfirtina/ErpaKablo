@@ -5,7 +5,7 @@ using Persistence.Context;
 
 namespace Persistence.Repositories;
 
-public class CategoryFilterRepository : EfRepositoryBase<CategoryFilter, int, ErpaKabloDbContext>, ICategoryFilterRepository
+public class CategoryFilterRepository : EfRepositoryBase<CategoryFilter, string, ErpaKabloDbContext>, ICategoryFilterRepository
 {
     public CategoryFilterRepository(ErpaKabloDbContext context) : base(context)
     {

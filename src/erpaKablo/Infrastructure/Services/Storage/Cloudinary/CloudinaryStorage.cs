@@ -32,7 +32,7 @@ public class CloudinaryStorage : ICloudinaryStorage
         {
             ImageUploadParams imageUploadParams = new()
             {
-                File = new FileDescription(file.FileName, stream: file.OpenReadStream()),
+                File = new FileDescription(file.Name, stream: file.OpenReadStream()),
                 UseFilename = true,
                 UniqueFilename = false,
                 Overwrite = false
@@ -41,10 +41,10 @@ public class CloudinaryStorage : ICloudinaryStorage
             
             
             imageUploadParams.Folder = category;
-            imageUploadParams.File.FileName = file.FileName;
+            imageUploadParams.File.Name = file.Name;
 
             ImageUploadResult imageUploadResult = await _cloudinary.UploadAsync(imageUploadParams);
-            datas.Add((file.FileName, imageUploadResult.Url.ToString(), path));
+            datas.Add((file.Name, imageUploadResult.Url.ToString(), path));
             
         }
         return datas;

@@ -5,7 +5,7 @@ using Persistence.Context;
 
 namespace Persistence.Repositories;
 
-public class BrandRepository : EfRepositoryBase<Brand, int, ErpaKabloDbContext>, IBrandRepository
+public class BrandRepository : EfRepositoryBase<Brand, string, ErpaKabloDbContext>, IBrandRepository
 {
     public BrandRepository(ErpaKabloDbContext context) : base(context)
     {

@@ -5,7 +5,7 @@ using Persistence.Context;
 
 namespace Persistence.Repositories;
 
-public class EndpointRepository : EfRepositoryBase<Endpoint, int, ErpaKabloDbContext>, IEndpointRepository
+public class EndpointRepository : EfRepositoryBase<Endpoint, string, ErpaKabloDbContext>, IEndpointRepository
 {
     public EndpointRepository(ErpaKabloDbContext context) : base(context)
     {
