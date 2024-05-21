@@ -22,43 +22,17 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\Brands\Commands\" />
-      <Folder Include="Features\Brands\Consts\" />
       <Folder Include="Features\Brands\Dtos\" />
-      <Folder Include="Features\Brands\Profiles\" />
-      <Folder Include="Features\Brands\Queries\" />
-      <Folder Include="Features\Brands\Rules\" />
-      <Folder Include="Features\Categories\Commands\" />
-      <Folder Include="Features\Categories\Consts\" />
-      <Folder Include="Features\Categories\Dtos\" />
-      <Folder Include="Features\Categories\Profiles\" />
-      <Folder Include="Features\Categories\Queries\" />
-      <Folder Include="Features\Categories\Rules\" />
-      <Folder Include="Features\CategoryFilters\Commands\" />
-      <Folder Include="Features\CategoryFilters\Consts\" />
       <Folder Include="Features\CategoryFilters\Dtos\" />
-      <Folder Include="Features\CategoryFilters\Profiles\" />
-      <Folder Include="Features\CategoryFilters\Queries\" />
-      <Folder Include="Features\CategoryFilters\Rules\" />
-      <Folder Include="Features\Feature\Commands\" />
-      <Folder Include="Features\Feature\Consts\" />
-      <Folder Include="Features\Feature\Dtos\" />
-      <Folder Include="Features\Feature\Profiles\" />
-      <Folder Include="Features\Feature\Queries\" />
-      <Folder Include="Features\Feature\Rules\" />
-      <Folder Include="Features\ProductFeatures\Commands\" />
-      <Folder Include="Features\ProductFeatures\Consts\" />
+      <Folder Include="Features\Features\Dtos\" />
       <Folder Include="Features\ProductFeatures\Dtos\" />
-      <Folder Include="Features\ProductFeatures\Profiles\" />
-      <Folder Include="Features\ProductFeatures\Queries\" />
-      <Folder Include="Features\ProductFeatures\Rules\" />
       <Folder Include="Features\ProductImageFiles\Commands\" />
       <Folder Include="Features\ProductImageFiles\Consts\" />
       <Folder Include="Features\ProductImageFiles\Dtos\" />
       <Folder Include="Features\ProductImageFiles\Profiles\" />
       <Folder Include="Features\ProductImageFiles\Queries\" />
       <Folder Include="Features\ProductImageFiles\Rules\" />
-      <Folder Include="Features\UIFilters\" />
+      <Folder Include="Features\Filters\Dtos\" />
     </ItemGroup>
 
 </Project>

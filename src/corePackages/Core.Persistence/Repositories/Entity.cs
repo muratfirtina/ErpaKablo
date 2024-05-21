@@ -14,7 +14,7 @@ public abstract class Entity<TId> : IEntity<TId>, IEntityTimestamps
         Id = default!;
     }
 
-    protected Entity(string name)
+    protected Entity(string? name)
     {
         Id = (TId)(object)IdGenerator.GenerateId(name);
     }

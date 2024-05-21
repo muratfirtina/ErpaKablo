@@ -2,11 +2,11 @@ namespace Domain;
 
 public class ProductImageFile:ImageFile
 {
-    public bool Showcase { get; set; }
+    public bool Showcase { get; set; } = false;
     public string? Alt { get; set; }
     public ICollection<Product>? Products { get; set; }
 
-    public ProductImageFile(string name) : base(name)
+    public ProductImageFile(string? name) : base(name)
     {
         Name = name;
     }

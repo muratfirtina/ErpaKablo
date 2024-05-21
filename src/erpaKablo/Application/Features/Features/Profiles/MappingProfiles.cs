@@ -1,0 +1,31 @@
+using Application.Features.Features.Commands.Create;
+using Application.Features.Features.Commands.Delete;
+using Application.Features.Features.Commands.Update;
+using Application.Features.Features.Queries.GetById;
+using Application.Features.Features.Queries.GetList;
+using AutoMapper;
+using Core.Application.Responses;
+using Core.Persistence.Paging;
+using Domain;
+
+namespace Application.Features.Features.Profiles;
+
+public class MappingProfiles : Profile
+{
+    public MappingProfiles()
+    {
+        CreateMap<Feature, GetAllFeatureQueryResponse>().ReverseMap();
+        CreateMap<Feature, GetByIdFeatureResponse>().ReverseMap();
+        CreateMap<List<Feature>, GetListResponse<GetAllFeatureQueryResponse>>()
+            .ForMember(dest 
+                => dest.Items, opt 
+                => opt.MapFrom(src => src));
+        CreateMap<IPaginate<Feature>, GetListResponse<GetAllFeatureQueryResponse>>().ReverseMap();
+        
+        CreateMap<Feature, CreateFeatureCommand>().ReverseMap();
+        CreateMap<Feature, CreatedFeatureResponse>().ReverseMap();
+        CreateMap<Feature, UpdateFeatureCommand>().ReverseMap();
+        CreateMap<Feature, UpdatedFeatureResponse>().ReverseMap();
+        CreateMap<Feature, DeletedFeatureResponse>().ReverseMap();
+    }
+}

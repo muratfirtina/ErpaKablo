@@ -4,7 +4,7 @@ namespace Domain;
 
 public class Product : Entity<string>
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
     public int? Stock { get; set; }
     public float? Price { get; set; }
     public string? Description { get; set; }
@@ -15,7 +15,7 @@ public class Product : Entity<string>
     public ICollection<ProductImageFile>? ProductImageFiles { get; set; }
     public virtual ICollection<ProductFeature>? ProductFeatures { get; set; }
     
-    public Product(string name) : base(name)
+    public Product(string? name) : base(name)
     {
         Name = name;
     }

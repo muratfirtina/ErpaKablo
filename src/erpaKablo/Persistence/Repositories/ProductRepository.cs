@@ -24,7 +24,7 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
             {
                 Id = pif.Id,
                 Path = pif.Path,
-                FileName = pif.Name,
+                Name = pif.Name,
                 Showcase = pif.Showcase,
                 Storage = pif.Storage,
                 Category = pif.Category

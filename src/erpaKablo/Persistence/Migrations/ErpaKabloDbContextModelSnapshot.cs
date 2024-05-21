@@ -178,7 +178,7 @@ namespace Persistence.Migrations
                     b.ToTable("Endpoints");
                 });
 
-            modelBuilder.Entity("Domain.Feature", b =>
+            modelBuilder.Entity("Domain.Features", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
@@ -193,10 +193,6 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ProductFeatureId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime(6)");
 
@@ -205,8 +201,6 @@ namespace Persistence.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProductFeatureId");
 
                     b.ToTable("Features");
                 });
@@ -412,21 +406,15 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
                     b.ToTable("ProductFeatures");
                 });
 
-            modelBuilder.Entity("Domain.UIFilter", b =>
+            modelBuilder.Entity("Domain.Filter", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
@@ -447,6 +435,21 @@ namespace Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Filters");
+                });
+
+            modelBuilder.Entity("FeatureProductFeature", b =>
+                {
+                    b.Property<string>("FeaturesId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ProductFeaturesId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("FeaturesId", "ProductFeaturesId");
+
+                    b.HasIndex("ProductFeaturesId");
+
+                    b.ToTable("FeatureProductFeature");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -551,6 +554,21 @@ namespace Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProductProductFeature", b =>
+                {
+                    b.Property<string>("ProductFeaturesId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ProductsId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("ProductFeaturesId", "ProductsId");
+
+                    b.HasIndex("ProductsId");
+
+                    b.ToTable("ProductProductFeature");
+                });
+
             modelBuilder.Entity("ProductProductImageFile", b =>
                 {
                     b.Property<string>("ProductImageFilesId")
@@ -612,7 +630,7 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.UIFilter", "Filter")
+                    b.HasOne("Domain.Filter", "Filter")
                         .WithMany("CategoryFilters")
                         .HasForeignKey("FilterId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -634,17 +652,6 @@ namespace Persistence.Migrations
                     b.Navigation("AcMenu");
                 });
 
-            modelBuilder.Entity("Domain.Feature", b =>
-                {
-                    b.HasOne("Domain.ProductFeature", "ProductFeature")
-                        .WithMany("Features")
-                        .HasForeignKey("ProductFeatureId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ProductFeature");
-                });
-
             modelBuilder.Entity("Domain.Product", b =>
                 {
                     b.HasOne("Domain.Brand", "Brand")
@@ -662,15 +669,19 @@ namespace Persistence.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("Domain.ProductFeature", b =>
+            modelBuilder.Entity("FeatureProductFeature", b =>
                 {
-                    b.HasOne("Domain.Product", "Product")
-                        .WithMany("ProductFeatures")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("Domain.Features", null)
+                        .WithMany()
+                        .HasForeignKey("FeaturesId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.HasOne("Domain.ProductFeature", null)
+                        .WithMany()
+                        .HasForeignKey("ProductFeaturesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -724,6 +735,21 @@ namespace Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProductProductFeature", b =>
+                {
+                    b.HasOne("Domain.ProductFeature", null)
+                        .WithMany()
+                        .HasForeignKey("ProductFeaturesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ProductProductImageFile", b =>
                 {
                     b.HasOne("Domain.ProductImageFile", null)
@@ -758,17 +784,7 @@ namespace Persistence.Migrations
                     b.Navigation("SubCategories");
                 });
 
-            modelBuilder.Entity("Domain.Product", b =>
-                {
-                    b.Navigation("ProductFeatures");
-                });
-
-            modelBuilder.Entity("Domain.ProductFeature", b =>
-                {
-                    b.Navigation("Features");
-                });
-
-            modelBuilder.Entity("Domain.UIFilter", b =>
+            modelBuilder.Entity("Domain.Filter", b =>
                 {
                     b.Navigation("CategoryFilters");
                 });

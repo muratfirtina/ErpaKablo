@@ -7,7 +7,7 @@ public class Brand : Entity<string>
     public string? Name { get; set; }
     public ICollection<Product>? Products { get; set; }
     
-    public Brand(string name) : base(name)
+    public Brand(string? name) : base(name)
     {
         Name = name;
     }

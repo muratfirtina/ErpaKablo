@@ -23,6 +23,7 @@ public static class ServiceRegistration
         services.AddScoped<IImageFileRepository, ImageFileRepository>();
         services.AddScoped<IFilterRepository, FilterRepository>();
         services.AddScoped<IEndpointRepository, EndpointRepository>();
+        services.AddScoped<IFeatureRepository, FeatureRepository>();
         
         
         return services;

@@ -92,12 +92,12 @@ public class LocalStorage : ILocalStorage
         var files = await _productRepository.GetFilesByProductId(productId);
         return files.Select(file => new T
         {
-            Name = file.FileName,
+            Name = file.Name,
             Path = file.Path,
             Category = file.Category,
             Storage = file.Storage,
             Id = file.Id,
-            Url = $"{baseUrl}/{file.Category}/{file.Path}/{file.FileName}"
+            Url = $"{baseUrl}/{file.Category}/{file.Path}/{file.Name}"
             
         }).ToList();
         

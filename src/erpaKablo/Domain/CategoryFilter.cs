@@ -8,5 +8,5 @@ public class CategoryFilter:Entity<string>
     public string? CategoryId { get; set; }
     public virtual Category Category { get; set; }
     public string? FilterId { get; set; }
-    public virtual UIFilter Filter { get; set; }
+    public virtual Filter Filter { get; set; }
 }

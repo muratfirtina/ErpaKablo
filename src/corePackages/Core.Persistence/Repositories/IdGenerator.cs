@@ -4,7 +4,7 @@ namespace Core.Persistence.Repositories;
 
 public static class IdGenerator
 {
-    public static string GenerateId(string name)
+    public static string GenerateId(string? name)
     {
         string cleanedName = NameOperation.CharacterRegulatory(name.ToLower());
 

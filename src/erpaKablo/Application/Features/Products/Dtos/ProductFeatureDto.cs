@@ -1,7 +1,9 @@
+using Domain;
+
 namespace Application.Features.Products.Dtos;
 
 public class ProductFeatureDto
 {
-    public string? FeatureGroupName { get; set; }
-    public ICollection<string>? FeatureDetails { get; set; }
+    public string? ProductFeatureGroupName { get; set; }
+    public List<FeatureDto>? FeatureDetails { get; set; }
 }

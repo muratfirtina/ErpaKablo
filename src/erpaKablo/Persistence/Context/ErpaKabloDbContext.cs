@@ -22,13 +22,27 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<CategoryFilter> CategoryFilters { get; set; }
     public DbSet<ProductFeature> ProductFeatures { get; set; }
     public DbSet<Feature> Features { get; set; }
-    public DbSet<UIFilter> Filters { get; set; }
+    public DbSet<Filter> Filters { get; set; }
     public DbSet<ProductImageFile> ProductImageFiles { get; set; }
     public DbSet<ImageFile> ImageFiles { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        builder.Entity<Product>().HasQueryFilter(p=>!p.DeletedDate.HasValue);
+        builder.Entity<Brand>().HasQueryFilter(b => !b.DeletedDate.HasValue);
+        builder.Entity<Category>().HasQueryFilter(c => !c.DeletedDate.HasValue);
+        builder.Entity<Feature>().HasQueryFilter(f => !f.DeletedDate.HasValue);
+        builder.Entity<Filter>().HasQueryFilter(f => !f.DeletedDate.HasValue);
+        builder.Entity<ProductFeature>().HasQueryFilter(pf => !pf.DeletedDate.HasValue);
+        builder.Entity<CategoryFilter>().HasQueryFilter(cf => !cf.DeletedDate.HasValue);
+        builder.Entity<ImageFile>().HasQueryFilter(i => !i.DeletedDate.HasValue);
+        
+        builder.Entity<Product>()
+            .HasMany<ProductFeature>(p => p.ProductFeatures)
+            .WithMany(pf => pf.Products);
+        
+        
         builder.Entity<Product>()
             .HasOne(p => p.Category)
             .WithMany(c => c.Products)
@@ -64,10 +78,8 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
             .HasForeignKey(cf => cf.FilterId);
 
         builder.Entity<ProductFeature>()
-            .HasOne(p => p.Product)
-            .WithMany(pf => pf.ProductFeatures)
-            .HasForeignKey(p => p.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasMany(pf => pf.Features)
+            .WithMany(f => f.ProductFeatures);
         
         
         base.OnModelCreating(builder);

@@ -3,7 +3,7 @@ using Domain;
 
 namespace Application.Repositories;
 
-public interface IFilterRepository : IAsyncRepository<UIFilter, string>, IRepository<UIFilter, string>
+public interface IFilterRepository : IAsyncRepository<Filter, string>, IRepository<Filter, string>
 {
     
 }

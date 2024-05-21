@@ -11,7 +11,7 @@ public class Category:Entity<string>
     public ICollection<Product>? Products { get; set; }
     public ICollection<CategoryFilter>? CategoryFilters { get; set; }
     
-    public Category(string name) : base(name)
+    public Category(string? name) : base(name)
     {
         Name = name;
     }

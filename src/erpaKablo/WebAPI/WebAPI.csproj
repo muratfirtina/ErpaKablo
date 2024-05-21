@@ -25,6 +25,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Areas\CategoryFiltersController\Controllers\" />
+      <Folder Include="Areas\CategoryFiltersController\Data\" />
+      <Folder Include="Areas\CategoryFiltersController\Models\" />
+      <Folder Include="Areas\CategoryFiltersController\Views\" />
       <Folder Include="Controllers\" />
     </ItemGroup>
 
