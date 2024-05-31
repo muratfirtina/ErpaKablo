@@ -1,6 +1,7 @@
 using Application;
 using Infrastructure;
 using Persistence;
+using WebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,4 +33,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+const string webApiConfigurationSection = "WebAPIConfiguration";
+WebApiConfiguration webApiConfiguration =
+    app.Configuration.GetSection(webApiConfigurationSection).Get<WebApiConfiguration>()
+    ?? throw new InvalidOperationException($"\"{webApiConfigurationSection}\" section cannot found in configuration.");
+app.UseCors(opt => opt.WithOrigins(webApiConfiguration.AllowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
 app.Run();

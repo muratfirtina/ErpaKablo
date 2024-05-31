@@ -4,10 +4,15 @@ public class ProductImageFile:ImageFile
 {
     public bool Showcase { get; set; } = false;
     public string? Alt { get; set; }
-    public ICollection<Product>? Products { get; set; }
+    public string? ProductId { get; set; }
+    public Product? Product { get; set; }
+    
 
     public ProductImageFile(string? name) : base(name)
     {
-        Name = name;
+    }
+
+    public ProductImageFile() : base(null)
+    {
     }
 }

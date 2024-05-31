@@ -28,7 +28,6 @@ public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
                 cancellationToken: cancellationToken,
                 include: x => x.Include(x => x.Category)
                     .Include(x => x.Brand)
-                    .Include(x => x.ProductFeatures).ThenInclude(x => x.Features)
                     .Include(x => x.ProductImageFiles));
             GetByIdProductResponse response = _mapper.Map<GetByIdProductResponse>(product);
             return response;

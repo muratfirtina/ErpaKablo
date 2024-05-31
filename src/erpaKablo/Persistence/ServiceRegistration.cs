@@ -15,15 +15,15 @@ public static class ServiceRegistration
         
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<IProductFeatureRepository, ProductFeatureRepository>();
         services.AddScoped<IBrandRepository, BrandRepository>();
-        services.AddScoped<ICategoryFilterRepository, CategoryFilterRepository>();
         services.AddScoped<IEndpointRepository, EndpointRepository>();
         services.AddScoped<IACMenuRepository, ACMenuRepository>();
         services.AddScoped<IImageFileRepository, ImageFileRepository>();
-        services.AddScoped<IFilterRepository, FilterRepository>();
         services.AddScoped<IEndpointRepository, EndpointRepository>();
         services.AddScoped<IFeatureRepository, FeatureRepository>();
+        services.AddScoped<IFeatureValueRepository, FeatureValueRepository>();
+        services.AddScoped<IProductVariantRepository, ProductVariantRepository>();
+        services.AddScoped<IVariantGroupRepository, VariantGroupRepository>();
         
         
         return services;

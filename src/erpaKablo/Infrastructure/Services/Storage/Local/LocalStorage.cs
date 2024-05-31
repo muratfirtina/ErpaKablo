@@ -39,8 +39,8 @@ public class LocalStorage : ILocalStorage
         foreach (IFormFile file in files)
         {
             
-            await CopyFileAsync(Path.Combine(employeeFolderPath, file.Name), file);
-            datas.Add((file.Name, Path.Combine(path, file.Name), category));
+            await CopyFileAsync(Path.Combine(employeeFolderPath, file.Value), file);
+            datas.Add((file.Value, Path.Combine(path, file.Value), category));
         }
         return datas;
         

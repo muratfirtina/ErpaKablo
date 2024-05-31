@@ -23,16 +23,14 @@
 
     <ItemGroup>
       <Folder Include="Features\Brands\Dtos\" />
-      <Folder Include="Features\CategoryFilters\Dtos\" />
       <Folder Include="Features\Features\Dtos\" />
-      <Folder Include="Features\ProductFeatures\Dtos\" />
+      <Folder Include="Features\FeatureValues\Dtos\" />
       <Folder Include="Features\ProductImageFiles\Commands\" />
       <Folder Include="Features\ProductImageFiles\Consts\" />
       <Folder Include="Features\ProductImageFiles\Dtos\" />
       <Folder Include="Features\ProductImageFiles\Profiles\" />
       <Folder Include="Features\ProductImageFiles\Queries\" />
       <Folder Include="Features\ProductImageFiles\Rules\" />
-      <Folder Include="Features\Filters\Dtos\" />
     </ItemGroup>
 
 </Project>

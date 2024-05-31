@@ -36,8 +36,7 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
                 var allProducts = await _productRepository.GetAllByDynamicAsync(
                     request.DynamicQuery,
                     include: p => p.Include(e => e.Category)
-                        .Include(e => e.Brand)
-                        .Include(e => e.ProductFeatures)!.ThenInclude(e => e.Features),
+                        .Include(e => e.Brand),
                     cancellationToken: cancellationToken);
 
                 var productsDtos = _mapper.Map<GetListResponse<GetListProductByDynamicDto>>(allProducts);
@@ -48,8 +47,7 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
                 IPaginate<Product> products = await _productRepository.GetListByDynamicAsync(
                     request.DynamicQuery,
                     include: p => p.Include(e => e.Category)
-                        .Include(e => e.Brand)
-                        .Include(e => e.ProductFeatures)!.ThenInclude(e => e.Features),
+                        .Include(e => e.Brand),
                     index: request.PageRequest.PageIndex,
                     size: request.PageRequest.PageSize,
                     cancellationToken: cancellationToken);

@@ -6,7 +6,7 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
 {
     public CreateProductCommandValidator()
     {
-        RuleFor(c => c.Name).NotEmpty();
+        RuleFor(c => c.CreateProductDto.Name).NotEmpty();
     }
 
 }

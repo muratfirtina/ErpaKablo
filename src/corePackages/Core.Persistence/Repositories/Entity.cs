@@ -18,4 +18,9 @@ public abstract class Entity<TId> : IEntity<TId>, IEntityTimestamps
     {
         Id = (TId)(object)IdGenerator.GenerateId(name);
     }
+    
+    protected Entity(string? name, string? sku)
+    {
+        Id = (TId)(object)IdGenerator.GenerateIdwithSku(name, sku);
+    }
 }
