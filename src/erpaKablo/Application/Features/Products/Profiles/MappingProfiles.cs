@@ -1,4 +1,5 @@
 using Application.Features.Products.Commands.Create;
+using Application.Features.Products.Commands.Delete;
 using Application.Features.Products.Commands.Update;
 using Application.Features.Products.Dtos;
 using Application.Features.Products.Queries.GetById;
@@ -76,6 +77,8 @@ public class MappingProfiles : Profile
         CreateMap<ProductVariant, ProductVariantDto>()
             .ForMember(dest => dest.Features, opt => opt.MapFrom(src => src.VariantFeatureValues))
             .ReverseMap();
+        
+        CreateMap<Product, DeletedProductResponse>();
 
 
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Context;
 
@@ -10,9 +11,11 @@ using Persistence.Context;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ErpaKabloDbContext))]
-    partial class ErpaKabloDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240602133414_mig_2")]
+    partial class mig_2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,7 +49,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("FeaturesId");
 
-                    b.ToTable("CategoryFeature", (string)null);
+                    b.ToTable("CategoryFeature");
                 });
 
             modelBuilder.Entity("Domain.ACMenu", b =>
@@ -119,6 +122,21 @@ namespace Persistence.Migrations
                     b.HasIndex("ParentCategoryId");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("Domain.CategoryFeature", b =>
+                {
+                    b.Property<string>("CategoryId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("FeatureId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("CategoryId", "FeatureId");
+
+                    b.HasIndex("FeatureId");
+
+                    b.ToTable("CategoryFeatures");
                 });
 
             modelBuilder.Entity("Domain.Endpoint", b =>
@@ -646,6 +664,25 @@ namespace Persistence.Migrations
                         .HasForeignKey("ParentCategoryId");
 
                     b.Navigation("ParentCategory");
+                });
+
+            modelBuilder.Entity("Domain.CategoryFeature", b =>
+                {
+                    b.HasOne("Domain.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Feature", "Feature")
+                        .WithMany()
+                        .HasForeignKey("FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Feature");
                 });
 
             modelBuilder.Entity("Domain.Endpoint", b =>

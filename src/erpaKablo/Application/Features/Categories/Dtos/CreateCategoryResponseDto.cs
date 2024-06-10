@@ -1,9 +1,8 @@
 using Application.Features.Features.Dtos;
-using Core.Application.Responses;
 
-namespace Application.Features.Categories.Commands.Create;
+namespace Application.Features.Categories.Dtos;
 
-public class CreatedCategoryResponse : IResponse
+public class CreateCategoryResponseDto
 {
     public string Id { get; set; }
     public string Name { get; set; }

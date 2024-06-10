@@ -1,6 +1,7 @@
 using Application.Features.Brands.Commands.Create;
 using Application.Features.Brands.Commands.Delete;
 using Application.Features.Brands.Commands.Update;
+using Application.Features.Brands.Queries.GetByDynamic;
 using Application.Features.Brands.Queries.GetById;
 using Application.Features.Brands.Queries.GetList;
 using AutoMapper;
@@ -21,6 +22,9 @@ public class MappingProfiles : Profile
                 => dest.Items, opt 
                 => opt.MapFrom(src => src));
         CreateMap<IPaginate<Brand>, GetListResponse<GetAllBrandQueryResponse>>().ReverseMap();
+
+        CreateMap<Brand, GetListBrandByDynamicDto>().ReverseMap();
+        CreateMap<IPaginate<Brand>, GetListResponse<GetListBrandByDynamicDto>>().ReverseMap();
         
         CreateMap<Brand, CreateBrandCommand>().ReverseMap();
         CreateMap<Brand, CreatedBrandResponse>().ReverseMap();

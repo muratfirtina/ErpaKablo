@@ -1,3 +1,5 @@
+using Application.Features.Categories.Dtos;
+using Application.Features.Categories.Rules;
 using Application.Repositories;
 using AutoMapper;
 using Core.CrossCuttingConcerns.Exceptions;
@@ -10,39 +12,58 @@ public class CreateCategoryCommand : IRequest<CreatedCategoryResponse>
 {
     public string Name { get; set; }
     public string? ParentCategoryId { get; set; }
+    public List<string>? FeatureIds { get; set; }
+    
+    
     
     public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand, CreatedCategoryResponse>
     {
         private readonly IMapper _mapper;
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IFeatureRepository _featureRepository;
+        private readonly CategoryBusinessRules _categoryBusinessRules;
 
-        public CreateCategoryCommandHandler(IMapper mapper, ICategoryRepository categoryRepository)
+        public CreateCategoryCommandHandler(IMapper mapper, ICategoryRepository categoryRepository, IFeatureRepository featureRepository, CategoryBusinessRules categoryBusinessRules)
         {
             _mapper = mapper;
             _categoryRepository = categoryRepository;
+            _featureRepository = featureRepository;
+            _categoryBusinessRules = categoryBusinessRules;
         }
 
         public async Task<CreatedCategoryResponse> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
         {
-            
-            
-            //Böyle bir kategori ismi var mı bak.
-            var category = await _categoryRepository.GetAsync(c => c.Name == request.Name, cancellationToken: cancellationToken);
-            if (category != null)
+            var category = _mapper.Map<Category>(request);
+            if (request.ParentCategoryId != null)
             {
-                throw new BusinessException("Bu isimde bir kategori zaten var.");
-            }
-            //parentCategoryId yoksa null yap
-            if (string.IsNullOrEmpty(request.ParentCategoryId))
-            {
-                request.ParentCategoryId = null;
+                var parentCategory = await _categoryRepository.GetAsync(category => category.Id == request.ParentCategoryId);
+                if (parentCategory == null)
+                {
+                    throw new BusinessException("Parent category not found");
+                }
+                category.ParentCategory = parentCategory;
             }
 
-            Category mappedCategory = _mapper.Map<Category>(request);
-            await _categoryRepository.AddAsync(mappedCategory);
-            CreatedCategoryResponse response = _mapper.Map<CreatedCategoryResponse>(mappedCategory);
+            if (request.FeatureIds != null)
+            {
+                ICollection<Feature> features = new List<Feature>();
+                foreach (var featureId in request.FeatureIds)
+                {
+                    var feature = await _featureRepository.GetAsync(feature => feature.Id == featureId);
+                    if (feature == null)
+                    {
+                        throw new BusinessException("Feature not found");
+                    }
+                    features.Add(feature);
+                }
+                category.Features = features;
+            }
+
+            await _categoryRepository.AddAsync(category);
+            CreatedCategoryResponse response = _mapper.Map<CreatedCategoryResponse>(category);
             return response;
         }
+
     }
     
 }

@@ -39,7 +39,11 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Delete([FromRoute] string id)
         {
             DeletedBrandResponse response = await Mediator.Send(new DeleteBrandCommand { Id = id });
-            return Ok(response);
+            if (response.Success)
+            {
+                return Ok(response);
+            }
+            return BadRequest("Brand deletion failed.");
         }
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateBrandCommand updateBrandCommand)
@@ -50,7 +54,8 @@ namespace WebAPI.Controllers
         [HttpPost("GetList/ByDynamic")]
         public async Task<IActionResult> GetListByDynamic([FromQuery] PageRequest pageRequest, [FromBody] DynamicQuery? dynamicQuery = null)
         {
-            GetListResponse<GetListBrandByDynamicDto> response = await Mediator.Send(new GetListBrandByDynamicQuery { PageRequest = pageRequest, DynamicQuery = dynamicQuery });
+            GetListBrandByDynamicQuery query = new GetListBrandByDynamicQuery { PageRequest = pageRequest, DynamicQuery = dynamicQuery };
+            GetListResponse<GetListBrandByDynamicDto> response = await Mediator.Send(query);
             return Ok(response);
         }
     }

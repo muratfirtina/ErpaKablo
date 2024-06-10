@@ -24,7 +24,7 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<ProductVariant> ProductVariants { get; set; }
     public DbSet<VariantFeatureValue> VariantFeatureValues { get; set; }
     public DbSet<VariantGroup> VariantGroups { get; set; }
-    public DbSet<CategoryFeature> CategoryFeatures { get; set; }
+    //public DbSet<CategoryFeature> CategoryFeatures { get; set; }
     public DbSet<ProductVariantGroup> ProductVariantGroups { get; set; }
     public DbSet<ProductImageFile> ProductImageFiles { get; set; }
     public DbSet<ImageFile> ImageFiles { get; set; }
@@ -41,7 +41,7 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<ProductVariant>().HasQueryFilter(pv => !pv.DeletedDate.HasValue);
         builder.Entity<VariantGroup>().HasQueryFilter(vg => !vg.DeletedDate.HasValue);
         builder.Entity<VariantFeatureValue>().HasQueryFilter(vfv => !vfv.Feature.DeletedDate.HasValue);
-        builder.Entity<CategoryFeature>().HasQueryFilter(cf => !cf.Feature.DeletedDate.HasValue);
+        //builder.Entity<CategoryFeature>().HasQueryFilter(cf => !cf.Feature.DeletedDate.HasValue);
         builder.Entity<ProductVariantGroup>().HasQueryFilter(pvg => !pvg.VariantGroup.DeletedDate.HasValue);
         
         
@@ -65,18 +65,15 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<Category>()
             .HasKey(c => c.Id);
         
-        builder.Entity<CategoryFeature>()
-            .HasKey(cf => new { cf.CategoryId, cf.FeatureId });
-
-        builder.Entity<CategoryFeature>()
-            .HasOne(cf => cf.Category)
-            .WithMany(c => c.CategoryFeatures)
-            .HasForeignKey(cf => cf.CategoryId);
-
-        builder.Entity<CategoryFeature>()
-            .HasOne(cf => cf.Feature)
-            .WithMany(f => f.CategoryFeatures)
-            .HasForeignKey(cf => cf.FeatureId);
+        builder.Entity<Category>()
+            .HasMany(c => c.Features)
+            .WithMany(f => f.Categories)
+            .UsingEntity(j => j.ToTable("CategoryFeature"));
+        
+        builder.Entity<Feature>()
+            .HasMany(f => f.Categories)
+            .WithMany(c => c.Features)
+            .UsingEntity(j => j.ToTable("CategoryFeature"));
         
         builder.Entity<VariantFeatureValue>()
             .HasKey(vfv => new { vfv.ProductVariantId, vfv.FeatureId, vfv.FeatureValueId });

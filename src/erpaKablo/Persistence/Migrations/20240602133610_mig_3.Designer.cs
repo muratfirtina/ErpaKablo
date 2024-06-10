@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence.Context;
 
@@ -10,9 +11,11 @@ using Persistence.Context;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ErpaKabloDbContext))]
-    partial class ErpaKabloDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240602133610_mig_3")]
+    partial class mig_3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,7 +49,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("FeaturesId");
 
-                    b.ToTable("CategoryFeature", (string)null);
+                    b.ToTable("CategoryFeature");
                 });
 
             modelBuilder.Entity("Domain.ACMenu", b =>

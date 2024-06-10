@@ -9,14 +9,12 @@ public class Category:Entity<string>
     public Category? ParentCategory { get; set; }
     public ICollection<Category>? SubCategories { get; set; }
     public ICollection<Product>? Products { get; set; }
-    public ICollection<CategoryFeature> CategoryFeatures { get; set; }
+    public ICollection<Feature> Features { get; set; }
     
     public Category(string? name) : base(name)
     {
         Name = name;
-        SubCategories = new List<Category>();
-        Products = new List<Product>();
-        CategoryFeatures = new List<CategoryFeature>();
+        Features = new List<Feature>();
     }
     
 }

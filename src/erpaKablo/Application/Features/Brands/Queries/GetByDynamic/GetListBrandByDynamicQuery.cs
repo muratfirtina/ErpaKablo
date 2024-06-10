@@ -31,6 +31,7 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
 
         public async Task<GetListResponse<GetListBrandByDynamicDto>> Handle(GetListBrandByDynamicQuery request, CancellationToken cancellationToken)
         {
+
             if (request.PageRequest.PageIndex == -1 && request.PageRequest.PageSize == -1)
             {
                 var allBrands = await _brandRepository.GetAllByDynamicAsync(

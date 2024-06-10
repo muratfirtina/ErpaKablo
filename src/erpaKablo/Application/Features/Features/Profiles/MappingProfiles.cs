@@ -1,6 +1,7 @@
 using Application.Features.Features.Commands.Create;
 using Application.Features.Features.Commands.Delete;
 using Application.Features.Features.Commands.Update;
+using Application.Features.Features.Dtos;
 using Application.Features.Features.Queries.GetById;
 using Application.Features.Features.Queries.GetList;
 using Application.Features.Products.Dtos;
@@ -23,8 +24,14 @@ public class MappingProfiles : Profile
                 => opt.MapFrom(src => src));
         CreateMap<IPaginate<Feature>, GetListResponse<GetAllFeatureQueryResponse>>().ReverseMap();
         
-        CreateMap<Feature, CreateFeatureCommand>().ReverseMap();
-        CreateMap<Feature, CreatedFeatureResponse>().ReverseMap();
+        CreateMap<CreateFeatureCommand, Feature>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            //.ForMember(dest => dest.CategoryFeatures, opt => opt.Ignore())
+            .ReverseMap();
+
+        CreateMap<Feature, CreatedFeatureResponse>()
+            .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories))
+            .ReverseMap();
         CreateMap<Feature, UpdateFeatureCommand>().ReverseMap();
         CreateMap<Feature, UpdatedFeatureResponse>().ReverseMap();
         CreateMap<Feature, DeletedFeatureResponse>().ReverseMap();
@@ -52,5 +59,10 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Value,
                 opt => opt.MapFrom(src => src.FeatureValues.Select(f => f.Value).FirstOrDefault()))
             .ReverseMap();
+        
+        CreateMap<Feature, CreateFeatureDto>()
+           // .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.CategoryFeatures.Select(cf => cf.Category)))
+            .ReverseMap();
+
     }
 }

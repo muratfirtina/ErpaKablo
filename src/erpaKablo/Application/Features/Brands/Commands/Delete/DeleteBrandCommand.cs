@@ -28,8 +28,7 @@ public class DeleteBrandCommand : IRequest<DeletedBrandResponse>
             Brand? brand = await _brandRepository.GetAsync(p=>p.Id==request.Id,cancellationToken: cancellationToken);
             await _brandBusinessRules.BrandShouldExistWhenSelected(brand);
             await _brandRepository.DeleteAsync(brand!);
-            DeletedBrandResponse response = _mapper.Map<DeletedBrandResponse>(brand);
-            return response;
+            return new DeletedBrandResponse { Success = true };
         }
     }
 }

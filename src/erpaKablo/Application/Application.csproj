@@ -23,7 +23,6 @@
 
     <ItemGroup>
       <Folder Include="Features\Brands\Dtos\" />
-      <Folder Include="Features\Features\Dtos\" />
       <Folder Include="Features\FeatureValues\Dtos\" />
       <Folder Include="Features\ProductImageFiles\Commands\" />
       <Folder Include="Features\ProductImageFiles\Consts\" />
