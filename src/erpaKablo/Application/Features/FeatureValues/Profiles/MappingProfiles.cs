@@ -1,6 +1,7 @@
 using Application.Features.FeatureValues.Commands.Create;
 using Application.Features.FeatureValues.Commands.Delete;
 using Application.Features.FeatureValues.Commands.Update;
+using Application.Features.FeatureValues.Queries.GetByDynamic;
 using Application.Features.FeatureValues.Queries.GetById;
 using Application.Features.FeatureValues.Queries.GetList;
 using Application.Features.Products.Dtos;
@@ -23,6 +24,9 @@ public class MappingProfiles : Profile
                 => opt.MapFrom(src => src));
         CreateMap<IPaginate<FeatureValue>, GetListResponse<GetAllFeatureValueQueryResponse>>().ReverseMap();
         
+        CreateMap<FeatureValue, GetListFeatureValueByDynamicDto>().ReverseMap();
+        CreateMap<IPaginate<FeatureValue>, GetListResponse<GetListFeatureValueByDynamicDto>>().ReverseMap();
+        
         CreateMap<FeatureValue, CreateFeatureValueCommand>().ReverseMap();
         CreateMap<FeatureValue, CreatedFeatureValueResponse>().ReverseMap();
         CreateMap<FeatureValue, UpdateFeatureValueCommand>().ReverseMap();
@@ -30,7 +34,7 @@ public class MappingProfiles : Profile
         CreateMap<FeatureValue, DeletedFeatureValueResponse>().ReverseMap();
         CreateMap<FeatureValue, FeatureValueDto>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.Value, opt => opt.MapFrom(src => src.Value))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
             .ReverseMap();
     }
 }

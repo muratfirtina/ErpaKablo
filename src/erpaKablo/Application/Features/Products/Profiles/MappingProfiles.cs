@@ -71,7 +71,7 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.FeatureId, opt => opt.MapFrom(src => src.Feature.Id))
             .ForMember(dest => dest.FeatureValueId, opt => opt.MapFrom(src => src.FeatureValue.Id))
             .ForMember(dest => dest.FeatureName, opt => opt.MapFrom(src => src.Feature.Name))
-            .ForMember(dest => dest.FeatureValueName, opt => opt.MapFrom(src => src.FeatureValue.Value))
+            .ForMember(dest => dest.FeatureValueName, opt => opt.MapFrom(src => src.FeatureValue.Name))
             .ReverseMap();
         
         CreateMap<ProductVariant, ProductVariantDto>()

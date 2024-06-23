@@ -29,6 +29,7 @@ public class DeleteFeatureCommand : IRequest<DeletedFeatureResponse>
             await _featureBusinessRules.FeatureShouldExistWhenSelected(feature);
             await _featureRepository.DeleteAsync(feature!);
             DeletedFeatureResponse response = _mapper.Map<DeletedFeatureResponse>(feature);
+            response.Success = true;
             return response;
         }
     }

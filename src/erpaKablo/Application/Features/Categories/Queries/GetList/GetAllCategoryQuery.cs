@@ -1,3 +1,4 @@
+using Application.Features.Categories.Dtos;
 using Application.Features.Categories.Queries.GetList;
 using Application.Repositories;
 using AutoMapper;
@@ -6,43 +7,51 @@ using Core.Application.Responses;
 using Core.Persistence.Paging;
 using Domain;
 using MediatR;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Application.Features.Categories.Queries.GetList;
-
-public class GetAllCategoryQuery : IRequest<GetListResponse<GetAllCategoryQueryResponse>>
+namespace Application.Features.Categories.Queries.GetList
 {
-    public PageRequest PageRequest { get; set; }
-    
-    public class GetAllCategoryQueryHandler : IRequestHandler<GetAllCategoryQuery, GetListResponse<GetAllCategoryQueryResponse>>
+    public class GetAllCategoryQuery : IRequest<GetListResponse<GetAllCategoryQueryResponse>>
     {
-        private readonly ICategoryRepository _categoryRepository;
-        private readonly IMapper _mapper;
-
-        public GetAllCategoryQueryHandler(ICategoryRepository categoryRepository, IMapper mapper)
+        public PageRequest PageRequest { get; set; }
+        
+        public class GetAllCategoryQueryHandler : IRequestHandler<GetAllCategoryQuery, GetListResponse<GetAllCategoryQueryResponse>>
         {
-            _categoryRepository = categoryRepository;
-            _mapper = mapper;
-        }
+            private readonly ICategoryRepository _categoryRepository;
+            private readonly IMapper _mapper;
 
-        public async Task<GetListResponse<GetAllCategoryQueryResponse>> Handle(GetAllCategoryQuery request, CancellationToken cancellationToken)
-        {
-            if (request.PageRequest.PageIndex == -1 && request.PageRequest.PageSize == -1)
+            public GetAllCategoryQueryHandler(ICategoryRepository categoryRepository, IMapper mapper)
             {
-                List<Category> categories = await _categoryRepository.GetAllAsync(
-                    cancellationToken: cancellationToken);
-                GetListResponse<GetAllCategoryQueryResponse> response = _mapper.Map<GetListResponse<GetAllCategoryQueryResponse>>(categories);
-                return response;
+                _categoryRepository = categoryRepository;
+                _mapper = mapper;
             }
-            else
+
+            public async Task<GetListResponse<GetAllCategoryQueryResponse>> Handle(GetAllCategoryQuery request, CancellationToken cancellationToken)
             {
-                IPaginate<Category> categories = await _categoryRepository.GetListAsync(
-                    index: request.PageRequest.PageIndex,
-                    size: request.PageRequest.PageSize,
-                    cancellationToken: cancellationToken
-                );
-                GetListResponse<GetAllCategoryQueryResponse> response = _mapper.Map<GetListResponse<GetAllCategoryQueryResponse>>(categories);
-                return response;
+                if (request.PageRequest.PageIndex == -1 && request.PageRequest.PageSize == -1)
+                {
+                    List<Category> categories = await _categoryRepository.GetAllAsync(cancellationToken: cancellationToken);
+                    
+                    GetListResponse<GetAllCategoryQueryResponse> response = _mapper.Map<GetListResponse<GetAllCategoryQueryResponse>>(categories);
+                    return response;
+                }
+                else
+                {
+                    IPaginate<Category> categories = await _categoryRepository.GetListAsync(
+                        index: request.PageRequest.PageIndex,
+                        size: request.PageRequest.PageSize,
+                        cancellationToken: cancellationToken
+                    );
+                    
+                    GetListResponse<GetAllCategoryQueryResponse> response = _mapper.Map<GetListResponse<GetAllCategoryQueryResponse>>(categories);
+                    return response;
+                }
             }
+
+            
         }
     }
 }

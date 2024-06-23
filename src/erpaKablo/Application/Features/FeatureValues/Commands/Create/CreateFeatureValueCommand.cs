@@ -8,7 +8,7 @@ namespace Application.Features.FeatureValues.Commands.Create;
 
 public class CreateFeatureValueCommand : IRequest<CreatedFeatureValueResponse>
 {
-    public string Value { get; set; }
+    public string Name { get; set; }
     public string FeatureId { get; set; }
     
     public class CreateFeatureCommandHandler : IRequestHandler<CreateFeatureValueCommand, CreatedFeatureValueResponse>

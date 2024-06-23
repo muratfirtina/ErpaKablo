@@ -56,7 +56,7 @@ public class GetByIdCategoryQuery : IRequest<GetByIdCategoryResponse>
                         .SelectMany(p => p.ProductVariants)
                         .Count(pv => pv.VariantFeatureValues.Any(vfv => vfv.FeatureId == feature.Id && vfv.FeatureValueId == featureValue.Id));
 
-                    valueCounts[featureValue.Value] = count;
+                    valueCounts[featureValue.Name] = count;
                 }
 
                 featureValueProductCounts[feature.Name] = valueCounts;

@@ -7,7 +7,7 @@ public class CreateFeatureValueCommandValidator : AbstractValidator<CreateFeatur
 {
     public CreateFeatureValueCommandValidator()
     {
-        RuleFor(c => c.Value).NotEmpty();
+        RuleFor(c => c.Name).NotEmpty();
     }
 
 }

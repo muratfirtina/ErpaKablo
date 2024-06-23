@@ -29,6 +29,7 @@ public class DeleteCategoryCommand : IRequest<DeletedCategoryResponse>
             await _categoryBusinessRules.CategoryShouldExistWhenSelected(category);
             await _categoryRepository.DeleteAsync(category!);
             DeletedCategoryResponse response = _mapper.Map<DeletedCategoryResponse>(category);
+            response.Success = true;
             return response;
         }
     }
