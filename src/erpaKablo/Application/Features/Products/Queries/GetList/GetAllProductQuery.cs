@@ -30,14 +30,8 @@ public class GetAllProductQuery : IRequest<GetListResponse<GetAllProductQueryRes
             {
                 List<Product> products = await _productRepository.GetAllAsync(
                     include: p => p
-                        .Include(x => x.Category)
-                        .Include(x => x.Brand)
-                        .Include(x => x.ProductVariants)
-                        .ThenInclude(v => v.VariantFeatureValues)
-                        .ThenInclude(vf => vf.Feature)
-                        .Include(x => x.ProductVariants)
-                        .ThenInclude(v => v.VariantFeatureValues)
-                        .ThenInclude(vf => vf.FeatureValue),
+                        .Include(p => p.Category)
+                        .Include(p => p.Brand),
                     cancellationToken: cancellationToken);
                 GetListResponse<GetAllProductQueryResponse> response = _mapper.Map<GetListResponse<GetAllProductQueryResponse>>(products);
                 return response;

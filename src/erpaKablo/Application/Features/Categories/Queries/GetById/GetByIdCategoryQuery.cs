@@ -14,14 +14,12 @@ public class GetByIdCategoryQuery : IRequest<GetByIdCategoryResponse>
     public class GetByIdCategoryQueryHandler : IRequestHandler<GetByIdCategoryQuery, GetByIdCategoryResponse>
     {
         private readonly ICategoryRepository _categoryRepository;
-        private readonly IProductVariantRepository _productVariantRepository;
         private readonly IMapper _mapper;
 
-        public GetByIdCategoryQueryHandler(ICategoryRepository categoryRepository, IMapper mapper, IProductVariantRepository productVariantRepository)
+        public GetByIdCategoryQueryHandler(ICategoryRepository categoryRepository, IMapper mapper)
         {
             _categoryRepository = categoryRepository;
             _mapper = mapper;
-            _productVariantRepository = productVariantRepository;
         }
 
         public async Task<GetByIdCategoryResponse> Handle(GetByIdCategoryQuery request, CancellationToken cancellationToken)
@@ -33,38 +31,15 @@ public class GetByIdCategoryQuery : IRequest<GetByIdCategoryResponse>
                     .Include(c => c.SubCategories)
                     .Include(c => c.Features)
                     .ThenInclude(f => f.FeatureValues)
-                    .Include(fv=>fv.Products)
-                    .ThenInclude(p=>p.ProductVariants)
-                    .ThenInclude(pv=>pv.VariantFeatureValues),
+                    .Include(fv=>fv.Products),
                 cancellationToken: cancellationToken);
 
             if (category == null)
             {
                 throw new BusinessException("Category not found.");
             }
-
-            // Özellik ve değer bazlı ürün varyantı sayısını hesaplayın
-            var featureValueProductCounts = new Dictionary<string, Dictionary<string, int>>();
-
-            foreach (var feature in category.Features)
-            {
-                var valueCounts = new Dictionary<string, int>();
-
-                foreach (var featureValue in feature.FeatureValues)
-                {
-                    int count = category.Products
-                        .SelectMany(p => p.ProductVariants)
-                        .Count(pv => pv.VariantFeatureValues.Any(vfv => vfv.FeatureId == feature.Id && vfv.FeatureValueId == featureValue.Id));
-
-                    valueCounts[featureValue.Name] = count;
-                }
-
-                featureValueProductCounts[feature.Name] = valueCounts;
-            }
             
             GetByIdCategoryResponse response = _mapper.Map<GetByIdCategoryResponse>(category);
-            response.FeatureValueProductCounts = featureValueProductCounts;
-
             return response;
         }
 

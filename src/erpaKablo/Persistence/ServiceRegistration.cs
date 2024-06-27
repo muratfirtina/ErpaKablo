@@ -22,9 +22,6 @@ public static class ServiceRegistration
         services.AddScoped<IEndpointRepository, EndpointRepository>();
         services.AddScoped<IFeatureRepository, FeatureRepository>();
         services.AddScoped<IFeatureValueRepository, FeatureValueRepository>();
-        services.AddScoped<IProductVariantRepository, ProductVariantRepository>();
-        services.AddScoped<IVariantGroupRepository, VariantGroupRepository>();
-        
         
         return services;
     }

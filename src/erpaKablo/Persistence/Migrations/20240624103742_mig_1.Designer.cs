@@ -11,8 +11,8 @@ using Persistence.Context;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ErpaKabloDbContext))]
-    [Migration("20240602133610_mig_3")]
-    partial class mig_3
+    [Migration("20240624103742_mig_1")]
+    partial class mig_1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -49,7 +49,7 @@ namespace Persistence.Migrations
 
                     b.HasIndex("FeaturesId");
 
-                    b.ToTable("CategoryFeature");
+                    b.ToTable("CategoryFeature", (string)null);
                 });
 
             modelBuilder.Entity("Domain.ACMenu", b =>
@@ -199,15 +199,13 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("FeatureId")
-                        .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -383,15 +381,24 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Sku")
-                        .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Tax")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("VariantGroupId")
-                        .HasColumnType("varchar(255)");
+                    b.Property<string>("VaryantGroupID")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -399,97 +406,22 @@ namespace Persistence.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("VariantGroupId");
-
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("Domain.ProductVariant", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("DeletedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<int>("Stock")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("ProductVariants");
-                });
-
-            modelBuilder.Entity("Domain.ProductVariantGroup", b =>
+            modelBuilder.Entity("Domain.ProductFeatureValue", b =>
                 {
                     b.Property<string>("ProductId")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("VariantGroupId")
-                        .HasColumnType("varchar(255)");
-
-                    b.HasKey("ProductId", "VariantGroupId");
-
-                    b.HasIndex("VariantGroupId");
-
-                    b.ToTable("ProductVariantGroups");
-                });
-
-            modelBuilder.Entity("Domain.VariantFeatureValue", b =>
-                {
-                    b.Property<string>("ProductVariantId")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("FeatureId")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("FeatureValueId")
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("ProductVariantId", "FeatureId", "FeatureValueId");
-
-                    b.HasIndex("FeatureId");
+                    b.HasKey("ProductId", "FeatureValueId");
 
                     b.HasIndex("FeatureValueId");
 
-                    b.ToTable("VariantFeatureValues");
-                });
-
-            modelBuilder.Entity("Domain.VariantGroup", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("DeletedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("VariantGroups");
+                    b.ToTable("ProductFeatureValues");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -594,6 +526,21 @@ namespace Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProductProductImageFile", b =>
+                {
+                    b.Property<string>("ProductImageFilesId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ProductsId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("ProductImageFilesId", "ProductsId");
+
+                    b.HasIndex("ProductsId");
+
+                    b.ToTable("ProductProductImageFile");
+                });
+
             modelBuilder.Entity("Domain.ProductImageFile", b =>
                 {
                     b.HasBaseType("Domain.ImageFile");
@@ -601,13 +548,8 @@ namespace Persistence.Migrations
                     b.Property<string>("Alt")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ProductId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<bool>("Showcase")
                         .HasColumnType("tinyint(1)");
-
-                    b.HasIndex("ProductId");
 
                     b.HasDiscriminator().HasValue("ProductImageFile");
                 });
@@ -666,9 +608,7 @@ namespace Persistence.Migrations
                 {
                     b.HasOne("Domain.Feature", "Feature")
                         .WithMany("FeatureValues")
-                        .HasForeignKey("FeatureId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("FeatureId");
 
                     b.Navigation("Feature");
                 });
@@ -685,72 +625,28 @@ namespace Persistence.Migrations
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Domain.VariantGroup", "VariantGroup")
-                        .WithMany("Products")
-                        .HasForeignKey("VariantGroupId");
-
                     b.Navigation("Brand");
 
                     b.Navigation("Category");
-
-                    b.Navigation("VariantGroup");
                 });
 
-            modelBuilder.Entity("Domain.ProductVariant", b =>
+            modelBuilder.Entity("Domain.ProductFeatureValue", b =>
                 {
-                    b.HasOne("Domain.Product", "Product")
-                        .WithMany("ProductVariants")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("Domain.ProductVariantGroup", b =>
-                {
-                    b.HasOne("Domain.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.VariantGroup", "VariantGroup")
-                        .WithMany()
-                        .HasForeignKey("VariantGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("VariantGroup");
-                });
-
-            modelBuilder.Entity("Domain.VariantFeatureValue", b =>
-                {
-                    b.HasOne("Domain.Feature", "Feature")
-                        .WithMany()
-                        .HasForeignKey("FeatureId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Domain.FeatureValue", "FeatureValue")
                         .WithMany()
                         .HasForeignKey("FeatureValueId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.ProductVariant", "ProductVariant")
-                        .WithMany("VariantFeatureValues")
-                        .HasForeignKey("ProductVariantId")
+                    b.HasOne("Domain.Product", "Product")
+                        .WithMany("ProductFeatureValues")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Feature");
-
                     b.Navigation("FeatureValue");
 
-                    b.Navigation("ProductVariant");
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -804,13 +700,19 @@ namespace Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.ProductImageFile", b =>
+            modelBuilder.Entity("ProductProductImageFile", b =>
                 {
-                    b.HasOne("Domain.Product", "Product")
-                        .WithMany("ProductImageFiles")
-                        .HasForeignKey("ProductId");
+                    b.HasOne("Domain.ProductImageFile", null)
+                        .WithMany()
+                        .HasForeignKey("ProductImageFilesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Product");
+                    b.HasOne("Domain.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.ACMenu", b =>
@@ -837,19 +739,7 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Product", b =>
                 {
-                    b.Navigation("ProductImageFiles");
-
-                    b.Navigation("ProductVariants");
-                });
-
-            modelBuilder.Entity("Domain.ProductVariant", b =>
-                {
-                    b.Navigation("VariantFeatureValues");
-                });
-
-            modelBuilder.Entity("Domain.VariantGroup", b =>
-                {
-                    b.Navigation("Products");
+                    b.Navigation("ProductFeatureValues");
                 });
 #pragma warning restore 612, 618
         }

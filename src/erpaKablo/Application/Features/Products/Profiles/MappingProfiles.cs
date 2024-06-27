@@ -37,9 +37,6 @@ public class MappingProfiles : Profile
             .ForMember(dest 
                 => dest.BrandName, opt 
                 => opt.MapFrom(src => src.Brand.Name))
-            .ForMember(dest 
-                => dest.Variants, opt 
-                => opt.MapFrom(src => src.ProductVariants))
             .ReverseMap();
 
 
@@ -61,21 +58,9 @@ public class MappingProfiles : Profile
           .ReverseMap();
 
         CreateMap<CreateProductDto, Product>()
-            .ForMember(dest => dest.ProductVariants, opt => opt.Ignore())
             .ForMember(dest => dest.ProductImageFiles, opt => opt.Ignore())
             .ForMember(dest => dest.Category, opt => opt.Ignore())
             .ForMember(dest => dest.Brand, opt => opt.Ignore())
-            .ReverseMap();
-        CreateMap<CreateProductVariantDto, ProductVariant>().ReverseMap();
-        CreateMap<VariantFeatureValue,VariantFeatureDto>()
-            .ForMember(dest => dest.FeatureId, opt => opt.MapFrom(src => src.Feature.Id))
-            .ForMember(dest => dest.FeatureValueId, opt => opt.MapFrom(src => src.FeatureValue.Id))
-            .ForMember(dest => dest.FeatureName, opt => opt.MapFrom(src => src.Feature.Name))
-            .ForMember(dest => dest.FeatureValueName, opt => opt.MapFrom(src => src.FeatureValue.Name))
-            .ReverseMap();
-        
-        CreateMap<ProductVariant, ProductVariantDto>()
-            .ForMember(dest => dest.Features, opt => opt.MapFrom(src => src.VariantFeatureValues))
             .ReverseMap();
         
         CreateMap<Product, DeletedProductResponse>();

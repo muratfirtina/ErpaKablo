@@ -130,18 +130,24 @@ namespace Persistence.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "VariantGroups",
+                name: "ImageFiles",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "varchar(255)", nullable: false),
                     Name = table.Column<string>(type: "longtext", nullable: true),
+                    Category = table.Column<string>(type: "longtext", nullable: false),
+                    Path = table.Column<string>(type: "longtext", nullable: false),
+                    Storage = table.Column<string>(type: "longtext", nullable: false),
+                    Discriminator = table.Column<string>(type: "varchar(21)", maxLength: 21, nullable: false),
+                    Showcase = table.Column<bool>(type: "tinyint(1)", nullable: true),
+                    Alt = table.Column<string>(type: "longtext", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_VariantGroups", x => x.Id);
+                    table.PrimaryKey("PK_ImageFiles", x => x.Id);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -283,54 +289,6 @@ namespace Persistence.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "CategoryFeatures",
-                columns: table => new
-                {
-                    CategoryId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    FeatureId = table.Column<string>(type: "varchar(255)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CategoryFeatures", x => new { x.CategoryId, x.FeatureId });
-                    table.ForeignKey(
-                        name: "FK_CategoryFeatures_Categories_CategoryId",
-                        column: x => x.CategoryId,
-                        principalTable: "Categories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CategoryFeatures_Features_FeatureId",
-                        column: x => x.FeatureId,
-                        principalTable: "Features",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "FeatureValues",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
-                    Value = table.Column<string>(type: "longtext", nullable: false),
-                    FeatureId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FeatureValues", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_FeatureValues_Features_FeatureId",
-                        column: x => x.FeatureId,
-                        principalTable: "Features",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "Products",
                 columns: table => new
                 {
@@ -339,8 +297,11 @@ namespace Persistence.Migrations
                     Description = table.Column<string>(type: "longtext", nullable: true),
                     CategoryId = table.Column<string>(type: "varchar(255)", nullable: true),
                     BrandId = table.Column<string>(type: "varchar(255)", nullable: true),
-                    Sku = table.Column<string>(type: "longtext", nullable: false),
-                    VariantGroupId = table.Column<string>(type: "varchar(255)", nullable: true),
+                    VaryantGroupID = table.Column<string>(type: "longtext", nullable: false),
+                    Sku = table.Column<string>(type: "longtext", nullable: true),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Stock = table.Column<int>(type: "int", nullable: false),
+                    Tax = table.Column<int>(type: "int", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -360,10 +321,52 @@ namespace Persistence.Migrations
                         principalTable: "Categories",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "CategoryFeature",
+                columns: table => new
+                {
+                    CategoriesId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    FeaturesId = table.Column<string>(type: "varchar(255)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CategoryFeature", x => new { x.CategoriesId, x.FeaturesId });
                     table.ForeignKey(
-                        name: "FK_Products_VariantGroups_VariantGroupId",
-                        column: x => x.VariantGroupId,
-                        principalTable: "VariantGroups",
+                        name: "FK_CategoryFeature_Categories_CategoriesId",
+                        column: x => x.CategoriesId,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CategoryFeature_Features_FeaturesId",
+                        column: x => x.FeaturesId,
+                        principalTable: "Features",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "FeatureValues",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Name = table.Column<string>(type: "longtext", nullable: true),
+                    FeatureId = table.Column<string>(type: "varchar(255)", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FeatureValues", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FeatureValues_Features_FeatureId",
+                        column: x => x.FeatureId,
+                        principalTable: "Features",
                         principalColumn: "Id");
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
@@ -394,76 +397,24 @@ namespace Persistence.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "ImageFiles",
+                name: "ProductProductImageFile",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
-                    Name = table.Column<string>(type: "longtext", nullable: true),
-                    Category = table.Column<string>(type: "longtext", nullable: false),
-                    Path = table.Column<string>(type: "longtext", nullable: false),
-                    Storage = table.Column<string>(type: "longtext", nullable: false),
-                    Discriminator = table.Column<string>(type: "varchar(21)", maxLength: 21, nullable: false),
-                    Showcase = table.Column<bool>(type: "tinyint(1)", nullable: true),
-                    Alt = table.Column<string>(type: "longtext", nullable: true),
-                    ProductId = table.Column<string>(type: "varchar(255)", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    ProductImageFilesId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    ProductsId = table.Column<string>(type: "varchar(255)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ImageFiles", x => x.Id);
+                    table.PrimaryKey("PK_ProductProductImageFile", x => new { x.ProductImageFilesId, x.ProductsId });
                     table.ForeignKey(
-                        name: "FK_ImageFiles_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id");
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "ProductVariantGroups",
-                columns: table => new
-                {
-                    ProductId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    VariantGroupId = table.Column<string>(type: "varchar(255)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductVariantGroups", x => new { x.ProductId, x.VariantGroupId });
-                    table.ForeignKey(
-                        name: "FK_ProductVariantGroups_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
+                        name: "FK_ProductProductImageFile_ImageFiles_ProductImageFilesId",
+                        column: x => x.ProductImageFilesId,
+                        principalTable: "ImageFiles",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_ProductVariantGroups_VariantGroups_VariantGroupId",
-                        column: x => x.VariantGroupId,
-                        principalTable: "VariantGroups",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "ProductVariants",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
-                    ProductId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Stock = table.Column<int>(type: "int", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    DeletedDate = table.Column<DateTime>(type: "datetime(6)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProductVariants", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProductVariants_Products_ProductId",
-                        column: x => x.ProductId,
+                        name: "FK_ProductProductImageFile_Products_ProductsId",
+                        column: x => x.ProductsId,
                         principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -471,32 +422,25 @@ namespace Persistence.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "VariantFeatureValues",
+                name: "ProductFeatureValues",
                 columns: table => new
                 {
-                    ProductVariantId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    FeatureId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    ProductId = table.Column<string>(type: "varchar(255)", nullable: false),
                     FeatureValueId = table.Column<string>(type: "varchar(255)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_VariantFeatureValues", x => new { x.ProductVariantId, x.FeatureId, x.FeatureValueId });
+                    table.PrimaryKey("PK_ProductFeatureValues", x => new { x.ProductId, x.FeatureValueId });
                     table.ForeignKey(
-                        name: "FK_VariantFeatureValues_FeatureValues_FeatureValueId",
+                        name: "FK_ProductFeatureValues_FeatureValues_FeatureValueId",
                         column: x => x.FeatureValueId,
                         principalTable: "FeatureValues",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_VariantFeatureValues_Features_FeatureId",
-                        column: x => x.FeatureId,
-                        principalTable: "Features",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_VariantFeatureValues_ProductVariants_ProductVariantId",
-                        column: x => x.ProductVariantId,
-                        principalTable: "ProductVariants",
+                        name: "FK_ProductFeatureValues_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 })
@@ -550,9 +494,9 @@ namespace Persistence.Migrations
                 column: "ParentCategoryId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CategoryFeatures_FeatureId",
-                table: "CategoryFeatures",
-                column: "FeatureId");
+                name: "IX_CategoryFeature_FeaturesId",
+                table: "CategoryFeature",
+                column: "FeaturesId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Endpoints_AcMenuId",
@@ -565,9 +509,14 @@ namespace Persistence.Migrations
                 column: "FeatureId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ImageFiles_ProductId",
-                table: "ImageFiles",
-                column: "ProductId");
+                name: "IX_ProductFeatureValues_FeatureValueId",
+                table: "ProductFeatureValues",
+                column: "FeatureValueId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductProductImageFile_ProductsId",
+                table: "ProductProductImageFile",
+                column: "ProductsId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_BrandId",
@@ -578,31 +527,6 @@ namespace Persistence.Migrations
                 name: "IX_Products_CategoryId",
                 table: "Products",
                 column: "CategoryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Products_VariantGroupId",
-                table: "Products",
-                column: "VariantGroupId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProductVariantGroups_VariantGroupId",
-                table: "ProductVariantGroups",
-                column: "VariantGroupId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProductVariants_ProductId",
-                table: "ProductVariants",
-                column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_VariantFeatureValues_FeatureId",
-                table: "VariantFeatureValues",
-                column: "FeatureId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_VariantFeatureValues_FeatureValueId",
-                table: "VariantFeatureValues",
-                column: "FeatureValueId");
         }
 
         /// <inheritdoc />
@@ -627,16 +551,13 @@ namespace Persistence.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "CategoryFeatures");
+                name: "CategoryFeature");
 
             migrationBuilder.DropTable(
-                name: "ImageFiles");
+                name: "ProductFeatureValues");
 
             migrationBuilder.DropTable(
-                name: "ProductVariantGroups");
-
-            migrationBuilder.DropTable(
-                name: "VariantFeatureValues");
+                name: "ProductProductImageFile");
 
             migrationBuilder.DropTable(
                 name: "Endpoints");
@@ -651,7 +572,10 @@ namespace Persistence.Migrations
                 name: "FeatureValues");
 
             migrationBuilder.DropTable(
-                name: "ProductVariants");
+                name: "ImageFiles");
+
+            migrationBuilder.DropTable(
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "ACMenus");
@@ -660,16 +584,10 @@ namespace Persistence.Migrations
                 name: "Features");
 
             migrationBuilder.DropTable(
-                name: "Products");
-
-            migrationBuilder.DropTable(
                 name: "Brands");
 
             migrationBuilder.DropTable(
                 name: "Categories");
-
-            migrationBuilder.DropTable(
-                name: "VariantGroups");
         }
     }
 }

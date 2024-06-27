@@ -8,7 +8,7 @@ public class Feature : Entity<string>
     public string? Name { get; set; }
     public ICollection<Category>Categories { get; set; }
     public ICollection<FeatureValue> FeatureValues { get; set; }
-    //public ICollection<VariantFeatureValue> VariantFeatureValues { get; set; }
+   
     
     public Feature(string? name) : base(name)
     {

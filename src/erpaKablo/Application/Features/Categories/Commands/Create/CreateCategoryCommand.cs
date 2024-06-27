@@ -33,14 +33,15 @@ public class CreateCategoryCommand : IRequest<CreatedCategoryResponse>
 
         public async Task<CreatedCategoryResponse> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
         {
+            
+            await _categoryBusinessRules.CategoryNameShouldBeUniqueWhenCreate(request.Name, cancellationToken);
+    
             var category = _mapper.Map<Category>(request);
+
             if (request.ParentCategoryId != null)
             {
+                await _categoryBusinessRules.CategoryIdShouldExistWhenSelected(request.ParentCategoryId, cancellationToken);
                 var parentCategory = await _categoryRepository.GetAsync(category => category.Id == request.ParentCategoryId);
-                if (parentCategory == null)
-                {
-                    throw new BusinessException("Parent category not found");
-                }
                 category.ParentCategory = parentCategory;
             }
 

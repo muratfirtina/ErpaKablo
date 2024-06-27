@@ -35,39 +35,6 @@ public class CreateProductCommand : IRequest<CreatedProductResponse>
             
             var product = _mapper.Map<Product>(request);
 
-            // Varyantları ve varyant özelliklerini ekleme
-            if (request.CreateProductDto.Variants != null && request.CreateProductDto.Variants.Any())
-            {
-                foreach (var variantDto in request.CreateProductDto.Variants)
-                {
-                    var variant = new ProductVariant
-                    {
-                        //ProductVariant ın id si ürün id si ve featurevalue.value birleşimi olacak
-                        Id = $"{product.Id}-{string.Join("-", variantDto.Features.Select(f => f.FeatureValueId).First())}",
-                        ProductId = product.Id,
-                        Price = variantDto.Price,
-                        Stock = variantDto.Stock,
-                        VariantFeatureValues = new List<VariantFeatureValue>()
-                    };
-
-                    if (variantDto.Features != null && variantDto.Features.Any())
-                    {
-                        foreach (var featureDto in variantDto.Features)
-                        {
-                            var variantFeature = new VariantFeatureValue
-                            {
-                                
-                                ProductVariantId = variant.Id,
-                                FeatureId = featureDto.FeatureId,
-                                FeatureValueId = featureDto.FeatureValueId
-                            };
-                            variant.VariantFeatureValues.Add(variantFeature);
-                        }
-                    }
-                    product.ProductVariants.Add(variant);
-                }
-            }
-
             await _productRepository.AddAsync(product);
             
             CreatedProductResponse response = _mapper.Map<CreatedProductResponse>(product);
