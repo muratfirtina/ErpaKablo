@@ -7,3 +7,5 @@ public class VariantFeatureDto
     public string FeatureValueId { get; set; }
     public string FeatureValueName { get; set; }
 }
+
+//todo: sil

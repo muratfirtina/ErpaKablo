@@ -6,7 +6,7 @@ public class UpdateFeatureValueCommandValidation : AbstractValidator<UpdateFeatu
 {
     public UpdateFeatureValueCommandValidation()
     {
-        RuleFor(p => p.Value).NotEmpty();
+        RuleFor(p => p.Name).NotEmpty();
         RuleFor(p => p.Id).NotEmpty();
     }
 }

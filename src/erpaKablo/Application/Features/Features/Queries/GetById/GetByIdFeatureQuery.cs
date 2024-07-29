@@ -24,6 +24,7 @@ public class GetByIdFeatureQuery : IRequest<GetByIdFeatureResponse>
         public async Task<GetByIdFeatureResponse> Handle(GetByIdFeatureQuery request, CancellationToken cancellationToken)
         {
             Feature? feature = await _featureRepository.GetAsync(
+                include: f => f.Include(f => f.FeatureValues).Include(f => f.Categories),
                 predicate: p => p.Id == request.Id,
                 cancellationToken: cancellationToken);
             GetByIdFeatureResponse response = _mapper.Map<GetByIdFeatureResponse>(feature);

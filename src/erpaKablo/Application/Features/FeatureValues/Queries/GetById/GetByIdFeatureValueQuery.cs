@@ -2,6 +2,7 @@ using Application.Repositories;
 using AutoMapper;
 using Domain;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.FeatureValues.Queries.GetById;
 
@@ -24,6 +25,7 @@ public class GetByIdFeatureValueQuery : IRequest<GetByIdFeatureValueResponse>
         {
             FeatureValue? featureValue = await _featureValueRepository.GetAsync(
                 predicate: p => p.Id == request.Id,
+                include: f => f.Include(f => f.Feature),
                 cancellationToken: cancellationToken);
             GetByIdFeatureValueResponse response = _mapper.Map<GetByIdFeatureValueResponse>(featureValue);
             return response;

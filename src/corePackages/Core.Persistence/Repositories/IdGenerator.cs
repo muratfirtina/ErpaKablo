@@ -7,6 +7,10 @@ public static class IdGenerator
     
     public static string GenerateId(string? name)
     {
+        if (string.IsNullOrEmpty(name))
+        {
+            return Guid.NewGuid().ToString("N");
+        }
         string cleanedName = NameOperation.CharacterRegulatory(name.ToLower());
 
         // Ardından rastgele bir alfanumerik string (GUID'dan türetilmiş) ekleyerek son ID'yi oluştur

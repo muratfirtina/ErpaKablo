@@ -1,11 +1,13 @@
 using Application.Services;
 using Application.Storage;
 using Application.Storage.Cloudinary;
+using Application.Storage.Google;
 using Application.Storage.Local;
 using Infrastructure.Enums;
 using Infrastructure.Services;
 using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Cloudinary;
+using Infrastructure.Services.Storage.Google;
 using Infrastructure.Services.Storage.Local;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +21,7 @@ public static class InfrastructureServiceRegistration
     {
         services.AddScoped<ILocalStorage, LocalStorage>();
         services.AddScoped<ICloudinaryStorage, CloudinaryStorage>();
+        services.AddScoped<IGoogleStorage, GoogleStorage>();
         services.AddScoped<IStorageService, StorageService>();
         services.AddScoped<IFileNameService, FileNameService>();
         
@@ -43,6 +46,10 @@ public static class InfrastructureServiceRegistration
             
             case StorageType.Cloudinary:
                 serviceCollection.AddScoped<IBlobService, CloudinaryStorage>();
+                break;
+
+            case StorageType.Google:
+                serviceCollection.AddScoped<IBlobService, GoogleStorage>();
                 break;
             default:
                 serviceCollection.AddScoped<IBlobService, LocalStorage>();

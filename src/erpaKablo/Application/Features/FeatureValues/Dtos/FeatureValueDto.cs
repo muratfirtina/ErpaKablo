@@ -1,4 +1,4 @@
-namespace Application.Features.Products.Dtos;
+namespace Application.Features.FeatureValues.Dtos;
 
 public class FeatureValueDto
 {

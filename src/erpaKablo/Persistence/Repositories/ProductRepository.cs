@@ -1,5 +1,7 @@
+using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Application.Repositories;
+using Application.Storage;
 using Core.Persistence.Repositories;
 using Domain;
 using Microsoft.EntityFrameworkCore;
@@ -9,29 +11,31 @@ namespace Persistence.Repositories;
 
 public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbContext>, IProductRepository
 {
+   
     public ProductRepository(ErpaKabloDbContext context) : base(context)
     {
+        
     }
 
-    public async Task<List<GetProductImageFileDto>> GetFilesByProductId(string productId)
+    public async Task<List<ProductImageFileDto>> GetFilesByProductId(string productId)
     {
-        //burada gelen product id ye göre imagefile tablosundan product id ye göre productimagefile ları getirip dönüş yapılacak.
+
         var query = Context.Products
             .Where(p => p.Id == productId)
             .SelectMany(p => p.ProductImageFiles)
             .OrderByDescending(e => e.CreatedDate)
-            .Select(pif => new GetProductImageFileDto
+            .Select(pif => new ProductImageFileDto
             {
                 Id = pif.Id,
                 Path = pif.Path,
-                Name = pif.Name,
+                FileName = pif.Name,
                 Showcase = pif.Showcase,
                 Storage = pif.Storage,
-                Category = pif.Category
+                Category = pif.Category,
+                Alt = pif.Alt,
             }).ToListAsync();
 
         return await query;
-            
     }
 
     public async Task ChangeShowcase(string productId, string imageFileId, bool showcase)

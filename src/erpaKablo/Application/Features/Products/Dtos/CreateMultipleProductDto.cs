@@ -1,10 +1,9 @@
-using Application.Features.ProductImageFiles.Dtos;
-using Application.Features.Products.Dtos;
-using Core.Application.Responses;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http;
 
-namespace Application.Features.Products.Commands.Create;
+namespace Application.Features.Products.Dtos;
 
-public class CreatedProductResponse : IResponse
+public class CreateMultipleProductDto
 {
     public string Name { get; set; }
     public string? Description { get; set; }
@@ -17,6 +16,7 @@ public class CreatedProductResponse : IResponse
     public string? VaryantGroupID { get; set; }
     public List<string>? FeatureIds { get; set; }
     public List<string>? FeatureValueIds { get; set; }
-    public List<ProductImageFileDto> Images { get; set; }
+    [JsonIgnore]
+    public List<IFormFile>? ProductImages { get; set; }
 
 }

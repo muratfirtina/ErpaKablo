@@ -11,7 +11,7 @@ public abstract class Entity<TId> : IEntity<TId>, IEntityTimestamps
 
     public Entity()
     {
-        Id = default!;
+        Id = (default);
     }
 
     protected Entity(string? name)

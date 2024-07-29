@@ -29,10 +29,10 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPost]
-        public async Task<IActionResult> Add([FromBody] CreateProductCommand createProductCommand)
+        [Consumes("multipart/form-data")] // Bu satırı ekleyin
+        public async Task<IActionResult> Add([FromForm] CreateProductCommand createProductCommand)
         {
             CreatedProductResponse response = await Mediator.Send(createProductCommand);
-
             return Created(uri: "", response);
         }
         [HttpDelete("{id}")]

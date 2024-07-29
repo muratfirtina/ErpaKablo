@@ -2,6 +2,7 @@ using Application.Features.Products.Commands.Create;
 using Application.Features.Products.Commands.Delete;
 using Application.Features.Products.Commands.Update;
 using Application.Features.Products.Dtos;
+using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
 using AutoMapper;
@@ -15,19 +16,34 @@ public class MappingProfiles : Profile
 {
     public MappingProfiles()
     {
+        CreateMap<Product, CreateMultipleProductsCommand>()
+            .ForMember(dest => dest.Products, opt => opt.MapFrom(src => new List<CreateProductCommand> { new CreateProductCommand { Name = src.Name, Sku = src.Sku } }))
+            .ReverseMap();
         CreateMap<Product, CreateProductCommand>()
-            .ForMember(dest=>dest.CreateProductDto,opt=>opt.MapFrom(src=>src))
+            .ForMember(dest => dest.Sku, opt => opt.MapFrom(src => src.Sku))
             .ReverseMap();
         CreateMap<Product, CreatedProductResponse>()
             .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.CategoryId))
             .ForMember(dest => dest.BrandId, opt => opt.MapFrom(src => src.BrandId))
-            //.ForMember(dest => dest.ProductFeatures, opt => opt.MapFrom(src => src.Features))
+            .ForMember(dest => dest.FeatureValueIds, opt => opt.MapFrom(src => src.ProductFeatureValues.Select(pfv => pfv.FeatureValueId)))
+            .ForMember(dest => dest.Sku, opt => opt.MapFrom(src => src.Sku))
+            .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.ProductImageFiles))
+
             .ReverseMap();
         CreateMap<List<Product>, GetListResponse<GetAllProductQueryResponse>>()
             .ForMember(dest 
                 => dest.Items, opt 
                 => opt.MapFrom(src => src));
         CreateMap<IPaginate<Product>, GetListResponse<GetAllProductQueryResponse>>()
+            .ReverseMap();
+        
+        CreateMap<Product, GetListProductByDynamicDto>()
+            .ReverseMap();
+        CreateMap<List<Product>, GetListResponse<GetListProductByDynamicDto>>()
+            .ForMember(dest 
+                => dest.Items, opt 
+                => opt.MapFrom(src => src));
+        CreateMap<IPaginate<Product>, GetListResponse<GetListProductByDynamicDto>>()
             .ReverseMap();
         
         CreateMap<Product, GetAllProductQueryResponse>()
@@ -41,9 +57,17 @@ public class MappingProfiles : Profile
 
 
         CreateMap<Product, GetByIdProductResponse>()
-            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
-            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
-            //.ForMember(dest => dest.ProductFeatures, opt => opt.MapFrom(src => src.Features))
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand != null ? src.Brand.Name : null))
+            .ForMember(dest => dest.ProductFeatureValues, opt => opt.MapFrom(src => src.ProductFeatureValues
+                .Where(pfv => pfv.FeatureValue != null && pfv.FeatureValue.Feature != null)
+                .Select(pfv => new ProductFeatureValueDto
+                {
+                    FeatureId = pfv.FeatureValue.Feature.Id,
+                    FeatureName = pfv.FeatureValue.Feature.Name,
+                    FeatureValueId = pfv.FeatureValue.Id,
+                    FeatureValueName = pfv.FeatureValue.Name
+                })))
             .ReverseMap();
 
         CreateMap<Product, UpdateProductCommand>()
@@ -57,7 +81,7 @@ public class MappingProfiles : Profile
         CreateMap<Product, UpdatedProductResponse>()
           .ReverseMap();
 
-        CreateMap<CreateProductDto, Product>()
+        CreateMap<CreateMultipleProductDto, Product>()
             .ForMember(dest => dest.ProductImageFiles, opt => opt.Ignore())
             .ForMember(dest => dest.Category, opt => opt.Ignore())
             .ForMember(dest => dest.Brand, opt => opt.Ignore())
@@ -65,8 +89,13 @@ public class MappingProfiles : Profile
         
         CreateMap<Product, DeletedProductResponse>();
 
-
-
+        CreateMap<Product, RelatedProductDto>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.ProductFeatureValues, opt => opt.MapFrom(src => src.ProductFeatureValues))
+            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => 
+                src.ProductImageFiles.FirstOrDefault(img => img.Showcase)))
+            .ReverseMap();
 
 
     }

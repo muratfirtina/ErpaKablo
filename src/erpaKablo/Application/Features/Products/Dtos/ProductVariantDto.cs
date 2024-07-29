@@ -9,4 +9,6 @@ public class ProductVariantDto
     public decimal? Price { get; set; }
     public int? Stock { get; set; }
     public List<VariantFeatureDto> Features { get; set; }
+    
+    //todo: sil
 }

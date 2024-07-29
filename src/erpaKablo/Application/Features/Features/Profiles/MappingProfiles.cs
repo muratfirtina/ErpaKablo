@@ -5,6 +5,7 @@ using Application.Features.Features.Dtos;
 using Application.Features.Features.Queries.GetByDynamic;
 using Application.Features.Features.Queries.GetById;
 using Application.Features.Features.Queries.GetList;
+using Application.Features.FeatureValues.Dtos;
 using Application.Features.Products.Dtos;
 using AutoMapper;
 using Core.Application.Responses;
@@ -33,10 +34,16 @@ public class MappingProfiles : Profile
         CreateMap<Feature, CreatedFeatureResponse>()
             .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories))
             .ReverseMap();
-        CreateMap<Feature, UpdateFeatureCommand>().ReverseMap();
+        CreateMap<Feature, UpdateFeatureCommand>()
+            //.ForMember(dest => dest.FeatureValueIds, opt => opt.MapFrom(src => src.FeatureValues.Select(fv => fv.Id).ToList()))
+            //.ForMember(dest => dest.CategoryIds, opt => opt.MapFrom(src => src.Categories.Select(c => c.Id).ToList()))
+            .ReverseMap();
+        
         CreateMap<Feature, UpdatedFeatureResponse>().ReverseMap();
         CreateMap<Feature, DeletedFeatureResponse>().ReverseMap();
         CreateMap<Feature, GetListFeatureByDynamicDto>().ReverseMap();
+        CreateMap<List<Feature>, GetListResponse<GetListFeatureByDynamicDto>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
         CreateMap<IPaginate<Feature>, GetListResponse<GetListFeatureByDynamicDto>>().ReverseMap();
         CreateMap<Feature, ProductFeatureDto>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
@@ -61,6 +68,12 @@ public class MappingProfiles : Profile
         CreateMap<Feature, CreateFeatureDto>()
            // .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.CategoryFeatures.Select(cf => cf.Category)))
             .ReverseMap();
+
+        CreateMap<Feature, GetByIdFeatureResponse>()
+            .ForMember(dest => dest.Categories, opt => opt.MapFrom(src => src.Categories))
+            .ForMember(dest => dest.FeatureValues, opt => opt.MapFrom(src => src.FeatureValues))
+            .ReverseMap();
+
 
     }
 }

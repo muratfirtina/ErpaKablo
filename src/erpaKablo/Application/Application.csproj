@@ -23,11 +23,8 @@
 
     <ItemGroup>
       <Folder Include="Features\Brands\Dtos\" />
-      <Folder Include="Features\FeatureValues\Dtos\" />
       <Folder Include="Features\ProductImageFiles\Commands\" />
       <Folder Include="Features\ProductImageFiles\Consts\" />
-      <Folder Include="Features\ProductImageFiles\Dtos\" />
-      <Folder Include="Features\ProductImageFiles\Profiles\" />
       <Folder Include="Features\ProductImageFiles\Queries\" />
       <Folder Include="Features\ProductImageFiles\Rules\" />
     </ItemGroup>

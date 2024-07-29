@@ -6,3 +6,5 @@ public class CreateProductVariantDto
     public int Stock { get; set; }
     public List<VariantFeatureDto> VariantFeatures { get; set; }
 }
+
+//todo: sil

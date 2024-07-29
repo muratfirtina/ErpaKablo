@@ -24,6 +24,7 @@ public class Product : Entity<string>
     public Product(string? name, string? sku) : base(name,sku)
     {
         Name = name;
+        Sku = sku;
         ProductImageFiles = new List<ProductImageFile>();
         ProductFeatureValues = new List<ProductFeatureValue>();
     }

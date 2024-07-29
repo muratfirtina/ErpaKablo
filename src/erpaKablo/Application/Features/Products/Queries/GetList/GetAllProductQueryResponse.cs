@@ -4,6 +4,7 @@ namespace Application.Features.Products.Queries.GetList;
 
 public class GetAllProductQueryResponse
 {
+    public string Id { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
     public string CategoryId { get; set; }

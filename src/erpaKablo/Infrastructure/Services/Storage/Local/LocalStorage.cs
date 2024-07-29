@@ -9,15 +9,13 @@ namespace Infrastructure.Services.Storage.Local;
 
 public class LocalStorage : ILocalStorage
 {
-    private readonly IProductRepository _productRepository;
     private readonly IImageFileRepository _imageFileRepository;
     private readonly string _baseFolderPath = Path.Combine("wwwroot");
     private readonly StorageSettings _storageSettings;
     
-    public LocalStorage(IOptions<StorageSettings> storageSettings,IProductRepository productRepository, IImageFileRepository imageFileRepository)
+    public LocalStorage(IOptions<StorageSettings> storageSettings, IImageFileRepository imageFileRepository)
     {
         
-        _productRepository = productRepository;
         _imageFileRepository = imageFileRepository;
         _storageSettings = storageSettings.Value;
         if (!Directory.Exists(_baseFolderPath))
@@ -80,27 +78,39 @@ public class LocalStorage : ILocalStorage
         }
         
     }
+    
 
-    public async Task<List<T>?> GetFiles<T>(string productId) where T : ImageFile, new()
+    public async Task<List<T>> GetFiles<T>(string productId) where T : ImageFile, new()
     {
-        var baseUrl = _storageSettings.LocalStorageUrl; // Ayarlardan URL alınır
+        var baseUrl = _storageSettings.LocalStorageUrl;
+        var productFolder = Path.Combine(_baseFolderPath, "products", productId);
         
-        if (string.IsNullOrEmpty(productId))
+        if (!Directory.Exists(productFolder))
         {
-            return null;
+            return new List<T>();
         }
-        var files = await _productRepository.GetFilesByProductId(productId);
-        return files.Select(file => new T
+
+        var files = Directory.GetFiles(productFolder, "*", SearchOption.AllDirectories);
+        var result = new List<T>();
+
+        foreach (var file in files)
         {
-            Name = file.Name,
-            Path = file.Path,
-            Category = file.Category,
-            Storage = file.Storage,
-            Id = file.Id,
-            Url = $"{baseUrl}/{file.Category}/{file.Path}/{file.Name}"
-            
-        }).ToList();
-        
+            var relativePath = Path.GetRelativePath(_baseFolderPath, file);
+            var fileInfo = new FileInfo(file);
+            var category = Path.GetDirectoryName(relativePath)?.Split(Path.DirectorySeparatorChar)[0] ?? "unknown";
+
+            result.Add(new T
+            {
+                Id = Path.GetFileNameWithoutExtension(file),
+                Name = fileInfo.Name,
+                Path = relativePath,
+                Category = category,
+                Storage = "LocalStorage",
+                Url = $"{baseUrl.TrimEnd('/')}/{relativePath.Replace('\\', '/')}"
+            });
+        }
+
+        return result;
     }
 
     /*public async Task<List<string>> GetFiles(string category,string path)

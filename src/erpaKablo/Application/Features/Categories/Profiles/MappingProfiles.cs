@@ -7,6 +7,7 @@ using Application.Features.Categories.Queries.GetById;
 using Application.Features.Categories.Queries.GetList;
 using Application.Features.Features.Commands.Create;
 using Application.Features.Features.Dtos;
+using Application.Features.FeatureValues.Dtos;
 using Application.Features.Products.Dtos;
 using AutoMapper;
 using Core.Application.Responses;
@@ -44,6 +45,7 @@ public class MappingProfiles : Profile
         CreateMap<Category, DeletedCategoryResponse>().ReverseMap();
         
         CreateMap<Category, GetListCategoryByDynamicDto>().ReverseMap();
+        CreateMap<Category, GetListResponse<GetListCategoryByDynamicDto>>().ReverseMap();
         CreateMap<IPaginate<Category>, GetListResponse<GetListCategoryByDynamicDto>>().ReverseMap();
         
         CreateMap<Feature, FeatureDto>()

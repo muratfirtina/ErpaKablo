@@ -9,7 +9,8 @@ namespace Application.Features.FeatureValues.Commands.Update;
 public class UpdateFeatureValueCommand : IRequest<UpdatedFeatureValueResponse>
 {
     public string Id { get; set; }
-    public string Value { get; set; }
+    public string Name { get; set; }
+    public string FeatureId { get; set; }
 
     public class UpdateFeatureValueCommandHandler : IRequestHandler<UpdateFeatureValueCommand, UpdatedFeatureValueResponse>
     {

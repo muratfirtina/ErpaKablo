@@ -1,6 +1,7 @@
 using Application.Features.FeatureValues.Commands.Create;
 using Application.Features.FeatureValues.Commands.Delete;
 using Application.Features.FeatureValues.Commands.Update;
+using Application.Features.FeatureValues.Dtos;
 using Application.Features.FeatureValues.Queries.GetByDynamic;
 using Application.Features.FeatureValues.Queries.GetById;
 using Application.Features.FeatureValues.Queries.GetList;
@@ -34,6 +35,11 @@ public class MappingProfiles : Profile
         CreateMap<FeatureValue, DeletedFeatureValueResponse>().ReverseMap();
         CreateMap<FeatureValue, FeatureValueDto>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+            .ReverseMap();
+        
+        CreateMap<FeatureValue, FeatureValueCreateDto>()
+            //.ForMember(dest => dest.FeatureId, opt => opt.MapFrom(src => src.FeatureId))
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
             .ReverseMap();
     }

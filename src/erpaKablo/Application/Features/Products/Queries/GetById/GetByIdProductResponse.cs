@@ -1,3 +1,4 @@
+using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 
 namespace Application.Features.Products.Queries.GetById;
@@ -5,10 +6,17 @@ namespace Application.Features.Products.Queries.GetById;
 public class GetByIdProductResponse
 {
     public string Name { get; set; }
-    public int? Stock { get; set; }
     public float? Price { get; set; }
     public string? Description { get; set; }
+    public string? CategoryId { get; set; }
     public string? CategoryName { get; set; }
+    public string? BrandId { get; set; }
     public string? BrandName { get; set; }
-    public ICollection<ProductFeatureDto> ProductFeatures { get; set; }
+    public int? Stock { get; set; } = 0;
+    public int? Tax { get; set; }
+    public string VaryantGroupID { get; set; }
+    public string? Sku { get; set; }
+    public ICollection<ProductImageFileDto>? ProductImageFiles { get; set; }
+    public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
+    public List<RelatedProductDto> RelatedProducts { get; set; }
 }

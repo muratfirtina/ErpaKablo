@@ -6,4 +6,5 @@ public class StorageSettings
     public string AzureStorageUrl { get; set; }
     public string GoogleStorageUrl { get; set; }
     public string AWSStorageUrl { get; set; }
+    public string StorageProvider { get; set; }
 }

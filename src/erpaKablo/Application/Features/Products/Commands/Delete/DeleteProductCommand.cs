@@ -26,10 +26,10 @@ public class DeleteProductCommand : IRequest<DeletedProductResponse>
         public async Task<DeletedProductResponse> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
         {
             Product? product = await _productRepository.GetAsync(p=>p.Id==request.Id,cancellationToken: cancellationToken);
-            
             await _productBusinessRules.ProductShouldExistWhenSelected(product);
             await _productRepository.DeleteAsync(product!);
             DeletedProductResponse response = _mapper.Map<DeletedProductResponse>(product);
+            response.Success = true;
             return response;
         }
     }

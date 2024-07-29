@@ -1,5 +1,11 @@
 using Application;
+using Application.Storage;
+using Application.Storage.Google;
+using Application.Storage.Local;
 using Infrastructure;
+using Infrastructure.Services.Storage;
+using Infrastructure.Services.Storage.Google;
+using Infrastructure.Services.Storage.Local;
 using Persistence;
 using WebAPI;
 
@@ -11,6 +17,7 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistenceServices();
 
 // Add services to the container.
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -32,7 +39,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseStaticFiles();
 const string webApiConfigurationSection = "WebAPIConfiguration";
 WebApiConfiguration webApiConfiguration =
     app.Configuration.GetSection(webApiConfigurationSection).Get<WebApiConfiguration>()
