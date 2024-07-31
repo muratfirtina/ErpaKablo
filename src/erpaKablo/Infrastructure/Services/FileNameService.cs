@@ -52,7 +52,7 @@ public class FileNameService : IFileNameService
     }
     public async Task FileMustBeInFileFormat(IFormFile formFile)
     {
-        List<string> extensions = new() { ".jpg", ".png", ".jpeg", ".webp", ".heic" };
+        List<string> extensions = new() { ".jpg", ".png", ".jpeg", ".webp", ".heic",".avif" };
 
         string extension = Path.GetExtension(formFile.FileName).ToLower();
         if (!extensions.Contains(extension))

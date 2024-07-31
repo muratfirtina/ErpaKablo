@@ -53,5 +53,13 @@ namespace WebAPI.Controllers
             GetListResponse<GetListProductByDynamicDto> response = await Mediator.Send(new GetListProductByDynamicQuery { PageRequest = pageRequest, DynamicQuery = dynamicQuery });
             return Ok(response);
         }
+        
+        [HttpPost("multiple")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateMultiple([FromForm] CreateMultipleProductsCommand createMultipleProductsCommand)
+        {
+            List<CreatedProductResponse> response = await Mediator.Send(createMultipleProductsCommand);
+            return Created(uri: "", response);
+        }
     }
 }

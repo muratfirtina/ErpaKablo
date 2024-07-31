@@ -18,5 +18,6 @@ public class CreateMultipleProductDto
     public List<string>? FeatureValueIds { get; set; }
     [JsonIgnore]
     public List<IFormFile>? ProductImages { get; set; }
+    public int ShowcaseImageIndex { get; set; } 
 
 }

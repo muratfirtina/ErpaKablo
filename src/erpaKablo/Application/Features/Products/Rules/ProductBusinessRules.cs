@@ -60,4 +60,10 @@ public class ProductBusinessRules : BaseBusinessRules
         await _featureValueBusinessRules.FeatureValueIdShouldExistWhenSelected(id, cancellationToken);
     }
     
+    public Task EnsureOnlyOneShowcaseImage(ICollection<ProductImageFile>? images)
+    {
+        if (images.Count(i => i.Showcase) > 1)
+            throw new BusinessException("Bir üründe sadece bir vitrin fotoğrafı olabilir.");
+        return Task.CompletedTask;
+    }
 }

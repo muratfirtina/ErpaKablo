@@ -39,7 +39,9 @@ public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
         
             var relatedProducts = await _productRepository.GetListAsync(
                 predicate: p => p.VaryantGroupID == product.VaryantGroupID && p.Id != product.Id,
-                include: x => x.Include(x => x.Category).Include(x => x.Brand),
+                include: x => x.Include(x => x.Category).Include(x => x.Brand)
+                    .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
+                    .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase == true)),
                 cancellationToken: cancellationToken);
 
             GetByIdProductResponse response = _mapper.Map<GetByIdProductResponse>(product);
@@ -50,6 +52,14 @@ public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
             foreach (var imageFile in response.ProductImageFiles)
             {
                 imageFile.Url = $"{baseUrl}{imageFile.Category}/{imageFile.Path}/{imageFile.FileName}";
+            }
+            
+            foreach (var relatedProduct in response.RelatedProducts)
+            {
+                if (relatedProduct.ShowcaseImage != null)
+                {
+                    relatedProduct.ShowcaseImage.Url = $"{baseUrl}{relatedProduct.ShowcaseImage.Category}/{relatedProduct.ShowcaseImage.Path}/{relatedProduct.ShowcaseImage.FileName}";
+                }
             }
 
             return response;

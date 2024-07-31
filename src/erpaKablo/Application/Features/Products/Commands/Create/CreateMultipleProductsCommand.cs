@@ -56,12 +56,17 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
                 if (productDto.ProductImages != null && productDto.ProductImages.Any())
                 {
                     var uploadedFiles = await _storageService.UploadAsync("products", product.Id, productDto.ProductImages);
-                    foreach (var file in uploadedFiles)
+                    for (int i = 0; i < uploadedFiles.Count; i++)
                     {
-                        var productImageFile = new ProductImageFile(file.fileName, file.category, file.path, file.storageType);
+                        var file = uploadedFiles[i];
+                        var productImageFile = new ProductImageFile(file.fileName, file.category, file.path, file.storageType)
+                        {
+                            Showcase = i == productDto.ShowcaseImageIndex // Showcase'i burada ayarlıyoruz
+                        };
                         product.ProductImageFiles.Add(productImageFile);
                     }
-                
+        
+                    await _productBusinessRules.EnsureOnlyOneShowcaseImage(product.ProductImageFiles);
                     await _productRepository.UpdateAsync(product);
                 }
 

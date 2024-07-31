@@ -9,5 +9,5 @@ public class ProductImageFileDto
     public string Storage { get; set; }
     public string? Alt { get; set; }
     public string Url { get; set; }
-    public bool Showcase { get; set; }
+    public bool? Showcase { get; set; }
 }
