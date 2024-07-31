@@ -17,19 +17,22 @@ public class StorageService : IStorageService
     private readonly ICloudinaryStorage _cloudinaryStorage;
     private readonly IGoogleStorage _googleStorage;
     private readonly IFileNameService _fileNameService;
-    private readonly IConfiguration _configuration;
-    private readonly IOptions<StorageSettings> _storageSettings;
+    private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
 
-    public StorageService(ILocalStorage localStorage, ICloudinaryStorage cloudinaryStorage, IGoogleStorage googleStorage, 
-        IFileNameService fileNameService, IConfiguration configuration, IOptions<StorageSettings> storageSettings)
+    public StorageService(
+        ILocalStorage localStorage,
+        ICloudinaryStorage cloudinaryStorage,
+        IGoogleStorage googleStorage,
+        IFileNameService fileNameService,
+        IOptionsSnapshot<StorageSettings> storageSettings)
     {
         _localStorage = localStorage;
         _cloudinaryStorage = cloudinaryStorage;
         _googleStorage = googleStorage;
         _fileNameService = fileNameService;
-        _configuration = configuration;
         _storageSettings = storageSettings;
     }
+
 
     public async Task<List<(string fileName, string path, string category,string storageType)>> UploadAsync(string category, string path,
         List<IFormFile> files)
@@ -88,27 +91,35 @@ public class StorageService : IStorageService
         }
     }
     
-    public string GetStorageUrl()
+
+    public async Task<List<T>?> GetFiles<T>(string productId, string preferredStorage = null) where T : ImageFile, new()
     {
-        return _storageSettings.Value.StorageProvider switch
+        var activeProvider = preferredStorage ?? _storageSettings.Value.ActiveProvider;
+
+        switch (activeProvider.ToLower())
         {
-            "LocalStorage" => _storageSettings.Value.LocalStorageUrl,
-            "GoogleStorage" => _storageSettings.Value.GoogleStorageUrl,
-            _ => _storageSettings.Value.LocalStorageUrl // varsayılan olarak LocalStorage
+            case "localstorage":
+                return await _localStorage.GetFiles<T>(productId);
+            case "cloudinary":
+                return await _cloudinaryStorage.GetFiles<T>(productId);
+            case "google":
+                return await _googleStorage.GetFiles<T>(productId);
+            default:
+                throw new ArgumentException("Invalid storage provider", nameof(preferredStorage));
+        }
+    }
+
+    public string GetStorageUrl(string storageType = null)
+    {
+        var activeProvider = storageType ?? _storageSettings.Value.ActiveProvider;
+        return activeProvider.ToLower() switch
+        {
+            "localstorage" => _storageSettings.Value.Providers.LocalStorage.Url,
+            "cloudinary" => _storageSettings.Value.Providers.Cloudinary.Url,
+            "google" => _storageSettings.Value.Providers.Google.Url,
+            _ => throw new ArgumentException("Invalid storage provider", nameof(storageType))
         };
     }
-
-    public async Task<List<T>?> GetFiles<T>(string productId) where T : ImageFile, new()
-    {
-        return await _localStorage.GetFiles<T>(productId);
-    }
-
-    /*public async Task<List<string>> GetFiles(string category,string path)
-    {
-        string newPath = await _fileNameService.PathRenameAsync(path);
-        // Burada bir örnekleme yapılıyor; gerçekte, her bir storage'tan dosyaları birleştirebilirsiniz.
-        return await _localStorage.GetFiles(category,newPath);
-    }*/
 
     public bool HasFile(string path, string fileName)
     {

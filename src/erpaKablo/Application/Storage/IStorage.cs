@@ -5,10 +5,6 @@ namespace Application.Storage;
 
 public interface IStorage
 {
-    Task<List<(string fileName, string path, string category,string storageType)>> UploadAsync(string category, string path,
-        List<IFormFile> files);
-    Task DeleteAsync(string path);
-    Task<List<T>?> GetFiles<T>(string productId) where T : ImageFile, new();
-    bool HasFile(string path, string fileName);
     
 }
+    

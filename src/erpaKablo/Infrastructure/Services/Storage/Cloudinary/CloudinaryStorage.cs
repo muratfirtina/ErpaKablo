@@ -23,35 +23,6 @@ public class CloudinaryStorage : ICloudinaryStorage
 
         _cloudinary = new CloudinaryDotNet.Cloudinary(account);
     }
-
-    /*public async Task<List<(string fileName, string path, string containerName)>> UploadAsync(string category,
-        string path, List<IFormFile> files)
-    {
-        var datas = new List<(string fileName, string path, string containerName)>();
-        foreach (IFormFile file in files)
-        {
-            ImageUploadParams imageUploadParams = new()
-            {
-                File = new FileDescription(file.Value, stream: file.OpenReadStream()),
-                UseFilename = true,
-                UniqueFilename = false,
-                Overwrite = false
-            };
-            
-            
-            
-            imageUploadParams.Folder = category;
-            imageUploadParams.File.Value = file.Value;
-
-            ImageUploadResult imageUploadResult = await _cloudinary.UploadAsync(imageUploadParams);
-            datas.Add((file.Value, imageUploadResult.Url.ToString(), path));
-            
-        }
-        return datas;
-        
-    }*/
-
-
     public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string category,
         string path, string fileName, MemoryStream fileStream)
     {

@@ -15,15 +15,15 @@ public class GoogleStorage : IGoogleStorage
 {
     private readonly StorageClient _storageClient;
     private readonly IProductRepository _productRepository;
-    private readonly StorageSettings _storageSettings;
+    private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
     private readonly string _bucketName = "erpaotomasyonkablo";
     
-    public GoogleStorage(IConfiguration configuration, IProductRepository productRepository, IOptions<StorageSettings> storageSettings)
+    public GoogleStorage(IConfiguration configuration, IProductRepository productRepository, IOptionsSnapshot<StorageSettings> storageSettings)
     {
         _productRepository = productRepository;
-        _storageSettings = storageSettings.Value;
+        _storageSettings = storageSettings;
 
-        var credentialsPath = configuration["Storage:Google:CredentialsFilePath"];
+        var credentialsPath = _storageSettings.Value.Providers.Google.CredentialsFilePath;
         if (string.IsNullOrEmpty(credentialsPath))
         {
             throw new BusinessException("Google Cloud Storage service account key file path is not configured.");
@@ -57,7 +57,7 @@ public class GoogleStorage : IGoogleStorage
     
     public async Task<List<T>?> GetFiles<T>(string productId) where T : ImageFile, new()
     {
-        var baseUrl = _storageSettings.GoogleStorageUrl;
+        var baseUrl = _storageSettings.Value.Providers.Google.Url;
         var productImages = await _productRepository.GetFilesByProductId(productId);
         if (productImages == null || !productImages.Any())
             return null; 

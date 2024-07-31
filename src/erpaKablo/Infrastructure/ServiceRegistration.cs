@@ -34,7 +34,7 @@ public static class InfrastructureServiceRegistration
     public static void AddStorage<T>(this IServiceCollection serviceCollection) where T : class,IBlobService
     {
         serviceCollection.AddScoped<IBlobService, T>();
-        serviceCollection.AddScoped<IStorage,StorageService>();
+        serviceCollection.AddScoped<IStorageService,StorageService>();
     }
     public static void AddStorage(this IServiceCollection serviceCollection, StorageType storageType)
     {

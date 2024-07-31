@@ -2,9 +2,19 @@ namespace Infrastructure.Services.Storage;
 
 public class StorageSettings
 {
-    public string LocalStorageUrl { get; set; }
-    public string AzureStorageUrl { get; set; }
-    public string GoogleStorageUrl { get; set; }
-    public string AWSStorageUrl { get; set; }
-    public string StorageProvider { get; set; }
+    public string ActiveProvider { get; set; }
+    public ProvidersSettings Providers { get; set; }
+
+    public class ProvidersSettings
+    {
+        public ProviderSettings LocalStorage { get; set; }
+        public ProviderSettings Cloudinary { get; set; }
+        public ProviderSettings Google { get; set; }
+    }
+
+    public class ProviderSettings
+    {
+        public string Url { get; set; }
+        public string CredentialsFilePath { get; set; }
+    }
 }

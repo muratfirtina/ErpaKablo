@@ -11,6 +11,9 @@ using WebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<StorageSettings>(
+            builder.Configuration.GetSection("Storage"));
+
 builder.Services.AddControllers();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);

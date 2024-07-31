@@ -11,39 +11,18 @@ public class LocalStorage : ILocalStorage
 {
     private readonly IImageFileRepository _imageFileRepository;
     private readonly string _baseFolderPath = Path.Combine("wwwroot");
-    private readonly StorageSettings _storageSettings;
+    private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
     
-    public LocalStorage(IOptions<StorageSettings> storageSettings, IImageFileRepository imageFileRepository)
+    public LocalStorage(IOptionsSnapshot<StorageSettings> storageSettings, IImageFileRepository imageFileRepository)
     {
         
         _imageFileRepository = imageFileRepository;
-        _storageSettings = storageSettings.Value;
+        _storageSettings = storageSettings;
         if (!Directory.Exists(_baseFolderPath))
         {
             Directory.CreateDirectory(_baseFolderPath);
         }
     }
-    /*public async Task<List<(string fileName, string path, string containerName)>> UploadAsync(string category,
-        string path, List<IFormFile> files)
-    {
-        
-        var employeeFolderPath = Path.Combine(_baseFolderPath, category, path);
-        if (!Directory.Exists(employeeFolderPath))
-        {
-            Directory.CreateDirectory(employeeFolderPath);
-        }
-        
-        List<(string fileName, string path, string containerName)> datas = new ();
-        foreach (IFormFile file in files)
-        {
-            
-            await CopyFileAsync(Path.Combine(employeeFolderPath, file.Value), file);
-            datas.Add((file.Value, Path.Combine(path, file.Value), category));
-        }
-        return datas;
-        
-    }*/
-
 
     public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string category,
         string path, string fileName, MemoryStream fileStream)
@@ -82,7 +61,7 @@ public class LocalStorage : ILocalStorage
 
     public async Task<List<T>> GetFiles<T>(string productId) where T : ImageFile, new()
     {
-        var baseUrl = _storageSettings.LocalStorageUrl;
+        var baseUrl = _storageSettings.Value.Providers.LocalStorage.Url;
         var productFolder = Path.Combine(_baseFolderPath, "products", productId);
         
         if (!Directory.Exists(productFolder))
@@ -113,19 +92,6 @@ public class LocalStorage : ILocalStorage
         return result;
     }
 
-    /*public async Task<List<string>> GetFiles(string category,string path)
-    {
-        
-        var fullPath = Path.Combine(_baseFolderPath, category, path);
-        if (!Directory.Exists(fullPath))
-            return new List<string>();
-
-        var baseUrl = _storageSettings.LocalStorageUrl; // Ayarlardan URL alınır
-        return Directory.GetFiles(fullPath)
-            .Select(fileName => $"{baseUrl}/{category}/{path}/{Path.GetFileName(fileName)}")
-            .ToList();
-    }*/
-
     public bool HasFile(string path, string fileName) 
         => File.Exists(Path.Combine(path, fileName));
     
@@ -145,40 +111,8 @@ public class LocalStorage : ILocalStorage
             //todo: loglama yapılacak!
             throw e;
         }
-        
 
     }
-    
-    /*public string ExtractLocalPath(string fullPath)
-    {
-        // Örneğin, Cloudinary URL'si veya karmaşık bir dosya yolu verildiğinde,
-        // yerel dosya sistemindeki klasör yapısına ve dosya adına karşılık gelen kısmı çıkarmak için
-        // bir mantık geliştirmeniz gerekebilir.
-    
-        // Örnek fullPath:
-        // "/Users/muratfirtina/Projects/GitHub/MiningHQFull/MiningHQ/src/miningHQ/WebAPI/wwwroot/images/http:/res.cloudinary.com/mininghq/image/upload/v1712050438/employee-images/LÜTFİ BURSALI/a64d8339-c5bf-469c-9d0e-681abed1e15b-20240402093356.jpg/_a64d8339-c5bf-469c-9d0e-681abed1e15b.jpeg"
-
-        // fullPath içindeki 'wwwroot' kelimesinden sonra gelen kısmı almak için
-        var startIndex = fullPath.IndexOf("wwwroot") + "wwwroot".Length;
-        if(startIndex > -1)
-        {
-            var relativePath = fullPath.Substring(startIndex);
-
-            // Eğer URL'den dosya adını çıkarmak istiyorsanız, ek işlemler yapılabilir
-            // Örneğin, son '/' karakterinden sonrasını almak gibi
-            var lastIndex = relativePath.LastIndexOf('/');
-            if(lastIndex > -1)
-            {
-                relativePath = relativePath.Substring(0, lastIndex); // Son dosya adını kaldır
-            }
-
-            // Temizlenmiş yerel yol
-            return relativePath;
-        }
-
-        // Eğer fullPath beklenen formatta değilse, orijinal fullPath'i döndür veya uygun bir hata yönetimi yap
-        return fullPath;
-    }*/
     
     public async Task FileMustBeInImageFormat(IFormFile formFile)
     {
