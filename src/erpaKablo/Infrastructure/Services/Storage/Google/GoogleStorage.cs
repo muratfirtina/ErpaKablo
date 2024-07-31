@@ -7,6 +7,7 @@ using Google.Cloud.Storage.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Google.Apis.Storage.v1.Data;
 
 namespace Infrastructure.Services.Storage.Google;
 
@@ -27,7 +28,6 @@ public class GoogleStorage : IGoogleStorage
         {
             throw new BusinessException("Google Cloud Storage service account key file path is not configured.");
         }
-        
 
         var credential = GoogleCredential.FromFile(credentialsPath);
         _storageClient = StorageClient.Create(credential);
@@ -37,23 +37,27 @@ public class GoogleStorage : IGoogleStorage
         string path, string fileName, MemoryStream fileStream)
     {
         List<(string fileName, string path, string containerName)> datas = new();
-        await _storageClient.UploadObjectAsync("erpaotomasyonkablo", $"{category}/{path}/{fileName}", null, fileStream);
-        
-        return null;
-        
-        
+        string objectName = $"products/{path}/{fileName}";
+        await _storageClient.UploadObjectAsync(_bucketName, objectName, null, fileStream);
+        datas.Add((fileName, objectName, _bucketName));
+        return datas;
     }
     
-    public async Task DeleteAsync(string path)
+    public async Task DeleteAsync(string fullPath)
     {
-        var storage = StorageClient.Create();
-        await storage.DeleteObjectAsync("erpaotomasyonkablo", path);
+        try
+        {
+            await _storageClient.DeleteObjectAsync(_bucketName, fullPath);
+        }
+        catch 
+        {
+            throw new BusinessException("File not found");
+        }
     }
     
     public async Task<List<T>?> GetFiles<T>(string productId) where T : ImageFile, new()
     {
-        var baseUrl = _storageSettings.GoogleStorageUrl; // Ayarlardan URL alınır
-        //employeeId ye göre category ve path bul.
+        var baseUrl = _storageSettings.GoogleStorageUrl;
         var productImages = await _productRepository.GetFilesByProductId(productId);
         if (productImages == null || !productImages.Any())
             return null; 
@@ -62,10 +66,9 @@ public class GoogleStorage : IGoogleStorage
 
         foreach (var productImageDto in productImages) 
         {
-            var prefix = $"{productImageDto.Category}/{productImageDto.Path}/";
+            var prefix = $"products/{productImageDto.Path}/";
             var objects = _storageClient.ListObjects(_bucketName, prefix);
 
-            // Assuming your _storageClient handles finding the relevant file based on the metadata
             var matchingObject = objects.FirstOrDefault(obj => obj.Name.EndsWith(productImageDto.FileName)); 
 
             if (matchingObject != null)
@@ -75,7 +78,7 @@ public class GoogleStorage : IGoogleStorage
                     Id = productImageDto.Id,
                     Name = productImageDto.FileName,
                     Path = productImageDto.Path,
-                    Category = productImageDto.Category,
+                    Category = "products",
                     Storage = productImageDto.Storage, 
                     Url = $"{baseUrl}/{matchingObject.Name}"
                 };
@@ -85,22 +88,20 @@ public class GoogleStorage : IGoogleStorage
 
         return files;
     }
+
     public bool HasFile(string path, string fileName)
     {
         try
         {
-            // Google Cloud Storage'da belirtilen bucket ve dosya adıyla bir obje olup olmadığını kontrol edin
-            var obj = _storageClient.GetObject("erpaotomasyonkablo", $"{path}/{fileName}");
-            return obj != null; // Eğer obje null değilse, dosya var demektir
+            var fullPath = $"products/{path}/{fileName}";
+            var obj = _storageClient.GetObject(_bucketName, fullPath);
+            return obj != null;
         }
-        
-        catch (Exception ex)
+        catch 
         {
-            // Diğer hatalar için bir loglama yapısı ekleyebilirsiniz
-            // Bu örnek için basitçe false dönüyoruz, ancak gerçek bir uygulamada hata yönetimi daha detaylı olmalıdır
-            Console.WriteLine($"An error occurred: {ex.Message}");
             return false;
         }
+        
     }
     
     public async Task FileMustBeInFileFormat(IFormFile formFile)

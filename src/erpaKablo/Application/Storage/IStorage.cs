@@ -10,4 +10,5 @@ public interface IStorage
     Task DeleteAsync(string path);
     Task<List<T>?> GetFiles<T>(string productId) where T : ImageFile, new();
     bool HasFile(string path, string fileName);
+    
 }

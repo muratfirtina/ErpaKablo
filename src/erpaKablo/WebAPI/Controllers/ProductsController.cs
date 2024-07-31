@@ -42,7 +42,8 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPut]
-        public async Task<IActionResult> Update([FromBody] UpdateProductCommand updateProductCommand)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Update([FromForm] UpdateProductCommand updateProductCommand)
         {
             UpdatedProductResponse response = await Mediator.Send(updateProductCommand);
             return Ok(response);

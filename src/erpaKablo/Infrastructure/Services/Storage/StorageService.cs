@@ -20,12 +20,13 @@ public class StorageService : IStorageService
     private readonly IConfiguration _configuration;
     private readonly IOptions<StorageSettings> _storageSettings;
 
-    public StorageService(ILocalStorage localStorage, ICloudinaryStorage cloudinaryStorage,IFileNameService fileNameService, IGoogleStorage googleStorage, IConfiguration configuration, IOptions<StorageSettings> storageSettings)
+    public StorageService(ILocalStorage localStorage, ICloudinaryStorage cloudinaryStorage, IGoogleStorage googleStorage, 
+        IFileNameService fileNameService, IConfiguration configuration, IOptions<StorageSettings> storageSettings)
     {
         _localStorage = localStorage;
         _cloudinaryStorage = cloudinaryStorage;
-        _fileNameService = fileNameService;
         _googleStorage = googleStorage;
+        _fileNameService = fileNameService;
         _configuration = configuration;
         _storageSettings = storageSettings;
     }
@@ -73,10 +74,18 @@ public class StorageService : IStorageService
 
     public async Task DeleteAsync(string path)
     {
-        await _localStorage.DeleteAsync(path);
-        await _cloudinaryStorage.DeleteAsync(path);
-        //await _azureStorage.DeleteAsync(path);
-        await _googleStorage.DeleteAsync(path);
+        var pathParts = path.Split('/');
+        if (pathParts.Length >= 3)
+        {
+            var category = pathParts[0];
+            var fileName = pathParts[pathParts.Length - 1];
+            var filePath = string.Join("/", pathParts.Skip(1).Take(pathParts.Length - 2));
+            await DeleteFromAllStoragesAsync(category, filePath, fileName);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid path format", nameof(path));
+        }
     }
     
     public string GetStorageUrl()
@@ -110,5 +119,33 @@ public class StorageService : IStorageService
     public string StorageName { get; } 
 
     
-    
+    public async Task DeleteFromAllStoragesAsync(string category, string path, string fileName)
+    {
+        try
+        {
+            await _localStorage.DeleteAsync($"{category}/{path}/{fileName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting from local storage: {ex.Message}");
+        }
+
+        try
+        {
+            await _cloudinaryStorage.DeleteAsync($"{category}/{path}/{fileName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting from Cloudinary: {ex.Message}");
+        }
+
+        try
+        {
+            await _googleStorage.DeleteAsync($"{category}/{path}/{fileName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting from Google Storage: {ex.Message}");
+        }
+    }
 }

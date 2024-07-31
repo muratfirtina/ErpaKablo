@@ -64,76 +64,97 @@ public class CloudinaryStorage : ICloudinaryStorage
             Overwrite = false
         };
         
-        imageUploadParams.Folder = category + "/" + path;
-        imageUploadParams.File.FileName = fileName;
+        imageUploadParams.Folder = $"{category}/{path}";
+        imageUploadParams.PublicId = Path.GetFileNameWithoutExtension(fileName);
         
-        await _cloudinary.UploadAsync(imageUploadParams);
+        var uploadResult = await _cloudinary.UploadAsync(imageUploadParams);
         
+        if (uploadResult.Error == null)
+        {
+            datas.Add((fileName, uploadResult.SecureUrl.ToString(), category));
+        }
         
-        return null;
-        
+        return datas;
     }
 
     public async Task DeleteAsync(string path)
     {
         var publicId = GetPublicId(path);
-        var deletionParams = new DeletionParams(publicId);
-        await _cloudinary.DestroyAsync(deletionParams);
+        if (!string.IsNullOrEmpty(publicId))
+        {
+            var deletionParams = new DeletionParams(publicId)
+            {
+                ResourceType = ResourceType.Image
+            };
+            await _cloudinary.DestroyAsync(deletionParams);
+        }
     }
 
-    public Task<List<T>?> GetFiles<T>(string employeeId) where T : ImageFile, new() => throw new NotImplementedException();
+    public async Task<List<T>?> GetFiles<T>(string employeeId) where T : ImageFile, new()
+    {
+        var searchExpression = $"folder:{employeeId}";
+        return await SearchAndMapResources<T>(searchExpression, employeeId);
+    }
 
-    public Task<List<T>> GetFiles<T>(string category, string path) where T : ImageFile, new() => throw new NotImplementedException();
+    public async Task<List<T>> GetFiles<T>(string category, string path) where T : ImageFile, new()
+    {
+        var fullPath = $"{category}/{path}";
+        var searchExpression = $"folder:{fullPath}";
+        return await SearchAndMapResources<T>(searchExpression, category);
+    }
 
     public async Task<List<string?>> GetFiles(string path, string category)
     {
-        DirectoryInfo directoryInfo = new DirectoryInfo(path);
-        var files = directoryInfo.GetFiles();
-        List<string> datas = new();
-        foreach (var file in files)
-        {
-            datas.Add(file.Name);
-        }
-        return datas;
-        
+        var fullPath = $"{category}/{path}";
+        var searchExpression = $"folder:{fullPath}";
+        var searchResult = _cloudinary.Search().Expression(searchExpression).Execute();
+
+        return searchResult.Resources.Select(resource => resource.SecureUrl.ToString()).ToList();
     }
 
-    public bool HasFile(string path, string fileName) 
-        => File.Exists(Path.Combine(path, fileName));
-
-    
-
-    private string GetPublicId(string imageUrl)
+    private async Task<List<T>> SearchAndMapResources<T>(string searchExpression, string category) where T : ImageFile, new()
     {
-        // Cloudinary URL'sinden '/image/upload/' dizgisinden sonraki kısmı çıkarmak için
-        var uploadSegment = "/image/upload/";
-        var startIndex = imageUrl.IndexOf(uploadSegment) + uploadSegment.Length;
-        if(startIndex > uploadSegment.Length - 1)
+        var searchResult =  _cloudinary.Search().Expression(searchExpression).Execute();
+
+        return searchResult.Resources.Select(resource => new T
         {
-            // '/image/upload/' segmentinden sonraki kısmı alır
-            var pathWithVersion = imageUrl.Substring(startIndex);
-        
-            // 'version' kısmını geçmek için ikinci '/' karakterinden sonrasını alır
-            var pathStartIndex = pathWithVersion.IndexOf('/', 1);
-            if(pathStartIndex > -1)
-            {
-                var publicId = pathWithVersion.Substring(pathStartIndex + 1);
+            Name = Path.GetFileName(resource.PublicId),
+            Path = resource.SecureUrl.ToString(),
+            Category = category,
+            Storage = "Cloudinary"
+        }).ToList();
+    }
 
-                // Eğer varsa dosya uzantısını kaldırır
-                var endIndex = publicId.LastIndexOf('.');
-                if(endIndex > -1)
-                {
-                    publicId = publicId.Substring(0, endIndex);
-                }
+    public bool HasFile(string path, string fileName)
+    {
+        var publicId = GetPublicId($"{path}/{fileName}");
+        var getResourceParams = new GetResourceParams(publicId)
+        {
+            ResourceType = ResourceType.Image
+        };
 
-                return publicId;
-            }
+        try
+        {
+            var result = _cloudinary.GetResource(getResourceParams);
+            return result != null && !string.IsNullOrEmpty(result.PublicId);
         }
+        catch (Exception)
+        {
+            // Dosya bulunamadı veya bir hata oluştu
+            return false;
+        }
+    }
 
-        // Eğer URL beklenen formatta değilse, boş bir string dön
+    private string GetPublicId(string fullPath)
+    {
+        var pathParts = fullPath.Split('/');
+        if (pathParts.Length >= 3)
+        {
+            var fileName = pathParts[pathParts.Length - 1];
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+            
+            return string.Join("/", pathParts.Take(pathParts.Length - 1).Append(fileNameWithoutExtension));
+        }
         return string.Empty;
     }
-    
-
-    
 }
