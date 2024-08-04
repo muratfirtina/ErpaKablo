@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\erpaKablo\Domain\Domain.csproj" />
-      <ProjectReference Include="..\Core.Persistence\Core.Persistence.csproj" />
+        <ProjectReference Include="..\..\erpaKablo\Domain\Domain.csproj"/>
+        <ProjectReference Include="..\Core.Persistence\Core.Persistence.csproj"/>
     </ItemGroup>
 
 </Project>

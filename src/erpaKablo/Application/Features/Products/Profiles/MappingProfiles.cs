@@ -37,8 +37,7 @@ public class MappingProfiles : Profile
         CreateMap<IPaginate<Product>, GetListResponse<GetAllProductQueryResponse>>()
             .ReverseMap();
         
-        CreateMap<Product, GetListProductByDynamicDto>()
-            .ReverseMap();
+       
         CreateMap<List<Product>, GetListResponse<GetListProductByDynamicDto>>()
             .ForMember(dest 
                 => dest.Items, opt 
@@ -53,9 +52,25 @@ public class MappingProfiles : Profile
             .ForMember(dest 
                 => dest.BrandName, opt 
                 => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest 
+                => dest.ShowcaseImage, opt 
+                => opt.MapFrom(src => 
+                src.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)))
             .ReverseMap();
-
-
+        
+        CreateMap<Product, GetListProductByDynamicDto>()
+            .ForMember(dest 
+                => dest.CategoryName, opt 
+                => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest 
+                => dest.BrandName, opt 
+                => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest 
+                => dest.ShowcaseImage, opt 
+                => opt.MapFrom(src => 
+                src.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)))
+            .ReverseMap();
+        
         CreateMap<Product, GetByIdProductResponse>()
             .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null))
             .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand != null ? src.Brand.Name : null))
@@ -102,6 +117,7 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.FeatureValueId, opt => opt.MapFrom(src => src.FeatureValue.Id))
             .ForMember(dest => dest.FeatureValueName, opt => opt.MapFrom(src => src.FeatureValue.Name))
             .ReverseMap();
+        
 
 
     }

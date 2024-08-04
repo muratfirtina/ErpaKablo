@@ -19,4 +19,5 @@ public class GetByIdProductResponse
     public ICollection<ProductImageFileDto>? ProductImageFiles { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
     public List<RelatedProductDto> RelatedProducts { get; set; }
+    public Dictionary<string, List<string>> AvailableFeatures { get; set; }
 }

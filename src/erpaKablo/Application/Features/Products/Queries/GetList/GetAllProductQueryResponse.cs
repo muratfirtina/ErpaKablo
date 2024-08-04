@@ -1,3 +1,4 @@
+using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 
 namespace Application.Features.Products.Queries.GetList;
@@ -12,6 +13,8 @@ public class GetAllProductQueryResponse
     public string BrandId { get; set; }
     public string BrandName { get; set; }
     public string Sku { get; set; }
-    public List<ProductVariantDto> Variants { get; set; }
+    public string VaryantGroupID { get; set; }
+    public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
+    public ProductImageFileDto? ShowcaseImage { get; set; }
     
 }

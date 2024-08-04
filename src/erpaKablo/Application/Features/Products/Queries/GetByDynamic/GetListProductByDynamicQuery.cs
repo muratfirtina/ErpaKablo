@@ -1,5 +1,7 @@
+using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Rules;
 using Application.Repositories;
+using Application.Storage;
 using AutoMapper;
 using Core.Application.Requests;
 using Core.Application.Responses;
@@ -21,12 +23,14 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
         private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
         private readonly ProductBusinessRules _productBusinessRules;
+        private readonly IStorageService _storageService;
 
-        public GetListByDynamicProductQueryHandler(IProductRepository productRepository, IMapper mapper, ProductBusinessRules productBusinessRules)
+        public GetListByDynamicProductQueryHandler(IProductRepository productRepository, IMapper mapper, ProductBusinessRules productBusinessRules, IStorageService storageService)
         {
             _productRepository = productRepository;
             _mapper = mapper;
             _productBusinessRules = productBusinessRules;
+            _storageService = storageService;
         }
 
         public async Task<GetListResponse<GetListProductByDynamicDto>> Handle(GetListProductByDynamicQuery request, CancellationToken cancellationToken)
@@ -36,10 +40,15 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
                 var allProducts = await _productRepository.GetAllByDynamicAsync(
                     request.DynamicQuery,
                     include: p => p.Include(e => e.Category)
-                        .Include(e => e.Brand),
+                        .Include(e => e.Brand)
+                        .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
+                        .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase == true)),
                     cancellationToken: cancellationToken);
 
                 var productsDtos = _mapper.Map<GetListResponse<GetListProductByDynamicDto>>(allProducts);
+                
+                SetProductImageUrls(productsDtos.Items);
+
                 return productsDtos;
             }
             else
@@ -47,14 +56,48 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
                 IPaginate<Product> products = await _productRepository.GetListByDynamicAsync(
                     request.DynamicQuery,
                     include: p => p.Include(e => e.Category)
-                        .Include(e => e.Brand),
+                        .Include(e => e.Brand)
+                        .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
+                        .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase == true)),
                     index: request.PageRequest.PageIndex,
                     size: request.PageRequest.PageSize,
                     cancellationToken: cancellationToken);
                 
                 var productsDtos = _mapper.Map<GetListResponse<GetListProductByDynamicDto>>(products);
+                
+                if (productsDtos?.Items != null)
+                {
+                    SetProductImageUrls(productsDtos.Items);
+                }
                 return productsDtos;
 
+            }
+        }
+        
+        private void SetProductImageUrls(IEnumerable<GetListProductByDynamicDto> products)
+        {
+            if (products == null || _storageService == null) return;
+
+            var baseUrl = _storageService.GetStorageUrl();
+            if (string.IsNullOrEmpty(baseUrl)) return;
+
+            foreach (var product in products)
+            {
+                if (product == null) continue;
+
+                if (product.ShowcaseImage == null)
+                {
+                    product.ShowcaseImage = new ProductImageFileDto
+                    {
+                        Category = "products",
+                        Path = "",
+                        FileName = "ecommerce-default-product.png"
+                    };
+                }
+
+                product.ShowcaseImage.Url = product.ShowcaseImage.FileName == "ecommerce-default-product.png"
+                    ? $"{baseUrl}{product.ShowcaseImage.Category}/{product.ShowcaseImage.FileName}"
+                    : $"{baseUrl}{product.ShowcaseImage.Category}/{product.ShowcaseImage.Path}/{product.ShowcaseImage.FileName}";
             }
         }
     }

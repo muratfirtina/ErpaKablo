@@ -4,6 +4,14 @@ namespace Domain;
 
 public class Product : Entity<string>
 {
+    public Product(string? name, string? sku) : base(name, sku)
+    {
+        Name = name;
+        Sku = sku;
+        ProductImageFiles = new List<ProductImageFile>();
+        ProductFeatureValues = new List<ProductFeatureValue>();
+    }
+
     public string Name { get; set; }
     public string? Description { get; set; }
     public string? CategoryId { get; set; }
@@ -15,21 +23,7 @@ public class Product : Entity<string>
     public decimal? Price { get; set; }
     public int Stock { get; set; } = 0;
     public int? Tax { get; set; }
-    
+
     public virtual ICollection<ProductImageFile>? ProductImageFiles { get; set; }
     public virtual ICollection<ProductFeatureValue>? ProductFeatureValues { get; set; }
-    
-
-    
-    public Product(string? name, string? sku) : base(name,sku)
-    {
-        Name = name;
-        Sku = sku;
-        ProductImageFiles = new List<ProductImageFile>();
-        ProductFeatureValues = new List<ProductFeatureValue>();
-    }
-    
-    
-    
 }
-
