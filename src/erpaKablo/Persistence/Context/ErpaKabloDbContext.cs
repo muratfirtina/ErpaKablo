@@ -25,6 +25,10 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     
     public DbSet<ProductImageFile> ProductImageFiles { get; set; }
     public DbSet<ImageFile> ImageFiles { get; set; }
+    public DbSet<Cart> Carts { get; set; }
+    public DbSet<CartItem> CartItems { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<CompletedOrder> CompletedOrders { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)
@@ -36,7 +40,24 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<ImageFile>().HasQueryFilter(i => !i.DeletedDate.HasValue);
         builder.Entity<FeatureValue>().HasQueryFilter(fv => !fv.DeletedDate.HasValue);
         builder.Entity<ProductFeatureValue>().HasQueryFilter(pfv => !pfv.Product.DeletedDate.HasValue);
+        builder.Entity<Cart>().HasQueryFilter(c => !c.DeletedDate.HasValue);
+        builder.Entity<CartItem>().HasQueryFilter(ci => !ci.DeletedDate.HasValue);
+        builder.Entity<Order>().HasQueryFilter(o => !o.DeletedDate.HasValue);
+        builder.Entity<CompletedOrder>().HasQueryFilter(co => !co.DeletedDate.HasValue);
         
+        builder.Entity<Order>()
+            .HasIndex(o=>o.OrderCode)
+            .IsUnique();
+        
+        builder.Entity<Cart>()
+            .HasOne(c => c.Order)
+            .WithOne(o => o.Cart)
+            .HasForeignKey<Order>(o => o.Id);
+        
+        builder.Entity<Order>()
+            .HasOne(o => o.CompletedOrder)
+            .WithOne(c => c.Order)
+            .HasForeignKey<CompletedOrder>(c => c.OrderId);
         
         builder.Entity<Product>()
             .HasOne(p => p.Category)

@@ -7,6 +7,7 @@ using AutoMapper;
 using Core.Persistence.Repositories.Operation;
 using Domain;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 public class CreateMultipleProductsCommand : IRequest<List<CreatedProductResponse>>
 {
@@ -18,13 +19,15 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
         private readonly IMapper _mapper;
         private readonly ProductBusinessRules _productBusinessRules;
         private readonly IStorageService _storageService;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public CreateMultipleProductsCommandHandler(IProductRepository productRepository, IMapper mapper, ProductBusinessRules productBusinessRules, IStorageService storageService)
+        public CreateMultipleProductsCommandHandler(IProductRepository productRepository, IMapper mapper, ProductBusinessRules productBusinessRules, IStorageService storageService, ICategoryRepository categoryRepository)
         {
             _productRepository = productRepository;
             _mapper = mapper;
             _productBusinessRules = productBusinessRules;
             _storageService = storageService;
+            _categoryRepository = categoryRepository;
         }
         public async Task<List<CreatedProductResponse>> Handle(CreateMultipleProductsCommand request, CancellationToken cancellationToken)
         {
@@ -41,6 +44,7 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
                 {
                     product.VaryantGroupID = $"{normalizename}-{normalizesku}";
                 }
+                
 
                 product.ProductFeatureValues = new List<ProductFeatureValue>();
                 if (productDto.FeatureValueIds != null)

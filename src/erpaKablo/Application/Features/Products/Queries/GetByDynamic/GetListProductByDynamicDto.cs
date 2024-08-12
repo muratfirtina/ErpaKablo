@@ -14,6 +14,8 @@ public class GetListProductByDynamicDto
     public string BrandName { get; set; }
     public string Sku { get; set; }
     public string VaryantGroupID { get; set; }
+    public int Stock{ get; set; }
+    public decimal Price { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
     public ProductImageFileDto? ShowcaseImage { get; set; }
 }

@@ -5,6 +5,6 @@ namespace Application.Tokens;
 
 public interface ITokenHandler
 {
-    Token CreateAccessToken(AppUser user);
+    Token CreateAccessToken(int second, AppUser appUser);
     string CreateRefreshToken();
 }

@@ -1,14 +1,19 @@
+using Application.Abstraction.Services;
+using Application.Abstraction.Services.Configurations;
 using Application.Services;
 using Application.Storage;
 using Application.Storage.Cloudinary;
 using Application.Storage.Google;
 using Application.Storage.Local;
+using Application.Tokens;
 using Infrastructure.Enums;
 using Infrastructure.Services;
+using Infrastructure.Services.Configurations;
 using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Cloudinary;
 using Infrastructure.Services.Storage.Google;
 using Infrastructure.Services.Storage.Local;
+using Infrastructure.Services.Token;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,6 +29,9 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IGoogleStorage, GoogleStorage>();
         services.AddScoped<IStorageService, StorageService>();
         services.AddScoped<IFileNameService, FileNameService>();
+        services.AddScoped<IApplicationService, ApplicationService>();
+        services.AddScoped<ITokenHandler, TokenHandler>();
+        services.AddScoped<IMailService, MailService>();
         
         services.Configure<StorageSettings>(configuration.GetSection("StorageUrls"));
         
