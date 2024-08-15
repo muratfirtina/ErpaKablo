@@ -46,7 +46,6 @@ public class MappingProfiles : Profile
         
         CreateMap<Category, GetListCategoryByDynamicDto>().ReverseMap();
         CreateMap<Category, GetListResponse<GetListCategoryByDynamicDto>>().ReverseMap();
-        CreateMap<IPaginate<Category>, GetListResponse<GetListCategoryByDynamicDto>>().ReverseMap();
         
         CreateMap<Feature, FeatureDto>()
             .ForMember(dest => dest.FeatureValues, opt => opt.MapFrom(src => src.FeatureValues));
@@ -58,8 +57,19 @@ public class MappingProfiles : Profile
         
         CreateMap<Category, CategoryDto>()
             .ReverseMap();
-        
-        
 
+        CreateMap<List<Category>, GetListResponse<GetListCategoryByDynamicDto>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
+
+        CreateMap<Category, GetListCategoryByDynamicDto>()
+            .ForMember(dest => dest.SubCategories, 
+                opt => opt.MapFrom(src => src.SubCategories))
+            .ForMember(dest => dest.Products, opt => opt.MapFrom(src => src.Products));
+        
+        CreateMap<IPaginate<Category>, GetListResponse<GetListCategoryByDynamicDto>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
+            .ReverseMap();
+
+        CreateMap<IPaginate<Category>, List<GetListCategoryByDynamicDto>>();
     }
 }

@@ -1,9 +1,8 @@
 using Application.Features.ProductImageFiles.Dtos;
-using Application.Features.Products.Dtos;
 
-namespace Application.Features.Products.Queries.GetList;
+namespace Application.Features.Products.Dtos;
 
-public class GetAllProductQueryResponse
+public class ProductDto
 {
     public string Id { get; set; }
     public string Name { get; set; }
@@ -18,5 +17,4 @@ public class GetAllProductQueryResponse
     public decimal Price { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
     public ProductImageFileDto? ShowcaseImage { get; set; }
-    
 }

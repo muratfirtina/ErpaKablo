@@ -7,7 +7,6 @@ using Application.Features.Products.Queries.GetList;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -61,6 +60,13 @@ namespace WebAPI.Controllers
         {
             List<CreatedProductResponse> response = await Mediator.Send(createMultipleProductsCommand);
             return Created(uri: "", response);
+        }
+        
+        [HttpGet("GetRandomProductsByCategory/{categoryId}")]
+        public async Task<IActionResult> GetRandomProductsByCategory(string categoryId, [FromQuery] int count = 4)
+        {
+            var products = await Mediator.Send(new GetRandomProductsByCategoryQuery { CategoryId = categoryId, Count = count });
+            return Ok(products);
         }
     }
 }

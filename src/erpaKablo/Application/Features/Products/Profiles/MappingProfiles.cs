@@ -1,3 +1,4 @@
+using Application.Features.Categories.Queries.GetById;
 using Application.Features.Products.Commands.Create;
 using Application.Features.Products.Commands.Delete;
 using Application.Features.Products.Commands.Update;
@@ -118,7 +119,9 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.FeatureValueName, opt => opt.MapFrom(src => src.FeatureValue.Name))
             .ReverseMap();
         
-
+        CreateMap<Product, ProductDto>()
+            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => 
+                src.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)));
 
     }
 }

@@ -13,7 +13,9 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
 {
     public List<CreateMultipleProductDto> Products { get; set; }
 
-    public class CreateMultipleProductsCommandHandler : IRequestHandler<CreateMultipleProductsCommand, List<CreatedProductResponse>>
+    public class
+        CreateMultipleProductsCommandHandler : IRequestHandler<CreateMultipleProductsCommand,
+        List<CreatedProductResponse>>
     {
         private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
@@ -21,7 +23,9 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
         private readonly IStorageService _storageService;
         private readonly ICategoryRepository _categoryRepository;
 
-        public CreateMultipleProductsCommandHandler(IProductRepository productRepository, IMapper mapper, ProductBusinessRules productBusinessRules, IStorageService storageService, ICategoryRepository categoryRepository)
+        public CreateMultipleProductsCommandHandler(IProductRepository productRepository, IMapper mapper,
+            ProductBusinessRules productBusinessRules, IStorageService storageService,
+            ICategoryRepository categoryRepository)
         {
             _productRepository = productRepository;
             _mapper = mapper;
@@ -29,22 +33,32 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
             _storageService = storageService;
             _categoryRepository = categoryRepository;
         }
-        public async Task<List<CreatedProductResponse>> Handle(CreateMultipleProductsCommand request, CancellationToken cancellationToken)
+
+        public async Task<List<CreatedProductResponse>> Handle(CreateMultipleProductsCommand request,
+            CancellationToken cancellationToken)
         {
             var responses = new List<CreatedProductResponse>();
 
             foreach (var productDto in request.Products)
             {
+                // Kategori kontrolü
+                var category = await _categoryRepository.GetAsync(c => c.Id == productDto.CategoryId);
+                if (category == null)
+                {
+                    throw new Exception($"Category with ID {productDto.CategoryId} not found.");
+                }
+
                 var product = _mapper.Map<Product>(productDto);
-                
+
                 var normalizename = NameOperation.CharacterRegulatory(productDto.Name);
                 var normalizesku = NameOperation.CharacterRegulatory(productDto.Sku);
-                
+
                 if (string.IsNullOrEmpty(productDto.VaryantGroupID))
                 {
                     product.VaryantGroupID = $"{normalizename}-{normalizesku}";
                 }
-                
+
+                product.CategoryId = productDto.CategoryId; // Kategori ID'sini atıyoruz
 
                 product.ProductFeatureValues = new List<ProductFeatureValue>();
                 if (productDto.FeatureValueIds != null)
@@ -59,17 +73,19 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
 
                 if (productDto.ProductImages != null && productDto.ProductImages.Any())
                 {
-                    var uploadedFiles = await _storageService.UploadAsync("products", product.Id, productDto.ProductImages);
+                    var uploadedFiles =
+                        await _storageService.UploadAsync("products", product.Id, productDto.ProductImages);
                     for (int i = 0; i < uploadedFiles.Count; i++)
                     {
                         var file = uploadedFiles[i];
-                        var productImageFile = new ProductImageFile(file.fileName, file.category, file.path, file.storageType)
-                        {
-                            Showcase = i == productDto.ShowcaseImageIndex // Showcase'i burada ayarlıyoruz
-                        };
+                        var productImageFile =
+                            new ProductImageFile(file.fileName, file.category, file.path, file.storageType)
+                            {
+                                Showcase = i == productDto.ShowcaseImageIndex
+                            };
                         product.ProductImageFiles.Add(productImageFile);
                     }
-        
+
                     await _productBusinessRules.EnsureOnlyOneShowcaseImage(product.ProductImageFiles);
                     await _productRepository.UpdateAsync(product);
                 }
@@ -80,6 +96,5 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
 
             return responses;
         }
-
     }
 }
