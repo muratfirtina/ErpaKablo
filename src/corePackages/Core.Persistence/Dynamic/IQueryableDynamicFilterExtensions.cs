@@ -101,12 +101,28 @@ public static class IQueryableDynamicFilterExtensions
 
         if (!string.IsNullOrEmpty(filter.Value))
         {
-            if (filter.Operator == "doesnotcontain")
-                where.Append($"(!np({filter.Field}).{comparison}(@{index.ToString()}))");
-            else if (comparison is "StartsWith" or "EndsWith" or "Contains")
-                where.Append($"(np({filter.Field}).{comparison}(@{index.ToString()}))");
-            else
-                where.Append($"np({filter.Field}) {comparison} @{index.ToString()}");
+            // Kelimeleri ayır ve boş olanları filtrele
+            var keywords = filter.Value.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .Distinct(); // Aynı kelimeleri tekrarlamamak için Distinct kullanıyoruz
+
+            if (keywords.Any())
+            {
+                StringBuilder keywordSearch = new StringBuilder();
+                foreach (var keyword in keywords)
+                {
+                    if (keywordSearch.Length > 0)
+                        keywordSearch.Append(" or ");
+
+                    if (filter.Operator == "doesnotcontain")
+                        keywordSearch.Append($"(!np({filter.Field}).Contains(\"{keyword}\"))");
+                    else if (comparison is "StartsWith" or "EndsWith" or "Contains")
+                        keywordSearch.Append($"(np({filter.Field}).{comparison}(\"{keyword}\"))");
+                    else
+                        keywordSearch.Append($"np({filter.Field}) {comparison} \"{keyword}\"");
+                }
+
+                where.Append($"({keywordSearch})");
+            }
         }
         else if (filter.Operator is "isnull" or "isnotnull")
         {
@@ -122,5 +138,9 @@ public static class IQueryableDynamicFilterExtensions
 
         return where.ToString();
     }
+
+
+
+
     
 }
