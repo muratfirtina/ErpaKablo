@@ -50,7 +50,7 @@ public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandom
         {
             if (product.ShowcaseImage != null)
             {
-                product.ShowcaseImage.Url = _storageService.GetStorageUrl() +  product.ShowcaseImage.Category + "/" + product.ShowcaseImage.Path + "/" + product.ShowcaseImage.FileName;
+                product.ShowcaseImage.Url = _storageService.GetStorageUrl() +  product.ShowcaseImage.EntityType + "/" + product.ShowcaseImage.Path + "/" + product.ShowcaseImage.FileName;
             }
         }
 

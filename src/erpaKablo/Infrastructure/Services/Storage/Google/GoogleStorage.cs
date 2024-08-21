@@ -14,13 +14,11 @@ namespace Infrastructure.Services.Storage.Google;
 public class GoogleStorage : IGoogleStorage
 {
     private readonly StorageClient _storageClient;
-    private readonly IProductRepository _productRepository;
     private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
     private readonly string _bucketName = "erpaotomasyonkablo";
     
-    public GoogleStorage(IConfiguration configuration, IProductRepository productRepository, IOptionsSnapshot<StorageSettings> storageSettings)
+    public GoogleStorage(IConfiguration configuration, IOptionsSnapshot<StorageSettings> storageSettings)
     {
-        _productRepository = productRepository;
         _storageSettings = storageSettings;
 
         var credentialsPath = _storageSettings.Value.Providers.Google.CredentialsFilePath;
@@ -33,20 +31,20 @@ public class GoogleStorage : IGoogleStorage
         _storageClient = StorageClient.Create(credential);
     }
     
-    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string category,
-        string path, string fileName, MemoryStream fileStream)
+    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string entityType, string path, string fileName, MemoryStream fileStream)
     {
         List<(string fileName, string path, string containerName)> datas = new();
-        string objectName = $"products/{path}/{fileName}";
+        string objectName = $"{entityType}/{path}/{fileName}";
         await _storageClient.UploadObjectAsync(_bucketName, objectName, null, fileStream);
         datas.Add((fileName, objectName, _bucketName));
         return datas;
     }
     
-    public async Task DeleteAsync(string fullPath)
+    public async Task DeleteAsync(string entityType, string path, string fileName)
     {
         try
         {
+            string fullPath = $"{entityType}/{path}/{fileName}";
             await _storageClient.DeleteObjectAsync(_bucketName, fullPath);
         }
         catch 
@@ -55,45 +53,36 @@ public class GoogleStorage : IGoogleStorage
         }
     }
     
-    public async Task<List<T>?> GetFiles<T>(string productId) where T : ImageFile, new()
+    public async Task<List<T>?> GetFiles<T>(string entityId, string entityType) where T : ImageFile, new()
     {
         var baseUrl = _storageSettings.Value.Providers.Google.Url;
-        var productImages = await _productRepository.GetFilesByProductId(productId);
-        if (productImages == null || !productImages.Any())
-            return null; 
+        var prefix = $"{entityType}/{entityId}/";
+        var objects = _storageClient.ListObjects(_bucketName, prefix);
 
         List<T> files = new List<T>();
 
-        foreach (var productImageDto in productImages) 
+        foreach (var obj in objects)
         {
-            var prefix = $"products/{productImageDto.Path}/";
-            var objects = _storageClient.ListObjects(_bucketName, prefix);
-
-            var matchingObject = objects.FirstOrDefault(obj => obj.Name.EndsWith(productImageDto.FileName)); 
-
-            if (matchingObject != null)
+            var file = new T
             {
-                var file = new T
-                {
-                    Id = productImageDto.Id,
-                    Name = productImageDto.FileName,
-                    Path = productImageDto.Path,
-                    Category = "products",
-                    Storage = productImageDto.Storage, 
-                    Url = $"{baseUrl}/{matchingObject.Name}"
-                };
-                files.Add(file);
-            }
+                Id = Path.GetFileNameWithoutExtension(obj.Name),
+                Name = Path.GetFileName(obj.Name),
+                Path = Path.GetDirectoryName(obj.Name),
+                EntityType = entityType,
+                Storage = "Google",
+                Url = $"{baseUrl}/{obj.Name}"
+            };
+            files.Add(file);
         }
 
         return files;
     }
 
-    public bool HasFile(string path, string fileName)
+    public bool HasFile(string entityType, string path, string fileName)
     {
         try
         {
-            var fullPath = $"products/{path}/{fileName}";
+            var fullPath = $"{entityType}/{path}/{fileName}";
             var obj = _storageClient.GetObject(_bucketName, fullPath);
             return obj != null;
         }
@@ -101,7 +90,6 @@ public class GoogleStorage : IGoogleStorage
         {
             return false;
         }
-        
     }
     
     public async Task FileMustBeInFileFormat(IFormFile formFile)

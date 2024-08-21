@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Application.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Queries.GetList
 {
@@ -22,20 +24,25 @@ namespace Application.Features.Categories.Queries.GetList
         {
             private readonly ICategoryRepository _categoryRepository;
             private readonly IMapper _mapper;
+            private readonly IStorageService _storageService;
 
-            public GetAllCategoryQueryHandler(ICategoryRepository categoryRepository, IMapper mapper)
+            public GetAllCategoryQueryHandler(ICategoryRepository categoryRepository, IMapper mapper, IStorageService storageService)
             {
                 _categoryRepository = categoryRepository;
                 _mapper = mapper;
+                _storageService = storageService;
             }
 
             public async Task<GetListResponse<GetAllCategoryQueryResponse>> Handle(GetAllCategoryQuery request, CancellationToken cancellationToken)
             {
                 if (request.PageRequest.PageIndex == -1 && request.PageRequest.PageSize == -1)
                 {
-                    List<Category> categories = await _categoryRepository.GetAllAsync(cancellationToken: cancellationToken);
+                    List<Category> categories = await _categoryRepository.GetAllAsync(
+                        include:x => x.Include(x => x.CategoryImageFiles),
+                        cancellationToken: cancellationToken);
                     
                     GetListResponse<GetAllCategoryQueryResponse> response = _mapper.Map<GetListResponse<GetAllCategoryQueryResponse>>(categories);
+                    SetCategoryImageUrls(response.Items);
                     return response;
                 }
                 else
@@ -43,14 +50,37 @@ namespace Application.Features.Categories.Queries.GetList
                     IPaginate<Category> categories = await _categoryRepository.GetListAsync(
                         index: request.PageRequest.PageIndex,
                         size: request.PageRequest.PageSize,
+                        include: x => x.Include(x => x.CategoryImageFiles),
                         cancellationToken: cancellationToken
                     );
                     
                     GetListResponse<GetAllCategoryQueryResponse> response = _mapper.Map<GetListResponse<GetAllCategoryQueryResponse>>(categories);
+                    SetCategoryImageUrls(response.Items);
                     return response;
                 }
             }
-
+            
+            private void SetCategoryImageUrls(IEnumerable<GetAllCategoryQueryResponse> categories)
+            {
+                var baseUrl = _storageService.GetStorageUrl();
+                foreach (var category in categories)
+                {
+                    if (category.CategoryImage != null)
+                    {
+                        category.CategoryImage.Url = $"{baseUrl}{category.CategoryImage.EntityType}/{category.CategoryImage.Path}/{category.CategoryImage.FileName}";
+                    }
+                    else
+                    {
+                        category.CategoryImage = new CategoryImageFileDto
+                        {
+                            EntityType = "categories",
+                            Path = "",
+                            FileName = "default-category-image.png",
+                            Url = $"{baseUrl}categories/default-category-image.png"
+                        };
+                    }
+                }
+            }
             
         }
     }

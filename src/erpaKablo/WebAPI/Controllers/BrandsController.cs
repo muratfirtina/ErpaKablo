@@ -29,10 +29,9 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPost]
-        public async Task<IActionResult> Add([FromBody] CreateBrandCommand createBrandCommand)
+        public async Task<IActionResult> Add([FromForm] CreateBrandCommand createBrandCommand)
         {
             CreatedBrandResponse response = await Mediator.Send(createBrandCommand);
-
             return Created(uri: "", response);
         }
         [HttpDelete("{id}")]

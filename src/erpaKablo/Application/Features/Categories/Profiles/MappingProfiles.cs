@@ -5,6 +5,7 @@ using Application.Features.Categories.Dtos;
 using Application.Features.Categories.Queries.GetByDynamic;
 using Application.Features.Categories.Queries.GetById;
 using Application.Features.Categories.Queries.GetList;
+using Application.Features.Categories.Queries.GetMainCategories;
 using Application.Features.Features.Commands.Create;
 using Application.Features.Features.Dtos;
 using Application.Features.FeatureValues.Dtos;
@@ -22,15 +23,26 @@ public class MappingProfiles : Profile
     {
         CreateMap<Category, GetAllCategoryQueryResponse>()
             .ForMember(dest=>dest.SubCategories,opt=>opt.MapFrom(src=> src.SubCategories))
-            .ReverseMap();
+            .ForMember(dest
+                =>dest.CategoryImage,opt
+                =>opt.MapFrom(src
+                    => src.CategoryImageFiles.FirstOrDefault()));
+        
         CreateMap<Category, GetListSubCategoryDto>().ReverseMap();
+        
         CreateMap<Category, GetByIdCategoryResponse>()
             .ForMember(dest=>dest.ParentCategoryName,opt=>opt.MapFrom(src=> src.ParentCategory.Name))
+            .ForMember(dest=>dest.SubCategories,opt=>opt.MapFrom(src=> src.SubCategories))
+            .ForMember(dest=>dest.Features,opt=>opt.MapFrom(src=> src.Features))
+            .ForMember(dest=>dest.FeatureValueProductCounts,opt=>opt.Ignore())
+            .ForMember(dest=>dest.CategoryImage,opt=>opt.MapFrom(src=> src.CategoryImageFiles.FirstOrDefault()))
             .ReverseMap();
+        
         CreateMap<List<Category>, GetListResponse<GetAllCategoryQueryResponse>>()
             .ForMember(dest 
                 => dest.Items, opt 
                 => opt.MapFrom(src => src));
+        
         CreateMap<IPaginate<Category>, GetListResponse<GetAllCategoryQueryResponse>>().ReverseMap();
         
         CreateMap<CreateCategoryCommand, Category>()
@@ -38,8 +50,8 @@ public class MappingProfiles : Profile
             //.ForMember(dest => dest.CategoryFeatures, opt => opt.Ignore())
             .ReverseMap();
         CreateMap<Category, CreatedCategoryResponse>()
-          //  .ForMember(dest => dest.Features, opt => opt.MapFrom(src => src.CategoryFeatures.Select(cf => cf.Feature)))
-            .ReverseMap();
+            .ForMember(dest => dest.CategoryImage, opt => opt.MapFrom(src => src.CategoryImageFiles.FirstOrDefault()));
+        
         CreateMap<Category, UpdateCategoryCommand>().ReverseMap();
         CreateMap<Category, UpdatedCategoryResponse>().ReverseMap();
         CreateMap<Category, DeletedCategoryResponse>().ReverseMap();
@@ -71,5 +83,25 @@ public class MappingProfiles : Profile
             .ReverseMap();
 
         CreateMap<IPaginate<Category>, List<GetListCategoryByDynamicDto>>();
+        
+        CreateMap<CategoryImageFile, CategoryImageFileDto>()
+            .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.Name))
+            .ReverseMap();
+        
+        CreateMap<Category, GetListCategoryByDynamicDto>();
+        CreateMap<CategoryImageFile, CategoryImageFileDto>
+            ().ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.Name))
+            .ReverseMap();
+        
+        CreateMap<Category, GetMainCategoriesResponse>()
+            .ForMember(dest => dest.CategoryImage, opt => opt.MapFrom(src => src.CategoryImageFiles.FirstOrDefault()));
+        
+        CreateMap<List<Category>, GetListResponse<GetMainCategoriesResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
+        
+        CreateMap<IPaginate<Category>, GetListResponse<GetMainCategoriesResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
+            .ReverseMap();
     }
+    
 }

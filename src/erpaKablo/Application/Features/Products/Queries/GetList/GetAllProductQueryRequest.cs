@@ -82,7 +82,7 @@ public class GetAllProductQuery : IRequest<GetListResponse<GetAllProductQueryRes
                     // Eğer ShowcaseImage null ise, varsayılan bir ProductImageFileDto oluştur
                     product.ShowcaseImage = new ProductImageFileDto
                     {
-                        Category = "products",
+                        EntityType = "products",
                         Path = "",
                         FileName = "ecommerce-default-product.png"
                     };
@@ -90,8 +90,8 @@ public class GetAllProductQuery : IRequest<GetListResponse<GetAllProductQueryRes
 
                 // Her durumda URL'yi ayarla
                 product.ShowcaseImage.Url = product.ShowcaseImage.FileName == "ecommerce-default-product.png"
-                    ? $"{baseUrl}{product.ShowcaseImage.Category}/{product.ShowcaseImage.FileName}"
-                    : $"{baseUrl}{product.ShowcaseImage.Category}/{product.ShowcaseImage.Path}/{product.ShowcaseImage.FileName}";
+                    ? $"{baseUrl}{product.ShowcaseImage.EntityType}/{product.ShowcaseImage.FileName}"
+                    : $"{baseUrl}{product.ShowcaseImage.EntityType}/{product.ShowcaseImage.Path}/{product.ShowcaseImage.FileName}";
             }
         }
     }

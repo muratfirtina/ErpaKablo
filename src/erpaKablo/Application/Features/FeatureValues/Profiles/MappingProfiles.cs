@@ -17,13 +17,18 @@ public class MappingProfiles : Profile
 {
     public MappingProfiles()
     {
-        CreateMap<FeatureValue, GetAllFeatureValueQueryResponse>().ReverseMap();
+        CreateMap<FeatureValue, GetAllFeatureValueQueryResponse>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
         CreateMap<FeatureValue, GetByIdFeatureValueResponse>().ReverseMap();
         CreateMap<List<FeatureValue>, GetListResponse<GetAllFeatureValueQueryResponse>>()
             .ForMember(dest 
                 => dest.Items, opt 
                 => opt.MapFrom(src => src));
-        CreateMap<IPaginate<FeatureValue>, GetListResponse<GetAllFeatureValueQueryResponse>>().ReverseMap();
+        CreateMap<IPaginate<FeatureValue>, GetListResponse<GetAllFeatureValueQueryResponse>>()
+            .ForMember(dest 
+                => dest.Items, opt 
+                => opt.MapFrom(src => src.Items));
         
         CreateMap<FeatureValue, GetListFeatureValueByDynamicDto>().ReverseMap();
         CreateMap<IPaginate<FeatureValue>, GetListResponse<GetListFeatureValueByDynamicDto>>().ReverseMap();

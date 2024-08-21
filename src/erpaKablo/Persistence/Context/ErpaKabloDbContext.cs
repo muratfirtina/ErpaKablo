@@ -22,13 +22,15 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<Feature> Features { get; set; }
     public DbSet<FeatureValue> FeatureValues { get; set; }
     public DbSet<ProductFeatureValue> ProductFeatureValues { get; set; }
-    
     public DbSet<ProductImageFile> ProductImageFiles { get; set; }
+    public DbSet<CategoryImageFile> CategoryImageFiles { get; set; }
+    public DbSet<BrandImageFile> BrandImageFiles { get; set; }
     public DbSet<ImageFile> ImageFiles { get; set; }
     public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<CompletedOrder> CompletedOrders { get; set; }
+    public DbSet<Carousel> Carousel { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)

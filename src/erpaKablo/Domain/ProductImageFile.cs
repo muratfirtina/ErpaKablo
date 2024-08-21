@@ -16,23 +16,23 @@ public class ProductImageFile:ImageFile
         Name = name;
     }
 
-    public ProductImageFile(string? name, string? category) : base(name)
+    public ProductImageFile(string? name, string? entityType) : base(name)
     {
         Name = name;
-        Category = category;
+        EntityType = entityType;
     }
     
-    public ProductImageFile(string? name, string? category, string? path) : base(name)
+    public ProductImageFile(string? name, string? entityType, string? path) : base(name)
     {
         Name = name;
-        Category = category;
+        EntityType = entityType;
         Path = path;
     }
     
-    public ProductImageFile(string? name, string? category, string? path, string? storage) : base(name)
+    public ProductImageFile(string? name, string? entityType, string? path, string? storage) : base(name)
     {
         Name = name;
-        Category = category;
+        EntityType = entityType;
         Path = path;
         Storage = storage;
         

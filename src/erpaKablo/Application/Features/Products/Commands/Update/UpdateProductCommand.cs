@@ -14,6 +14,7 @@ public class UpdateProductCommand : IRequest<UpdatedProductResponse>
 {
     public string Id { get; set; }
     public string Name { get; set; }
+    public string? Title { get; set; }
     public string? Description { get; set; }
     public string CategoryId { get; set; }
     public string BrandId { get; set; }
@@ -115,13 +116,13 @@ public class UpdateProductCommand : IRequest<UpdatedProductResponse>
                     var uploadedFiles = await _storageService.UploadAsync("products", product.Id, request.NewProductImages);
                     foreach (var file in uploadedFiles)
                     {
-                        var productImageFile = new ProductImageFile(file.fileName, file.category, file.path, file.storageType);
-                        product.ProductImageFiles.Add(productImageFile);
+                        var productImageFile = new ProductImageFile(file.fileName, file.entityType, file.path, file.storageType);
+                        product.ProductImageFiles?.Add(productImageFile);
                     }
                 }
 
                 // Set showcase image
-                if (request.ShowcaseImageIndex.HasValue && request.ShowcaseImageIndex.Value < product.ProductImageFiles.Count)
+                if (request.ShowcaseImageIndex.HasValue && request.ShowcaseImageIndex.Value < product.ProductImageFiles?.Count)
                 {
                     foreach (var image in product.ProductImageFiles)
                     {

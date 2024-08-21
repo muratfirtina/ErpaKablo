@@ -89,15 +89,15 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
                 {
                     product.ShowcaseImage = new ProductImageFileDto
                     {
-                        Category = "products",
+                        EntityType = "products",
                         Path = "",
                         FileName = "ecommerce-default-product.png"
                     };
                 }
 
                 product.ShowcaseImage.Url = product.ShowcaseImage.FileName == "ecommerce-default-product.png"
-                    ? $"{baseUrl}{product.ShowcaseImage.Category}/{product.ShowcaseImage.FileName}"
-                    : $"{baseUrl}{product.ShowcaseImage.Category}/{product.ShowcaseImage.Path}/{product.ShowcaseImage.FileName}";
+                    ? $"{baseUrl}{product.ShowcaseImage.EntityType}/{product.ShowcaseImage.FileName}"
+                    : $"{baseUrl}{product.ShowcaseImage.EntityType}/{product.ShowcaseImage.Path}/{product.ShowcaseImage.FileName}";
             }
         }
     }

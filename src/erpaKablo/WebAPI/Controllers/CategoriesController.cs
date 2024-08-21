@@ -4,6 +4,7 @@ using Application.Features.Categories.Commands.Update;
 using Application.Features.Categories.Queries.GetByDynamic;
 using Application.Features.Categories.Queries.GetById;
 using Application.Features.Categories.Queries.GetList;
+using Application.Features.Categories.Queries.GetMainCategories;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -29,7 +30,7 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPost]
-        public async Task<IActionResult> Add([FromBody] CreateCategoryCommand createCategoryCommand)
+        public async Task<IActionResult> Add([FromForm] CreateCategoryCommand createCategoryCommand)
         {
             CreatedCategoryResponse response = await Mediator.Send(createCategoryCommand);
 
@@ -42,7 +43,7 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPut]
-        public async Task<IActionResult> Update([FromBody] UpdateCategoryCommand updateCategoryCommand)
+        public async Task<IActionResult> Update([FromForm] UpdateCategoryCommand updateCategoryCommand)
         {
             UpdatedCategoryResponse response = await Mediator.Send(updateCategoryCommand);
             return Ok(response);
@@ -52,6 +53,12 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetListByDynamic([FromQuery] PageRequest pageRequest, [FromBody] DynamicQuery? dynamicQuery = null)
         {
             GetListResponse<GetListCategoryByDynamicDto> response = await Mediator.Send(new GetListCategoryByDynamicQuery { PageRequest = pageRequest, DynamicQuery = dynamicQuery });
+            return Ok(response);
+        }
+        [HttpGet("GetMainCategories")]
+        public async Task<IActionResult> GetMainCategories([FromQuery] PageRequest pageRequest)
+        {
+            GetListResponse<GetMainCategoriesResponse> response = await Mediator.Send(new GetMainCategoiesQuery { PageRequest = pageRequest });
             return Ok(response);
         }
     }

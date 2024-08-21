@@ -7,6 +7,7 @@ public class UpdatedProductResponse : IResponse
 {
     public string Id { get; set; }
     public string Name { get; set; }
+    public string? Title { get; set; }
     public string CategoryName { get; set; }
     public string BrandName { get; set; }
     public string? Description { get; set; }

@@ -24,66 +24,61 @@ public class LocalStorage : ILocalStorage
         }
     }
 
-    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string category,
-        string path, string fileName, MemoryStream fileStream)
+    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string entityType, string path, string fileName, MemoryStream fileStream)
     {
-        var employeeFolderPath = Path.Combine(_baseFolderPath, category, path);
+        var entityFolderPath = Path.Combine(_baseFolderPath, entityType, path);
         
-        if (!Directory.Exists(employeeFolderPath))
+        if (!Directory.Exists(entityFolderPath))
         {
-            Directory.CreateDirectory(employeeFolderPath);
+            Directory.CreateDirectory(entityFolderPath);
         }
         
         List<(string fileName, string path, string containerName)> datas = new();
         
-        //dosyayı locale kaydet
-        var filePath = Path.Combine(employeeFolderPath, fileName);
+        var filePath = Path.Combine(entityFolderPath, fileName);
         await using FileStream fileStream1 = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, useAsync:false);
         await fileStream.CopyToAsync(fileStream1);
         await fileStream1.FlushAsync();
         
-        datas.Add((fileName, path, category));
+        datas.Add((fileName, path, entityType));
 
-        return null;
+        return datas;
     }
 
-    public async Task DeleteAsync(string path)
+    public async Task DeleteAsync(string entityType, string path, string fileName)
     {
-        //var localPath = ExtractLocalPath(path); // Dosya yolu çıkar
-        var filePath = Path.Combine(_baseFolderPath, path); // Dosya yolu ve adını birleştir
+        var filePath = Path.Combine(_baseFolderPath, entityType, path, fileName);
         if (File.Exists(filePath))
         {
             File.Delete(filePath);
         }
-        
     }
     
 
-    public async Task<List<T>> GetFiles<T>(string productId) where T : ImageFile, new()
+    public async Task<List<T>> GetFiles<T>(string entityId, string entityType) where T : ImageFile, new()
     {
         var baseUrl = _storageSettings.Value.Providers.LocalStorage.Url;
-        var productFolder = Path.Combine(_baseFolderPath, "products", productId);
+        var entityFolder = Path.Combine(_baseFolderPath, entityType, entityId);
         
-        if (!Directory.Exists(productFolder))
+        if (!Directory.Exists(entityFolder))
         {
             return new List<T>();
         }
 
-        var files = Directory.GetFiles(productFolder, "*", SearchOption.AllDirectories);
+        var files = Directory.GetFiles(entityFolder, "*", SearchOption.AllDirectories);
         var result = new List<T>();
 
         foreach (var file in files)
         {
             var relativePath = Path.GetRelativePath(_baseFolderPath, file);
             var fileInfo = new FileInfo(file);
-            var category = Path.GetDirectoryName(relativePath)?.Split(Path.DirectorySeparatorChar)[0] ?? "unknown";
 
             result.Add(new T
             {
                 Id = Path.GetFileNameWithoutExtension(file),
                 Name = fileInfo.Name,
                 Path = relativePath,
-                Category = category,
+                EntityType = entityType,
                 Storage = "LocalStorage",
                 Url = $"{baseUrl.TrimEnd('/')}/{relativePath.Replace('\\', '/')}"
             });
@@ -92,8 +87,8 @@ public class LocalStorage : ILocalStorage
         return result;
     }
 
-    public bool HasFile(string path, string fileName) 
-        => File.Exists(Path.Combine(path, fileName));
+    public bool HasFile(string entityType, string path, string fileName) 
+        => File.Exists(Path.Combine(_baseFolderPath, entityType, path, fileName));
     
     async Task<bool> CopyFileAsync(string path, IFormFile file)
     {

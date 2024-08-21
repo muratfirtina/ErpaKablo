@@ -54,7 +54,7 @@ public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
             var baseUrl = _storageService.GetStorageUrl();
             foreach (var imageFile in response.ProductImageFiles)
             {
-                imageFile.Url = $"{baseUrl}{imageFile.Category}/{imageFile.Path}/{imageFile.FileName}";
+                imageFile.Url = $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
             }
 
             foreach (var relatedProduct in response.RelatedProducts)
@@ -62,7 +62,7 @@ public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
                 if (relatedProduct.ShowcaseImage != null)
                 {
                     relatedProduct.ShowcaseImage.Url =
-                        $"{baseUrl}{relatedProduct.ShowcaseImage.Category}/{relatedProduct.ShowcaseImage.Path}/{relatedProduct.ShowcaseImage.FileName}";
+                        $"{baseUrl}{relatedProduct.ShowcaseImage.EntityType}/{relatedProduct.ShowcaseImage.Path}/{relatedProduct.ShowcaseImage.FileName}";
                 }
             }
 

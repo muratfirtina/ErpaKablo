@@ -13,6 +13,7 @@ namespace Application.Features.Products.Commands.Create;
 public class CreateProductCommand : IRequest<CreatedProductResponse>
 {
     public string Name { get; set; }
+    public string? Title { get; set; }
     public string? Description { get; set; }
     public string CategoryId { get; set; }
     public string BrandId { get; set; }
@@ -68,7 +69,7 @@ public class CreateProductCommand : IRequest<CreatedProductResponse>
                 foreach (var file in uploadedFiles)
                 {
                     var productImageFile =
-                        new ProductImageFile(file.fileName, file.category, file.path, file.storageType);
+                        new ProductImageFile(file.fileName, file.entityType, file.path, file.storageType);
                     product.ProductImageFiles.Add(productImageFile);
                 }
 

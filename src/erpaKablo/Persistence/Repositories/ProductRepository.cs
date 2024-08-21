@@ -31,7 +31,7 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
                 FileName = pif.Name,
                 Showcase = pif.Showcase,
                 Storage = pif.Storage,
-                Category = pif.Category,
+                EntityType = pif.EntityType,
                 Alt = pif.Alt,
             }).ToListAsync();
 

@@ -6,7 +6,7 @@ namespace Domain;
 public class ImageFile: Entity<string>
 {
     public string? Name { get; set; }
-    public string Category { get; set; }
+    public string EntityType { get; set; }
     public string Path { get; set; }
     [NotMapped]
     public string Url { get; set; }

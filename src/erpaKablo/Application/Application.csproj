@@ -24,7 +24,6 @@
 
     <ItemGroup>
         <Folder Include="Features\AuthorizationEndpoint\Commands\" />
-        <Folder Include="Features\Brands\Dtos\"/>
         <Folder Include="Features\ProductImageFiles\Commands\"/>
         <Folder Include="Features\ProductImageFiles\Consts\"/>
         <Folder Include="Features\ProductImageFiles\Queries\"/>

@@ -4,15 +4,18 @@ using CloudinaryDotNet.Actions;
 using Domain;
 using Infrastructure.Adapters.Image.Cloudinary;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Services.Storage.Cloudinary;
 
 public class CloudinaryStorage : ICloudinaryStorage
 {
     private readonly CloudinaryDotNet.Cloudinary _cloudinary;
+    private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
     
-    public CloudinaryStorage(IConfiguration configuration)
+    public CloudinaryStorage(IConfiguration configuration, IOptionsSnapshot<StorageSettings> storageSettings)
     {
+        _storageSettings = storageSettings;
         var cloudinaryAccountSettings = configuration.GetSection("CloudinaryAccount").Get<CloudinarySettings>();
 
         var account = new Account(
@@ -23,8 +26,8 @@ public class CloudinaryStorage : ICloudinaryStorage
 
         _cloudinary = new CloudinaryDotNet.Cloudinary(account);
     }
-    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string category,
-        string path, string fileName, MemoryStream fileStream)
+
+    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string entityType, string path, string fileName, MemoryStream fileStream)
     {
         var datas = new List<(string fileName, string path, string containerName)>();
         ImageUploadParams imageUploadParams = new()
@@ -35,22 +38,22 @@ public class CloudinaryStorage : ICloudinaryStorage
             Overwrite = false
         };
         
-        imageUploadParams.Folder = $"{category}/{path}";
+        imageUploadParams.Folder = $"{entityType}/{path}";
         imageUploadParams.PublicId = Path.GetFileNameWithoutExtension(fileName);
         
         var uploadResult = await _cloudinary.UploadAsync(imageUploadParams);
         
         if (uploadResult.Error == null)
         {
-            datas.Add((fileName, uploadResult.SecureUrl.ToString(), category));
+            datas.Add((fileName, uploadResult.SecureUrl.ToString(), entityType));
         }
         
         return datas;
     }
 
-    public async Task DeleteAsync(string path)
+    public async Task DeleteAsync(string entityType, string path, string fileName)
     {
-        var publicId = GetPublicId(path);
+        var publicId = GetPublicId($"{entityType}/{path}/{fileName}");
         if (!string.IsNullOrEmpty(publicId))
         {
             var deletionParams = new DeletionParams(publicId)
@@ -61,44 +64,26 @@ public class CloudinaryStorage : ICloudinaryStorage
         }
     }
 
-    public async Task<List<T>?> GetFiles<T>(string employeeId) where T : ImageFile, new()
+    public async Task<List<T>?> GetFiles<T>(string entityId, string entityType) where T : ImageFile, new()
     {
-        var searchExpression = $"folder:{employeeId}";
-        return await SearchAndMapResources<T>(searchExpression, employeeId);
-    }
-
-    public async Task<List<T>> GetFiles<T>(string category, string path) where T : ImageFile, new()
-    {
-        var fullPath = $"{category}/{path}";
-        var searchExpression = $"folder:{fullPath}";
-        return await SearchAndMapResources<T>(searchExpression, category);
-    }
-
-    public async Task<List<string?>> GetFiles(string path, string category)
-    {
-        var fullPath = $"{category}/{path}";
-        var searchExpression = $"folder:{fullPath}";
+        var baseUrl = _storageSettings.Value.Providers.Cloudinary.Url;
+        var searchExpression = $"folder:{entityType}/{entityId}";
         var searchResult = _cloudinary.Search().Expression(searchExpression).Execute();
-
-        return searchResult.Resources.Select(resource => resource.SecureUrl.ToString()).ToList();
-    }
-
-    private async Task<List<T>> SearchAndMapResources<T>(string searchExpression, string category) where T : ImageFile, new()
-    {
-        var searchResult =  _cloudinary.Search().Expression(searchExpression).Execute();
 
         return searchResult.Resources.Select(resource => new T
         {
+            Id = Path.GetFileNameWithoutExtension(resource.PublicId),
             Name = Path.GetFileName(resource.PublicId),
-            Path = resource.SecureUrl.ToString(),
-            Category = category,
-            Storage = "Cloudinary"
+            Path = Path.GetDirectoryName(resource.PublicId),
+            EntityType = entityType,
+            Storage = "Cloudinary",
+            Url = resource.SecureUrl.ToString()
         }).ToList();
     }
 
-    public bool HasFile(string path, string fileName)
+    public bool HasFile(string entityType, string path, string fileName)
     {
-        var publicId = GetPublicId($"{path}/{fileName}");
+        var publicId = GetPublicId($"{entityType}/{path}/{fileName}");
         var getResourceParams = new GetResourceParams(publicId)
         {
             ResourceType = ResourceType.Image
@@ -111,7 +96,6 @@ public class CloudinaryStorage : ICloudinaryStorage
         }
         catch (Exception)
         {
-            // Dosya bulunamadı veya bir hata oluştu
             return false;
         }
     }

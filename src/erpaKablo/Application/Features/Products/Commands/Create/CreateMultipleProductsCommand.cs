@@ -79,7 +79,7 @@ public class CreateMultipleProductsCommand : IRequest<List<CreatedProductRespons
                     {
                         var file = uploadedFiles[i];
                         var productImageFile =
-                            new ProductImageFile(file.fileName, file.category, file.path, file.storageType)
+                            new ProductImageFile(file.fileName, file.entityType, file.path, file.storageType)
                             {
                                 Showcase = i == productDto.ShowcaseImageIndex
                             };
