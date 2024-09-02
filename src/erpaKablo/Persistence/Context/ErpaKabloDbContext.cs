@@ -25,6 +25,7 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<ProductImageFile> ProductImageFiles { get; set; }
     public DbSet<CategoryImageFile> CategoryImageFiles { get; set; }
     public DbSet<BrandImageFile> BrandImageFiles { get; set; }
+    public DbSet<CarouselImageFile> CarouselImageFiles { get; set; }
     public DbSet<ImageFile> ImageFiles { get; set; }
     public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }

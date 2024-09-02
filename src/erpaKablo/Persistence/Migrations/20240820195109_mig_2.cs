@@ -11,13 +11,13 @@ namespace Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "Title",
+                name: "Name",
                 table: "Products",
                 type: "longtext",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
-                name: "Title",
+                name: "Name",
                 table: "Categories",
                 type: "longtext",
                 nullable: true);
@@ -27,11 +27,11 @@ namespace Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "Title",
+                name: "Name",
                 table: "Products");
 
             migrationBuilder.DropColumn(
-                name: "Title",
+                name: "Name",
                 table: "Categories");
         }
     }

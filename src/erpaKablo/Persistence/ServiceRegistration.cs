@@ -63,6 +63,7 @@ public static class ServiceRegistration
         services.AddScoped<IInternalAuthentication, AuthService>();
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IAuthorizationEndpointService, AuthorizationEndpointService>();
+        services.AddScoped<ICarouselRepository, CarouselRepository>();
         
         return services;
     }

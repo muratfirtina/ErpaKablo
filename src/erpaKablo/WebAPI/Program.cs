@@ -6,6 +6,7 @@ using Application.Storage;
 using Application.Storage.Google;
 using Application.Storage.Local;
 using Infrastructure;
+using Infrastructure.Filters;
 using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Google;
 using Infrastructure.Services.Storage.Local;
@@ -14,6 +15,7 @@ using Microsoft.IdentityModel.Tokens;
 using Persistence;
 using Persistence.Services;
 using WebAPI;
+using WebAPI.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,12 +24,18 @@ builder.Services.Configure<StorageSettings>(
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddControllers();
+
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistenceServices();
 
-
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<ValidationFilter>();
+        options.Filters.Add<RolePermissionFilter>();
+    })
+    //.AddFluentValidation(options => options.RegisterValidatorsFromAssemblyContaining<CreateProductValidator>())
+    .ConfigureApiBehaviorOptions(options => options.SuppressModelStateInvalidFilter = true);
 
 
 // Add services to the container.
@@ -81,7 +89,7 @@ app.UseCors(opt => opt.WithOrigins(webApiConfiguration.AllowedOrigins).AllowAnyH
 
 app.UseHttpsRedirection();
 
-//app.UseAuthentication();
+app.UseAuthentication();
 app.UseAuthentication();
 app.UseAuthorization();
 app.Run();
