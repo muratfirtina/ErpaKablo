@@ -1,3 +1,6 @@
+using Application.Consts;
+using Application.CustomAttributes;
+using Application.Enums;
 using Application.Features.Features.Commands.Create;
 using Application.Features.Features.Commands.Delete;
 using Application.Features.Features.Commands.Update;
@@ -7,6 +10,7 @@ using Application.Features.Features.Queries.GetList;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,6 +33,9 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Create Feature", Menu = AuthorizeDefinitionConstants.Features)]
+        
         public async Task<IActionResult> Add([FromBody] CreateFeatureCommand createFeatureCommand)
         {
             CreatedFeatureResponse response = await Mediator.Send(createFeatureCommand);
@@ -36,12 +43,16 @@ namespace WebAPI.Controllers
             return Created(uri: "", response);
         }
         [HttpDelete("{id}")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Deleting, Definition = "Delete Feature", Menu = AuthorizeDefinitionConstants.Features)]
         public async Task<IActionResult> Delete([FromRoute] string id)
         {
             DeletedFeatureResponse response = await Mediator.Send(new DeleteFeatureCommand { Id = id });
             return Ok(response);
         }
         [HttpPut]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update Feature", Menu = AuthorizeDefinitionConstants.Features)]
         public async Task<IActionResult> Update([FromBody] UpdateFeatureCommand updateFeatureCommand)
         {
             UpdatedFeatureResponse response = await Mediator.Send(updateFeatureCommand);

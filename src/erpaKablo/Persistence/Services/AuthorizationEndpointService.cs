@@ -69,7 +69,7 @@ public class AuthorizationEndpointService : IAuthorizationEndpointService
 
         foreach (var roleDto in roles)
         {
-            var role = await _roleManager.FindByNameAsync(roleDto.RoleName);
+            var role = await _roleManager.FindByNameAsync(roleDto.Name);
             if (role != null)
             {
                 endpoint.Roles.Add(role);
@@ -90,8 +90,8 @@ public class AuthorizationEndpointService : IAuthorizationEndpointService
         {
             return endpoint.Roles.Select(x => new RoleDto
             {
-                RoleName = x.Name,
-                RoleId = x.Id
+                Name = x.Name,
+                Id = x.Id
             }).ToList();
         }
 

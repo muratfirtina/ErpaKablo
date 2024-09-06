@@ -28,6 +28,7 @@ public class GetAllFeatureValueQuery : IRequest<GetListResponse<GetAllFeatureVal
             if (request.PageRequest.PageIndex == -1 && request.PageRequest.PageSize == -1)
             {
                 List<FeatureValue> featureValues = await _featureValueRepository.GetAllAsync(
+                    orderBy: x => x.OrderBy(x => x.CreatedDate),
                     cancellationToken: cancellationToken);
                 GetListResponse<GetAllFeatureValueQueryResponse> response = _mapper.Map<GetListResponse<GetAllFeatureValueQueryResponse>>(featureValues);
                 return response;
@@ -35,6 +36,7 @@ public class GetAllFeatureValueQuery : IRequest<GetListResponse<GetAllFeatureVal
             else
             {
                 IPaginate<FeatureValue> featureValues = await _featureValueRepository.GetListAsync(
+                    orderBy: x => x.OrderBy(x => x.CreatedDate),
                     index: request.PageRequest.PageIndex,
                     size: request.PageRequest.PageSize,
                     cancellationToken: cancellationToken

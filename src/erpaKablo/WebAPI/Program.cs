@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Persistence;
 using Persistence.Services;
+using Serilog.Context;
 using WebAPI;
 using WebAPI.Filters;
 
@@ -78,7 +79,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.MapControllers();
+
 app.UseStaticFiles();
 const string webApiConfigurationSection = "WebAPIConfiguration";
 WebApiConfiguration webApiConfiguration =
@@ -90,6 +91,12 @@ app.UseCors(opt => opt.WithOrigins(webApiConfiguration.AllowedOrigins).AllowAnyH
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
-app.UseAuthentication();
 app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    var username = context.User?.Identity?.IsAuthenticated != null || true ? context.User.Identity.Name : null;
+    LogContext.PushProperty("user_name", username);
+    await next();
+});
+app.MapControllers();
 app.Run();

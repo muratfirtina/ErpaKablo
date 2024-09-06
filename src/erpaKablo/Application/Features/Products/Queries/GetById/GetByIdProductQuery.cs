@@ -43,7 +43,7 @@ public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
             var relatedProducts = await _productRepository.GetListAsync(
                 predicate: p => p.VaryantGroupID == product.VaryantGroupID && p.Id != product.Id,
                 include: x => x.Include(x => x.Category).Include(x => x.Brand)
-                    .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
+                    .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature).OrderBy(x => x.CreatedDate)
                     .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase == true)),
                 cancellationToken: cancellationToken);
 

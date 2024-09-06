@@ -37,13 +37,19 @@ public class MappingProfiles : Profile
             .ReverseMap();
 
         CreateMap<Brand, GetListBrandByDynamicDto>()
-            .ForMember(dest => dest.BrandImage, opt => opt.MapFrom(src => 
-                src.BrandImageFiles != null && src.BrandImageFiles.Any() 
-                    ? new BrandImageFileDto { Url = src.BrandImageFiles.First().Url } 
-                    : null));
+            .ForMember(dest 
+                => dest.BrandImage, opt 
+                => opt.MapFrom(src => src.BrandImageFiles.FirstOrDefault()));
+
+
+        CreateMap<List<Brand>, GetListResponse<GetListBrandByDynamicDto>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
+        
         CreateMap<IPaginate<Brand>, GetListResponse<GetListBrandByDynamicDto>>()
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
             .ReverseMap();
+
+        CreateMap<IPaginate<Brand>, List<GetListBrandByDynamicDto>>();
         
         CreateMap<Brand, CreateBrandCommand>().ReverseMap();
         CreateMap<Brand, CreatedBrandResponse>()

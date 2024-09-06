@@ -29,7 +29,6 @@
         <Folder Include="Features\ProductImageFiles\Queries\"/>
         <Folder Include="Features\ProductImageFiles\Rules\"/>
         <Folder Include="Features\Roles\Commands\" />
-        <Folder Include="Features\Users\Queries\" />
     </ItemGroup>
 
     <ItemGroup>

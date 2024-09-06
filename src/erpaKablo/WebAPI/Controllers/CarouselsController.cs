@@ -1,8 +1,12 @@
+using Application.Consts;
+using Application.CustomAttributes;
+using Application.Enums;
 using Application.Features.Carousels.Commands.Create;
 using Application.Features.Carousels.Commands.Update;
 using Application.Features.Carousels.Queries.GetCarousel;
 using Core.Application.Requests;
 using Core.Application.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +24,8 @@ namespace WebAPI.Controllers
         }
         
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Create Carousel", Menu = AuthorizeDefinitionConstants.Carousels)]
         public async Task<IActionResult> Add([FromForm] CreateCarouselCommand createCarouselCommand)
         {
             CreatedCarouselResponse response = await Mediator.Send(createCarouselCommand);
@@ -27,6 +33,8 @@ namespace WebAPI.Controllers
         }
         
         [HttpPut]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update Carousel", Menu = AuthorizeDefinitionConstants.Carousels)]
         public async Task<IActionResult> Update([FromBody] UpdateCarouselCommand updateCarouselCommand)
         {
             UpdatedCarouselResponse response = await Mediator.Send(updateCarouselCommand);

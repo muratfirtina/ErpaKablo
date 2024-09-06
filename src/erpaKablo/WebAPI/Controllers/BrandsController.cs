@@ -1,3 +1,6 @@
+using Application.Consts;
+using Application.CustomAttributes;
+using Application.Enums;
 using Application.Features.Brands.Commands.Create;
 using Application.Features.Brands.Commands.Delete;
 using Application.Features.Brands.Commands.Update;
@@ -7,6 +10,7 @@ using Application.Features.Brands.Queries.GetList;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,12 +33,16 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Create Brand", Menu = AuthorizeDefinitionConstants.Brands)]
         public async Task<IActionResult> Add([FromForm] CreateBrandCommand createBrandCommand)
         {
             CreatedBrandResponse response = await Mediator.Send(createBrandCommand);
             return Created(uri: "", response);
         }
         [HttpDelete("{id}")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Deleting, Definition = "Delete Brand", Menu = AuthorizeDefinitionConstants.Brands)]
         public async Task<IActionResult> Delete([FromRoute] string id)
         {
             DeletedBrandResponse response = await Mediator.Send(new DeleteBrandCommand { Id = id });
@@ -45,6 +53,8 @@ namespace WebAPI.Controllers
             return BadRequest("Brand deletion failed.");
         }
         [HttpPut]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update Brand", Menu = AuthorizeDefinitionConstants.Brands)]
         public async Task<IActionResult> Update([FromBody] UpdateBrandCommand updateBrandCommand)
         {
             UpdatedBrandResponse response = await Mediator.Send(updateBrandCommand);

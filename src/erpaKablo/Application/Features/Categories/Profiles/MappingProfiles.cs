@@ -89,9 +89,6 @@ public class MappingProfiles : Profile
             .ReverseMap();
         
         CreateMap<Category, GetListCategoryByDynamicDto>();
-        CreateMap<CategoryImageFile, CategoryImageFileDto>
-            ().ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.Name))
-            .ReverseMap();
         
         CreateMap<Category, GetMainCategoriesResponse>()
             .ForMember(dest => dest.CategoryImage, opt => opt.MapFrom(src => src.CategoryImageFiles.FirstOrDefault()));

@@ -45,6 +45,11 @@ public class CartService : ICartService
                 .Include(u => u.Carts)
                 .FirstOrDefaultAsync(u => u.UserName == userName);
 
+            if (user == null)
+            {
+                throw new Exception("User not found.");
+            }
+
             var cartWithoutOrder = await _cartRepository.GetAsync(
                 predicate: c => c.UserId == user.Id && c.Order == null,
                 include: c => c.Include(c => c.Order)

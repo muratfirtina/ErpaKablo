@@ -1,3 +1,6 @@
+using Application.Consts;
+using Application.CustomAttributes;
+using Application.Enums;
 using Application.Features.Products.Commands.Create;
 using Application.Features.Products.Commands.Delete;
 using Application.Features.Products.Commands.Update;
@@ -7,6 +10,7 @@ using Application.Features.Products.Queries.GetList;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.Controllers
@@ -28,13 +32,17 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPost]
-        [Consumes("multipart/form-data")] // Bu satırı ekleyin
+        [Consumes("multipart/form-data")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Create Product", Menu = AuthorizeDefinitionConstants.Products)]
         public async Task<IActionResult> Add([FromForm] CreateProductCommand createProductCommand)
         {
             CreatedProductResponse response = await Mediator.Send(createProductCommand);
             return Created(uri: "", response);
         }
         [HttpDelete("{id}")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Deleting, Definition = "Delete Product", Menu = AuthorizeDefinitionConstants.Products)]
         public async Task<IActionResult> Delete([FromRoute] string id)
         {
             DeletedProductResponse response = await Mediator.Send(new DeleteProductCommand { Id = id });
@@ -42,6 +50,8 @@ namespace WebAPI.Controllers
         }
         [HttpPut]
         [Consumes("multipart/form-data")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update Product", Menu = AuthorizeDefinitionConstants.Products)]
         public async Task<IActionResult> Update([FromForm] UpdateProductCommand updateProductCommand)
         {
             UpdatedProductResponse response = await Mediator.Send(updateProductCommand);
@@ -56,6 +66,8 @@ namespace WebAPI.Controllers
         
         [HttpPost("multiple")]
         [Consumes("multipart/form-data")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Create Multiple Products", Menu = AuthorizeDefinitionConstants.Products)]
         public async Task<IActionResult> CreateMultiple([FromForm] CreateMultipleProductsCommand createMultipleProductsCommand)
         {
             List<CreatedProductResponse> response = await Mediator.Send(createMultipleProductsCommand);

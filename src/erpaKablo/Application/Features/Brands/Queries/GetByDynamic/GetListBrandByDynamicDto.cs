@@ -6,6 +6,6 @@ public class GetListBrandByDynamicDto
 {
     public string Id { get; set; } 
     public string Name { get; set; }
-    public BrandImageFileDto BrandImage { get; set; }
+    public BrandImageFileDto? BrandImage { get; set; }
 
 }

@@ -1,3 +1,6 @@
+using Application.Consts;
+using Application.CustomAttributes;
+using Application.Enums;
 using Application.Features.Categories.Commands.Create;
 using Application.Features.Categories.Commands.Delete;
 using Application.Features.Categories.Commands.Update;
@@ -8,6 +11,7 @@ using Application.Features.Categories.Queries.GetMainCategories;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,6 +34,8 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Create Category", Menu = AuthorizeDefinitionConstants.Categories)]
         public async Task<IActionResult> Add([FromForm] CreateCategoryCommand createCategoryCommand)
         {
             CreatedCategoryResponse response = await Mediator.Send(createCategoryCommand);
@@ -37,12 +43,16 @@ namespace WebAPI.Controllers
             return Created(uri: "", response);
         }
         [HttpDelete("{id}")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Deleting, Definition = "Delete Category", Menu = AuthorizeDefinitionConstants.Categories)]
         public async Task<IActionResult> Delete([FromRoute] string id)
         {
             DeletedCategoryResponse response = await Mediator.Send(new DeleteCategoryCommand { Id = id });
             return Ok(response);
         }
         [HttpPut]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update Category", Menu = AuthorizeDefinitionConstants.Categories)]
         public async Task<IActionResult> Update([FromForm] UpdateCategoryCommand updateCategoryCommand)
         {
             UpdatedCategoryResponse response = await Mediator.Send(updateCategoryCommand);

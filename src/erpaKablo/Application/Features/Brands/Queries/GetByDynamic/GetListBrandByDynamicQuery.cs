@@ -40,7 +40,7 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
             {
                 var allBrands = await _brandRepository.GetAllByDynamicAsync(
                     request.DynamicQuery,
-                    include: x => x.Include(c => c.BrandImageFiles),
+                    include: x => x.Include(x => x.BrandImageFiles),
                     cancellationToken: cancellationToken);
 
                 var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicDto>>(allBrands);
@@ -53,7 +53,7 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
                     request.DynamicQuery,
                     index: request.PageRequest.PageIndex,
                     size: request.PageRequest.PageSize,
-                    include: x => x.Include(c => c.BrandImageFiles),
+                    include: x => x.Include(x => x.BrandImageFiles),
                     cancellationToken: cancellationToken);
                 
                 var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicDto>>(brands);

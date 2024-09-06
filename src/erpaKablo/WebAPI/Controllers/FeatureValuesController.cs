@@ -1,3 +1,6 @@
+using Application.Consts;
+using Application.CustomAttributes;
+using Application.Enums;
 using Application.Features.FeatureValues.Commands.Create;
 using Application.Features.FeatureValues.Commands.Delete;
 using Application.Features.FeatureValues.Commands.Update;
@@ -7,6 +10,7 @@ using Application.Features.FeatureValues.Queries.GetList;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,6 +33,8 @@ namespace WebAPI.Controllers
             return Ok(response);
         }
         [HttpPost]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Create FeatureValue", Menu = AuthorizeDefinitionConstants.FeatureValues)]
         public async Task<IActionResult> Add([FromBody] CreateFeatureValueCommand createFeatureValueCommand)
         {
             CreatedFeatureValueResponse response = await Mediator.Send(createFeatureValueCommand);
@@ -36,12 +42,16 @@ namespace WebAPI.Controllers
             return Created(uri: "", response);
         }
         [HttpDelete("{id}")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Deleting, Definition = "Delete FeatureValue", Menu = AuthorizeDefinitionConstants.FeatureValues)]
         public async Task<IActionResult> Delete([FromRoute] string id)
         {
             DeletedFeatureValueResponse response = await Mediator.Send(new DeleteFeatureValueCommand { Id = id });
             return Ok(response);
         }
         [HttpPut]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update FeatureValue", Menu = AuthorizeDefinitionConstants.FeatureValues)]
         public async Task<IActionResult> Update([FromBody] UpdateFeatureValueCommand updateFeatureValueCommand)
         {
             UpdatedFeatureValueResponse response = await Mediator.Send(updateFeatureValueCommand);

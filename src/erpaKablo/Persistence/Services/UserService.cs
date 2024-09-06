@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Application.Abstraction.Helpers;
 using Application.Abstraction.Services;
 using Application.Dtos.Role;
@@ -5,10 +6,12 @@ using Application.Dtos.User;
 using Application.Exceptions;
 using Application.Repositories;
 using Core.Application.Requests;
+using Core.Persistence.Dynamic;
 using Core.Persistence.Paging;
 using Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Org.BouncyCastle.Security;
 
 namespace Persistence.Services;
@@ -80,7 +83,7 @@ public class UserService: IUserService
         {
             var userRoles = await _userManager.GetRolesAsync(user);
             await _userManager.RemoveFromRolesAsync(user, userRoles);
-            await _userManager.AddToRolesAsync(user, roles.Select(x => x.RoleName).ToList());
+            await _userManager.AddToRolesAsync(user, roles.Select(x => x.Name).ToList());
         }
     }
 
@@ -95,8 +98,8 @@ public class UserService: IUserService
             var userRoles = await _userManager.GetRolesAsync(user);
             return await _roleManager.Roles.Where(x => userRoles.Contains(x.Name)).Select(x => new RoleDto()
             {
-                RoleName = x.Name,
-                RoleId = x.Id
+                Name = x.Name,
+                Id = x.Id
             }).ToListAsync();
         }
 
@@ -120,6 +123,38 @@ public class UserService: IUserService
 
         var endpointRoles = endpoint.Roles.Select(r => r.Name).ToList();
         
-        return userRoles.Any(userRole => endpointRoles.Contains(userRole.RoleName));
+        return userRoles.Any(userRole => endpointRoles.Contains(userRole.Name));
     }
+
+    public async Task<List<AppUser>> GetAllByDynamicAsync(DynamicQuery dynamic, Expression<Func<AppUser, bool>>? predicate = null, Func<IQueryable<AppUser>, IIncludableQueryable<AppUser, object>>? include = null, int index = -1,
+        int size = -1, bool withDeleted = false, bool enableTracking = true, CancellationToken cancellationToken = default)
+    {
+        IQueryable<AppUser> queryable = Query().ToDynamic(dynamic);
+        if (!enableTracking)
+            queryable = queryable.AsNoTracking();
+        if (include != null)
+            queryable = include(queryable);
+        if (withDeleted)
+            queryable = queryable.IgnoreQueryFilters();
+        if (predicate != null)
+            queryable = queryable.Where(predicate);
+        return await queryable.ToListAsync();
+    }
+
+    public async Task<IPaginate<AppUser>> GetListByDynamicAsync(DynamicQuery dynamic, Expression<Func<AppUser, bool>>? predicate = null, Func<IQueryable<AppUser>, IIncludableQueryable<AppUser, object>>? include = null, int index = 0,
+        int size = 10, bool withDeleted = false, bool enableTracking = true, CancellationToken cancellationToken = default)
+    {
+        IQueryable<AppUser> queryable = Query().ToDynamic(dynamic);
+        if (!enableTracking)
+            queryable = queryable.AsNoTracking();
+        if (include != null)
+            queryable = include(queryable);
+        if (withDeleted)
+            queryable = queryable.IgnoreQueryFilters();
+        if (predicate != null)
+            queryable = queryable.Where(predicate);
+        return await queryable.ToPaginateAsync(index, size, from: 0, cancellationToken);
+    }
+    
+    public IQueryable<AppUser> Query() => _userManager.Users.AsQueryable();
 }

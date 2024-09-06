@@ -9,5 +9,8 @@ public class Cart: Entity<string>
     public AppUser User { get; set; }
     public Order Order { get; set; }
     public ICollection<CartItem?> CartItems { get; set; }
-
+    public Cart() : base("Cart")
+    {
+        CartItems = new List<CartItem?>();
+    }
 }
