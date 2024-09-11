@@ -5,7 +5,7 @@ namespace Application.Features.Roles.Commands.CreateRole;
 
 public class CreateRoleCommand: IRequest<CreatedRoleResponse>
 {
-    public string RoleName { get; set; }
+    public string Name { get; set; }
     
     public class CreateRoleRequestHandler: IRequestHandler<CreateRoleCommand, CreatedRoleResponse>
     {
@@ -18,7 +18,7 @@ public class CreateRoleCommand: IRequest<CreatedRoleResponse>
 
         public async Task<CreatedRoleResponse> Handle(CreateRoleCommand command, CancellationToken cancellationToken)
         {
-            var result= await _roleService.CreateRoleAsync(command.RoleName);
+            var result= await _roleService.CreateRoleAsync(command.Name);
             return new CreatedRoleResponse()
             {
                 Succeeded = result

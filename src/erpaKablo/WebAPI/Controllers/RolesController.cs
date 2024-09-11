@@ -30,7 +30,7 @@ namespace WebAPI.Controllers
         
         [HttpPost]
         //[AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Create Role", Menu = AuthorizeDefinitionConstants.Roles)]
-        public async Task<IActionResult> Create([FromBody] CreateRoleCommand createRoleCommand)
+        public async Task<IActionResult> Create([FromForm] CreateRoleCommand createRoleCommand)
         {
             CreatedRoleResponse response = await Mediator.Send(createRoleCommand);
             return Created(uri: "", response);
