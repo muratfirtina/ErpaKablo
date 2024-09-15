@@ -32,6 +32,8 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<Order> Orders { get; set; }
     public DbSet<CompletedOrder> CompletedOrders { get; set; }
     public DbSet<Carousel> Carousel { get; set; }
+    public DbSet<FilterGroup> FilterGroups { get; set; }
+    public DbSet<FilterOption> FilterOptions { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)
@@ -47,6 +49,9 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<CartItem>().HasQueryFilter(ci => !ci.DeletedDate.HasValue);
         builder.Entity<Order>().HasQueryFilter(o => !o.DeletedDate.HasValue);
         builder.Entity<CompletedOrder>().HasQueryFilter(co => !co.DeletedDate.HasValue);
+        builder.Entity<Carousel>().HasQueryFilter(c => !c.DeletedDate.HasValue);
+        builder.Entity<FilterGroup>().HasQueryFilter(fg => !fg.DeletedDate.HasValue);
+        builder.Entity<FilterOption>().HasQueryFilter(fo => !fo.DeletedDate.HasValue);
         
         builder.Entity<Order>()
             .HasIndex(o=>o.OrderCode)

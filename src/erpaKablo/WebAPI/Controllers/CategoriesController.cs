@@ -6,6 +6,7 @@ using Application.Features.Categories.Commands.Delete;
 using Application.Features.Categories.Commands.Update;
 using Application.Features.Categories.Queries.GetByDynamic;
 using Application.Features.Categories.Queries.GetById;
+using Application.Features.Categories.Queries.GetCategoriesByIds;
 using Application.Features.Categories.Queries.GetList;
 using Application.Features.Categories.Queries.GetMainCategories;
 using Core.Application.Requests;
@@ -69,6 +70,14 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetMainCategories([FromQuery] PageRequest pageRequest)
         {
             GetListResponse<GetMainCategoriesResponse> response = await Mediator.Send(new GetMainCategoiesQuery { PageRequest = pageRequest });
+            return Ok(response);
+        }
+        
+        [HttpPost("GetByIds")]
+        
+        public async Task<IActionResult> GetByIds([FromBody] List<string> ids)
+        {
+            GetListResponse<GetCategoriesByIdsQueryResponse> response = await Mediator.Send(new GetCategoriesByIdsQuery { Ids = ids });
             return Ok(response);
         }
     }

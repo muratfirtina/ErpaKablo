@@ -3,9 +3,13 @@ using Application.Features.Products.Commands.Create;
 using Application.Features.Products.Commands.Delete;
 using Application.Features.Products.Commands.Update;
 using Application.Features.Products.Dtos;
+using Application.Features.Products.Dtos.FilterDto;
 using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
+using Application.Features.Products.Queries.SearchAndFilter;
+using Application.Features.Products.Queries.SearchAndFilter.Filter;
+using Application.Features.Products.Queries.SearchAndFilter.Search;
 using AutoMapper;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -123,5 +127,26 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => 
                 src.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)));
 
+        CreateMap<Product,SearchProductQueryResponse>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => src.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)))
+            .ReverseMap();
+        
+        CreateMap<IPaginate<Product>, GetListResponse<SearchProductQueryResponse>>()
+            .ReverseMap();
+        
+        CreateMap<Product, FilterProductQueryResponse>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => src.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)))
+            .ReverseMap();
+        CreateMap<IPaginate<Product>, GetListResponse<FilterProductQueryResponse>>()
+            .ReverseMap();
+        
+        CreateMap<FilterGroup, FilterDefinitionDto>()
+            .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options.Select(o => o.Value)));
+
+        CreateMap<FilterDefinition, FilterDefinitionDto>();
     }
 }

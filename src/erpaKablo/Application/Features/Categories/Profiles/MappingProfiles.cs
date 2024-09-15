@@ -4,6 +4,7 @@ using Application.Features.Categories.Commands.Update;
 using Application.Features.Categories.Dtos;
 using Application.Features.Categories.Queries.GetByDynamic;
 using Application.Features.Categories.Queries.GetById;
+using Application.Features.Categories.Queries.GetCategoriesByIds;
 using Application.Features.Categories.Queries.GetList;
 using Application.Features.Categories.Queries.GetMainCategories;
 using Application.Features.Features.Commands.Create;
@@ -99,6 +100,19 @@ public class MappingProfiles : Profile
         CreateMap<IPaginate<Category>, GetListResponse<GetMainCategoriesResponse>>()
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
             .ReverseMap();
+        
+        CreateMap<List<Category>, GetListResponse<GetCategoriesByIdsQueryResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src))
+            .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.Count))
+            .ForMember(dest => dest.Pages, opt => opt.MapFrom(src => 1))
+            .ForMember(dest => dest.Index, opt => opt.MapFrom(src => 0))
+            .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.Count))
+            .ForMember(dest => dest.HasNext, opt => opt.MapFrom(src => false))
+            .ForMember(dest => dest.HasPrevious, opt => opt.MapFrom(src => false));
+
+        CreateMap<Category, GetCategoriesByIdsQueryResponse>()
+            .ForMember(dest => dest.CategoryImage, opt => opt.MapFrom(src => src.CategoryImageFiles.FirstOrDefault()))
+            .ForMember(dest => dest.SubCategories, opt => opt.MapFrom(src => src.SubCategories));
     }
     
 }

@@ -4,9 +4,14 @@ using Application.Enums;
 using Application.Features.Products.Commands.Create;
 using Application.Features.Products.Commands.Delete;
 using Application.Features.Products.Commands.Update;
+using Application.Features.Products.Dtos.FilterDto;
 using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
+using Application.Features.Products.Queries.SearchAndFilter;
+using Application.Features.Products.Queries.SearchAndFilter.Filter;
+using Application.Features.Products.Queries.SearchAndFilter.Filter.GetAvailableFilter;
+using Application.Features.Products.Queries.SearchAndFilter.Search;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -79,6 +84,32 @@ namespace WebAPI.Controllers
         {
             var products = await Mediator.Send(new GetRandomProductsByCategoryQuery { CategoryId = categoryId, Count = count });
             return Ok(products);
+        }
+        
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string searchTerm, [FromQuery] PageRequest pageRequest)
+        {
+            GetListResponse<SearchProductQueryResponse> response = await Mediator.Send(new SearchProductQuery { SearchTerm = searchTerm, PageRequest = pageRequest });
+            return Ok(response);
+        }
+        
+        [HttpPost("filter")]
+        public async Task<IActionResult> Filter([FromQuery] PageRequest pageRequest, [FromBody] FilterProductQuery filterQuery)
+        {
+            var request = new FilterProductWithPaginationQuery
+            {
+                SearchTerm = filterQuery.SearchTerm,
+                Filters = filterQuery.Filters,
+                PageRequest = pageRequest
+            };
+            GetListResponse<FilterProductQueryResponse> response = await Mediator.Send(request);
+            return Ok(response);
+        }
+        
+        [HttpGet("filters")]
+        public async Task<ActionResult<List<FilterDefinitionDto>>> GetAvailableFilters()
+        {
+            return Ok(await Mediator.Send(new GetAvailableFiltersQuery()));
         }
     }
 }

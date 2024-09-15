@@ -4,6 +4,7 @@ using Application.Enums;
 using Application.Features.Brands.Commands.Create;
 using Application.Features.Brands.Commands.Delete;
 using Application.Features.Brands.Commands.Update;
+using Application.Features.Brands.Queries.GetBrandsByIds;
 using Application.Features.Brands.Queries.GetByDynamic;
 using Application.Features.Brands.Queries.GetById;
 using Application.Features.Brands.Queries.GetList;
@@ -65,6 +66,14 @@ namespace WebAPI.Controllers
         {
             GetListBrandByDynamicQuery query = new GetListBrandByDynamicQuery { PageRequest = pageRequest, DynamicQuery = dynamicQuery };
             GetListResponse<GetListBrandByDynamicDto> response = await Mediator.Send(query);
+            return Ok(response);
+        }
+        
+        [HttpPost("GetByIds")]
+        
+        public async Task<IActionResult> GetByIds([FromBody] List<string> ids)
+        {
+            GetListResponse<GetBrandsByIdsQueryResponse> response = await Mediator.Send(new GetBrandsByIdsQuery { Ids = ids });
             return Ok(response);
         }
     }

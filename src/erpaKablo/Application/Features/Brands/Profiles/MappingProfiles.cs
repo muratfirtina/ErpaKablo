@@ -2,6 +2,7 @@ using Application.Features.Brands.Commands.Create;
 using Application.Features.Brands.Commands.Delete;
 using Application.Features.Brands.Commands.Update;
 using Application.Features.Brands.Dtos;
+using Application.Features.Brands.Queries.GetBrandsByIds;
 using Application.Features.Brands.Queries.GetByDynamic;
 using Application.Features.Brands.Queries.GetById;
 using Application.Features.Brands.Queries.GetList;
@@ -64,5 +65,12 @@ public class MappingProfiles : Profile
         CreateMap<BrandImageFile, BrandImageFileDto>()
             .ForMember(dest => dest.FileName, opt => opt.MapFrom(src => src.Name))
             .ReverseMap();
+        
+        CreateMap<List<Brand>, GetListResponse<GetBrandsByIdsQueryResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
+
+        CreateMap<Brand, GetBrandsByIdsQueryResponse>()
+            .ForMember(dest => dest.BrandImage, opt => opt.MapFrom(src => src.BrandImageFiles.FirstOrDefault()));
+
     }
 }
