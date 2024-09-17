@@ -5,9 +5,9 @@ using MediatR;
 
 namespace Application.Features.Products.Queries.SearchAndFilter.Filter.GetAvailableFilter;
 
-public class GetAvailableFiltersQuery : IRequest<List<FilterDefinitionDto>> { }
+public class GetAvailableFiltersQuery : IRequest<List<FilterGroupDto>> { }
 
-public class GetAvailableFiltersQueryHandler : IRequestHandler<GetAvailableFiltersQuery, List<FilterDefinitionDto>>
+public class GetAvailableFiltersQueryHandler : IRequestHandler<GetAvailableFiltersQuery, List<FilterGroupDto>>
 {
     private readonly IProductRepository _productRepository;
     private readonly IMapper _mapper;
@@ -18,9 +18,9 @@ public class GetAvailableFiltersQueryHandler : IRequestHandler<GetAvailableFilte
         _mapper = mapper;
     }
 
-    public async Task<List<FilterDefinitionDto>> Handle(GetAvailableFiltersQuery request, CancellationToken cancellationToken)
+    public async Task<List<FilterGroupDto>> Handle(GetAvailableFiltersQuery request, CancellationToken cancellationToken)
     {
         var filters = await _productRepository.GetAvailableFilters();
-        return _mapper.Map<List<FilterDefinitionDto>>(filters);
+        return _mapper.Map<List<FilterGroupDto>>(filters);
     }
 }

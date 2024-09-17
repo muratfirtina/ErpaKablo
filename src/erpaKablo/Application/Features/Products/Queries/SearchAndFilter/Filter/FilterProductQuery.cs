@@ -15,6 +15,7 @@ public class FilterProductWithPaginationQuery : IRequest<GetListResponse<FilterP
     public string SearchTerm { get; set; }
     public PageRequest PageRequest { get; set; }
     public Dictionary<string, List<string>> Filters { get; set; }
+    public string SortOrder { get; set; }  = "default";
 
     public class FilterProductQueryHandler : IRequestHandler<FilterProductWithPaginationQuery, GetListResponse<FilterProductQueryResponse>>
     {
@@ -34,7 +35,8 @@ public class FilterProductWithPaginationQuery : IRequest<GetListResponse<FilterP
             IPaginate<Product> products = await _productRepository.FilterProductsAsync(
                 request.SearchTerm, 
                 request.Filters, 
-                request.PageRequest
+                request.PageRequest,
+                request.SortOrder
             );
             GetListResponse<FilterProductQueryResponse> response = _mapper.Map<GetListResponse<FilterProductQueryResponse>>(products);
             
@@ -72,4 +74,5 @@ public class FilterProductQuery : IRequest<GetListResponse<FilterProductQueryRes
 {
     public string SearchTerm { get; set; }
     public Dictionary<string, List<string>> Filters { get; set; }
+    public string SortOrder { get; set; } = "default";
 }

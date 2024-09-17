@@ -17,7 +17,7 @@ public interface IProductRepository : IAsyncRepository<Product, string>, IReposi
     //bir sözcük veya kelimeyi içeren ürünleri pagination ile getirir
     Task<IPaginate<Product>> SearchProductsAsync(string searchTerm, int pageIndex, int pageSize);
     
-    Task<IPaginate<Product>> FilterProductsAsync(string searchTerm,Dictionary<string, List<string>> filters, PageRequest pageRequest);
-    Task<List<FilterDefinition>> GetAvailableFilters(string searchTerm = null);
+    Task<IPaginate<Product>> FilterProductsAsync(string searchTerm,Dictionary<string, List<string>> filters, PageRequest pageRequest,string sortOrder);
+    Task<List<FilterGroup>> GetAvailableFilters(string searchTerm = null);
 
 }

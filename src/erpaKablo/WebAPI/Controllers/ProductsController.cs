@@ -100,16 +100,18 @@ namespace WebAPI.Controllers
             {
                 SearchTerm = filterQuery.SearchTerm,
                 Filters = filterQuery.Filters,
-                PageRequest = pageRequest
+                PageRequest = pageRequest,
+                SortOrder = filterQuery.SortOrder ?? "default"
             };
             GetListResponse<FilterProductQueryResponse> response = await Mediator.Send(request);
             return Ok(response);
         }
         
         [HttpGet("filters")]
-        public async Task<ActionResult<List<FilterDefinitionDto>>> GetAvailableFilters()
+        public async Task<ActionResult<List<FilterGroupDto>>> GetAvailableFilters()
         {
-            return Ok(await Mediator.Send(new GetAvailableFiltersQuery()));
+            List<FilterGroupDto> filters = await Mediator.Send(new GetAvailableFiltersQuery());
+            return Ok(filters);
         }
     }
 }

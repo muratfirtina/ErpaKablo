@@ -144,9 +144,12 @@ public class MappingProfiles : Profile
         CreateMap<IPaginate<Product>, GetListResponse<FilterProductQueryResponse>>()
             .ReverseMap();
         
-        CreateMap<FilterGroup, FilterDefinitionDto>()
-            .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options.Select(o => o.Value)));
-
-        CreateMap<FilterDefinition, FilterDefinitionDto>();
+        CreateMap<FilterGroup, FilterGroupDto>()
+            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.DisplayName))
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
+            .ForMember(dest => dest.Key, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options))
+            .ReverseMap();
+        
     }
 }
