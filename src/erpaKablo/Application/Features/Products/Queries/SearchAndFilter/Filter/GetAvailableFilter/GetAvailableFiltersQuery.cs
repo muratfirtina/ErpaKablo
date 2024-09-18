@@ -5,7 +5,10 @@ using MediatR;
 
 namespace Application.Features.Products.Queries.SearchAndFilter.Filter.GetAvailableFilter;
 
-public class GetAvailableFiltersQuery : IRequest<List<FilterGroupDto>> { }
+public class GetAvailableFiltersQuery : IRequest<List<FilterGroupDto>>
+{
+    public string SearchTerm { get; set; }
+}
 
 public class GetAvailableFiltersQueryHandler : IRequestHandler<GetAvailableFiltersQuery, List<FilterGroupDto>>
 {
@@ -20,7 +23,7 @@ public class GetAvailableFiltersQueryHandler : IRequestHandler<GetAvailableFilte
 
     public async Task<List<FilterGroupDto>> Handle(GetAvailableFiltersQuery request, CancellationToken cancellationToken)
     {
-        var filters = await _productRepository.GetAvailableFilters();
+        var filters = await _productRepository.GetAvailableFilters(request.SearchTerm);
         return _mapper.Map<List<FilterGroupDto>>(filters);
     }
 }

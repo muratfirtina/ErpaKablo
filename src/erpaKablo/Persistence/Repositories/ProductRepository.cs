@@ -77,15 +77,14 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
             foreach (var term in terms)
             {
                 var termParam = term.ToLower();
-                query = query.Where(p => 
+                query = query.Where(p =>
                     EF.Functions.Like(p.Name.ToLower(), $"%{termParam}%") ||
                     EF.Functions.Like(p.Description.ToLower(), $"%{termParam}%") ||
                     EF.Functions.Like(p.Title.ToLower(), $"%{termParam}%") ||
                     EF.Functions.Like(p.Brand.Name.ToLower(), $"%{termParam}%") ||
                     EF.Functions.Like(p.Category.Name.ToLower(), $"%{termParam}%") ||
-                    p.ProductFeatureValues.Any(pfv => 
+                    p.ProductFeatureValues.Any(pfv =>
                         EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{termParam}%"))
-                
                 );
             }
         }
@@ -102,135 +101,165 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
         return await query.ToPaginateAsync(pageIndex, pageSize);
     }
 
-    public async Task<IPaginate<Product>> FilterProductsAsync(string searchTerm, Dictionary<string, List<string>> filters, PageRequest pageRequest, string sortOrder)
-{
-    var query = Context.Products
-        .Include(p => p.Brand)
-        .Include(p => p.Category)
-        .Include(p => p.ProductImageFiles)
-        .Include(p => p.ProductFeatureValues)
+    public async Task<IPaginate<Product>> FilterProductsAsync(string searchTerm,
+        Dictionary<string, List<string>> filters, PageRequest pageRequest, string sortOrder)
+    {
+        var query = Context.Products
+            .Include(p => p.Brand)
+            .Include(p => p.Category)
+            .Include(p => p.ProductImageFiles)
+            .Include(p => p.ProductFeatureValues)
             .ThenInclude(pfv => pfv.FeatureValue)
-                .ThenInclude(fv => fv.Feature)
-        .AsQueryable();
-
-    if (!string.IsNullOrWhiteSpace(searchTerm))
-    {
-        var terms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        foreach (var term in terms)
-        {
-            var termParam = term.ToLower();
-            query = query.Where(p => 
-                EF.Functions.Like(p.Name.ToLower(), $"%{termParam}%") ||
-                EF.Functions.Like(p.Description.ToLower(), $"%{termParam}%") ||
-                EF.Functions.Like(p.Title.ToLower(), $"%{termParam}%") ||
-                EF.Functions.Like(p.Brand.Name.ToLower(), $"%{termParam}%") ||
-                EF.Functions.Like(p.Category.Name.ToLower(), $"%{termParam}%") ||
-                p.ProductFeatureValues.Any(pfv => 
-                    EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{termParam}%"))
-                
-            );
-        }
-    }
-
-    foreach (var filter in filters.Where(f => f.Value.Count > 0))
-    {
-        switch (filter.Key)
-        {
-            case "Brand":
-                query = query.Where(p => filter.Value.Contains(p.Brand.Name));
-                break;
-            case "Price":
-                if (filter.Value.Count > 0 && !string.IsNullOrWhiteSpace(filter.Value[0]))
-                {
-                    var priceRange = filter.Value[0].Split('-');
-                    if (priceRange.Length == 2)
-                    {
-                        if (decimal.TryParse(priceRange[0], out decimal minPrice) && minPrice > 0)
-                        {
-                            query = query.Where(p => p.Price >= minPrice);
-                        }
-
-                        if (decimal.TryParse(priceRange[1], out decimal maxPrice) && maxPrice > 0)
-                        {
-                            query = query.Where(p => p.Price <= maxPrice);
-                        }
-                    }
-                }
-                break;
-            default:
-                query = query.Where(p => p.ProductFeatureValues.Any(pfv => 
-                    pfv.FeatureValue.Feature.Name == filter.Key && 
-                    filter.Value.Contains(pfv.FeatureValue.Name)));
-                break;
-        }
-    }
-
-    query = query.OrderByDescending(p => p.CreatedDate);
-    
-    switch (sortOrder)
-    {
-        case "price_asc":
-            query = query.OrderBy(p => p.Price);
-            break;
-        case "price_desc":
-            query = query.OrderByDescending(p => p.Price);
-            break;
-        default:
-            query = query.OrderByDescending(p => p.CreatedDate);
-            break;
-    }
-
-    var result = await query.ToPaginateAsync(pageRequest.PageIndex, pageRequest.PageSize);
-
-    if (result.Items.Count == 0)
-    {
-        Console.WriteLine($"No results found for searchTerm: {searchTerm}, filters: {string.Join(", ", filters.Select(f => $"{f.Key}:[{string.Join(",", f.Value)}]"))}");
-    }
-
-    return result;
-}
-
-    public async Task<List<FilterGroup>> GetAvailableFilters(string searchTerm = null)
-    {
-        var filterDefinitions = new List<FilterGroup>();
-
-        IQueryable<Product> productsQuery = Context.Products;
+            .ThenInclude(fv => fv.Feature)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            productsQuery = productsQuery.Where(p =>
-                EF.Functions.Like(p.Name, $"%{searchTerm}%") ||
-                EF.Functions.Like(p.Description, $"%{searchTerm}%") ||
-                EF.Functions.Like(p.Title, $"%{searchTerm}%"));
+            query = query.Where(p =>
+                EF.Functions.Like(p.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                EF.Functions.Like(p.Description.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                EF.Functions.Like(p.Title.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                EF.Functions.Like(p.Brand.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                EF.Functions.Like(p.Category.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                p.ProductFeatureValues.Any(pfv =>
+                    EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{searchTerm.ToLower()}%"))
+            );
         }
 
-        var products = await productsQuery
+        foreach (var filter in filters)
+        {
+            if (filter.Value.Count > 0)
+            {
+                switch (filter.Key)
+                {
+                    case "Brand":
+                        query = query.Where(p => filter.Value.Contains(p.Brand.Id));
+                        break;
+                    case "Category":
+                        query = query.Where(p => filter.Value.Contains(p.Category.Id));
+                        break;
+                    case "Price":
+                        if (filter.Value.Count > 0 && !string.IsNullOrWhiteSpace(filter.Value[0]))
+                        {
+                            var priceRange = filter.Value[0].Split('-');
+                            if (priceRange.Length == 2)
+                            {
+                                if (decimal.TryParse(priceRange[0], out decimal minPrice))
+                                {
+                                    query = query.Where(p => p.Price >= minPrice);
+                                }
+
+                                if (decimal.TryParse(priceRange[1], out decimal maxPrice))
+                                {
+                                    query = query.Where(p => p.Price <= maxPrice);
+                                }
+                            }
+                        }
+
+                        break;
+                    default:
+                        query = query.Where(p => p.ProductFeatureValues.Any(pfv =>
+                            pfv.FeatureValue.Feature.Name == filter.Key &&
+                            filter.Value.Contains(pfv.FeatureValue.Id)));
+                        break;
+                }
+            }
+        }
+
+        // Sıralama
+        switch (sortOrder)
+        {
+            case "price_asc":
+                query = query.OrderBy(p => p.Price);
+                break;
+            case "price_desc":
+                query = query.OrderByDescending(p => p.Price);
+                break;
+            default:
+                query = query.OrderByDescending(p => p.CreatedDate);
+                break;
+        }
+
+        return await query.ToPaginateAsync(pageRequest.PageIndex, pageRequest.PageSize);
+    }
+
+    public async Task<List<FilterGroup>> GetAvailableFilters(string searchTerm)
+    {
+        var filterDefinitions = new List<FilterGroup>();
+
+        IQueryable<Product> productsQuery = Context.Products
             .Include(p => p.Brand)
             .Include(p => p.Category)
             .Include(p => p.ProductFeatureValues)
             .ThenInclude(pfv => pfv.FeatureValue)
-            .ThenInclude(fv => fv.Feature)
-            .ToListAsync();
+            .ThenInclude(fv => fv.Feature);
 
-        var brands = products.Select(p => p.Brand.Name).Distinct().ToList();
-        filterDefinitions.Add(new FilterGroup
+        if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            Name = "Brand",
-            DisplayName = "Marka",
-            Type = FilterType.Checkbox,
-            Options = brands.Select(b => new FilterOption
+            var category = await Context.Categories.FirstOrDefaultAsync(c => c.Id == searchTerm);
+            if (category != null)
             {
-                Value = b,
-                DisplayValue = b
-            }).ToList()
-        });
+                productsQuery = productsQuery.Where(p =>
+                    p.CategoryId == category.Id || p.Category.ParentCategoryId == category.Id);
+            }
+            else
+            {
+                productsQuery = productsQuery.Where(p =>
+                    EF.Functions.Like(p.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                    EF.Functions.Like(p.Description.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                    EF.Functions.Like(p.Title.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                    EF.Functions.Like(p.Brand.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                    EF.Functions.Like(p.Category.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                    p.ProductFeatureValues.Any(pfv =>
+                        EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{searchTerm.ToLower()}%"))
+                );
+            }
+        }
 
+        var products = await productsQuery.ToListAsync();
+
+        // Kategori filtresi
+        var categories = products.Select(p => p.Category).Where(c => c != null).DistinctBy(c => c.Id).ToList();
+        if (categories.Any())
+        {
+            filterDefinitions.Add(new FilterGroup
+            {
+                Name = "Category",
+                DisplayName = "Kategori",
+                Type = FilterType.Checkbox,
+                Options = categories.Select(c => new FilterOption
+                {
+                    Value = c.Id,
+                    DisplayValue = c.Name
+                }).ToList()
+            });
+        }
+
+        // Marka filtresi
+        var brands = products.Select(p => p.Brand).Where(b => b != null).DistinctBy(b => b.Id).ToList();
+        if (brands.Any())
+        {
+            filterDefinitions.Add(new FilterGroup
+            {
+                Name = "Brand",
+                DisplayName = "Marka",
+                Type = FilterType.Checkbox,
+                Options = brands.Select(b => new FilterOption
+                {
+                    Value = b.Id,
+                    DisplayValue = b.Name
+                }).ToList()
+            });
+        }
+
+        // Özellik filtreleri
         var features = products
             .SelectMany(p => p.ProductFeatureValues)
+            .Where(pfv => pfv.FeatureValue != null && pfv.FeatureValue.Feature != null)
             .GroupBy(pfv => pfv.FeatureValue.Feature.Name)
             .ToDictionary(
                 g => g.Key,
-                g => g.Select(pfv => pfv.FeatureValue.Name).Distinct().ToList()
+                g => g.Select(pfv => pfv.FeatureValue).DistinctBy(fv => fv.Id).ToList()
             );
 
         foreach (var feature in features)
@@ -240,38 +269,58 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
                 Name = feature.Key,
                 DisplayName = feature.Key,
                 Type = FilterType.Checkbox,
-                Options = feature.Value.Select(f => new FilterOption
+                Options = feature.Value.Select(fv => new FilterOption
                 {
-                    Value = f,
-                    DisplayValue = f
+                    Value = fv.Id,
+                    DisplayValue = fv.Name
                 }).ToList()
             });
         }
 
-        var minPrice = products.Min(p => p.Price);
-        var maxPrice = products.Max(p => p.Price);
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
+        // Fiyat filtresi
+        var prices = products.Select(p => p.Price).Where(price => price.HasValue).ToList();
+        if (prices.Any())
         {
-            var maxPriceFromSearch = productsQuery.Max(p => p.Price);
-            maxPrice = Math.Max((decimal)maxPrice, (decimal)maxPriceFromSearch);
+            var minPrice = prices.Min();
+            var maxPrice = prices.Max();
+
+            if (minPrice.HasValue && maxPrice.HasValue)
+            {
+                filterDefinitions.Add(new FilterGroup
+                {
+                    Name = "Price",
+                    DisplayName = "Fiyat",
+                    Type = FilterType.Range,
+                    Options = GeneratePriceRanges(minPrice.Value, maxPrice.Value, 7).Select(r => new FilterOption
+                    {
+                        Value = $"{r.start}-{r.end}",
+                        DisplayValue = $"{r.start:C0} - {r.end:C0}"
+                    }).ToList()
+                });
+            }
         }
 
-        var priceRanges = GeneratePriceRanges(minPrice, maxPrice, 7);
-
-        filterDefinitions.Add(new FilterGroup
-        {
-            Name = "Price",
-            DisplayName = "Fiyat",
-            Type = FilterType.Range,
-            Options = priceRanges.Select(r => new FilterOption
-            {
-                Value = $"{r.Item1}-{r.Item2}",
-                DisplayValue = $"{r.Item1:C0} - {r.Item2:C0}"
-            }).ToList()
-        });
-
         return filterDefinitions;
+    }
+
+    private List<(decimal start, decimal end)> GeneratePriceRanges(decimal minPrice, decimal maxPrice, int steps)
+    {
+        var ranges = new List<(decimal start, decimal end)>();
+        if (minPrice >= maxPrice)
+        {
+            ranges.Add((minPrice, maxPrice));
+            return ranges;
+        }
+
+        var step = (maxPrice - minPrice) / steps;
+        for (int i = 0; i < steps; i++)
+        {
+            var start = minPrice + (step * i);
+            var end = (i == steps - 1) ? maxPrice : minPrice + (step * (i + 1));
+            ranges.Add((Math.Floor(start), Math.Ceiling(end)));
+        }
+
+        return ranges;
     }
 
     private List<(decimal? start, decimal? end)> GeneratePriceRanges(decimal? minPrice, decimal? maxPrice, int steps)

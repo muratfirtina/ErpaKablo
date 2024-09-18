@@ -108,9 +108,9 @@ namespace WebAPI.Controllers
         }
         
         [HttpGet("filters")]
-        public async Task<ActionResult<List<FilterGroupDto>>> GetAvailableFilters()
+        public async Task<ActionResult<List<FilterGroupDto>>> GetAvailableFilters([FromQuery] string searchTerm)
         {
-            List<FilterGroupDto> filters = await Mediator.Send(new GetAvailableFiltersQuery());
+            List<FilterGroupDto> filters = await Mediator.Send(new GetAvailableFiltersQuery { SearchTerm = searchTerm });
             return Ok(filters);
         }
     }
