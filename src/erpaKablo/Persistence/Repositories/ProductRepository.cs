@@ -55,10 +55,8 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
         await Context.SaveChangesAsync();
     }
 
-
     public async Task<ProductImageFile?> GetProductImage(string productId)
     {
-        //burada gelen product id ye göre productimagefile tablosundan product id ye göre productimagefile getirilecek.
         var query = Context.Products
             .Where(p => p.Id == productId)
             .SelectMany(p => p.ProductImageFiles)
@@ -136,7 +134,8 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
                         query = query.Where(p => filter.Value.Contains(p.Brand.Id));
                         break;
                     case "Category":
-                        query = query.Where(p => filter.Value.Contains(p.Category.Id));
+                        var allCategoryIds = await GetAllSubcategoryIds(filter.Value);
+                        query = query.Where(p => allCategoryIds.Contains(p.CategoryId));
                         break;
                     case "Price":
                         if (filter.Value.Count > 0 && !string.IsNullOrWhiteSpace(filter.Value[0]))
@@ -155,7 +154,6 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
                                 }
                             }
                         }
-
                         break;
                     default:
                         query = query.Where(p => p.ProductFeatureValues.Any(pfv =>
@@ -166,7 +164,6 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
             }
         }
 
-        // Sıralama
         switch (sortOrder)
         {
             case "price_asc":
@@ -199,8 +196,8 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
             var category = await Context.Categories.FirstOrDefaultAsync(c => c.Id == searchTerm);
             if (category != null)
             {
-                productsQuery = productsQuery.Where(p =>
-                    p.CategoryId == category.Id || p.Category.ParentCategoryId == category.Id);
+                var allSubcategoryIds = await GetAllSubcategoryIds(new List<string> { category.Id });
+                productsQuery = productsQuery.Where(p => allSubcategoryIds.Contains(p.CategoryId));
             }
             else
             {
@@ -218,24 +215,21 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
 
         var products = await productsQuery.ToListAsync();
 
-        // Kategori filtresi
-        var categories = products.Select(p => p.Category).Where(c => c != null).DistinctBy(c => c.Id).ToList();
-        if (categories.Any())
+        var categoryIds = products.Select(p => p.CategoryId).Distinct().ToList();
+        var allRelevantCategories = await GetAllRelevantCategories(categoryIds);
+        var categoryTree = BuildCategoryTree(allRelevantCategories);
+
+        if (categoryTree.Any())
         {
             filterDefinitions.Add(new FilterGroup
             {
                 Name = "Category",
                 DisplayName = "Kategori",
                 Type = FilterType.Checkbox,
-                Options = categories.Select(c => new FilterOption
-                {
-                    Value = c.Id,
-                    DisplayValue = c.Name
-                }).ToList()
+                Options = GetCategoryOptions(categoryTree)
             });
         }
 
-        // Marka filtresi
         var brands = products.Select(p => p.Brand).Where(b => b != null).DistinctBy(b => b.Id).ToList();
         if (brands.Any())
         {
@@ -252,7 +246,6 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
             });
         }
 
-        // Özellik filtreleri
         var features = products
             .SelectMany(p => p.ProductFeatureValues)
             .Where(pfv => pfv.FeatureValue != null && pfv.FeatureValue.Feature != null)
@@ -277,7 +270,6 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
             });
         }
 
-        // Fiyat filtresi
         var prices = products.Select(p => p.Price).Where(price => price.HasValue).ToList();
         if (prices.Any())
         {
@@ -322,23 +314,113 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
 
         return ranges;
     }
-
-    private List<(decimal? start, decimal? end)> GeneratePriceRanges(decimal? minPrice, decimal? maxPrice, int steps)
+    
+    private async Task<List<string>> GetAllSubcategoryIds(List<string> categoryIds)
     {
-        var ranges = new List<(decimal? start, decimal? end)>();
-        var step = (maxPrice - minPrice) / steps;
+        var allSubcategories = new HashSet<string>(categoryIds);
+        var queue = new Queue<string>(categoryIds);
 
-        for (int i = 0; i < steps; i++)
+        while (queue.Count > 0)
         {
-            var start = minPrice + (step * i);
-            var end = (i == steps - 1) ? maxPrice : minPrice + (step * (i + 1));
+            var currentId = queue.Dequeue();
+            var subcategories = await Context.Categories
+                .Where(c => c.ParentCategoryId == currentId)
+                .Select(c => c.Id)
+                .ToListAsync();
 
-            start = Math.Floor((decimal)start);
-            end = Math.Ceiling((decimal)end);
-
-            ranges.Add((start, end));
+            foreach (var subcategoryId in subcategories)
+            {
+                if (allSubcategories.Add(subcategoryId))
+                {
+                    queue.Enqueue(subcategoryId);
+                }
+            }
         }
 
-        return ranges;
+        return allSubcategories.ToList();
+    }
+
+    private async Task<List<Category>> GetAllRelevantCategories(List<string> categoryIds)
+    {
+        var relevantCategoryIds = new HashSet<string>(categoryIds);
+        var categoriesToProcess = new Queue<string>(categoryIds);
+
+        while (categoriesToProcess.Count > 0)
+        {
+            var currentId = categoriesToProcess.Dequeue();
+            var category = await Context.Categories
+                .FirstOrDefaultAsync(c => c.Id == currentId);
+
+            if (category != null)
+            {
+                if (category.ParentCategoryId != null && relevantCategoryIds.Add(category.ParentCategoryId))
+                {
+                    categoriesToProcess.Enqueue(category.ParentCategoryId);
+                }
+
+                var childCategories = await Context.Categories
+                    .Where(c => c.ParentCategoryId == currentId)
+                    .Select(c => c.Id)
+                    .ToListAsync();
+
+                foreach (var childId in childCategories)
+                {
+                    if (relevantCategoryIds.Add(childId))
+                    {
+                        categoriesToProcess.Enqueue(childId);
+                    }
+                }
+            }
+        }
+
+        return await Context.Categories
+            .Where(c => relevantCategoryIds.Contains(c.Id))
+            .ToListAsync();
+    }
+
+    private List<Category> BuildCategoryTree(List<Category> allCategories)
+    {
+        var lookup = allCategories.ToLookup(c => c.ParentCategoryId);
+    
+        void AddSubCategories(Category category)
+        {
+            category.SubCategories = lookup[category.Id].ToList();
+            foreach (var subCategory in category.SubCategories)
+            {
+                AddSubCategories(subCategory);
+            }
+        }
+
+        var rootCategories = lookup[null].ToList();
+        foreach (var rootCategory in rootCategories)
+        {
+            AddSubCategories(rootCategory);
+        }
+
+        return rootCategories;
+    }
+
+    private List<FilterOption> GetCategoryOptions(ICollection<Category> categories, string parentPath = "")
+    {
+        var options = new List<FilterOption>();
+
+        foreach (var category in categories)
+        {
+            var currentPath = string.IsNullOrEmpty(parentPath) ? category.Name : $"{parentPath} > {category.Name}";
+        
+            options.Add(new FilterOption
+            {
+                Value = category.Id,
+                DisplayValue = currentPath,
+                ParentId = category.ParentCategoryId
+            });
+
+            if (category.SubCategories != null && category.SubCategories.Any())
+            {
+                options.AddRange(GetCategoryOptions(category.SubCategories, currentPath));
+            }
+        }
+
+        return options;
     }
 }
