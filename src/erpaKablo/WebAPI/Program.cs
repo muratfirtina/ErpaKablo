@@ -16,6 +16,7 @@ using Persistence;
 using Persistence.Services;
 using Serilog.Context;
 using WebAPI;
+using WebAPI.Extensions;
 using WebAPI.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -92,11 +93,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.Use(async (context, next) =>
-{
-    var username = context.User?.Identity?.IsAuthenticated != null || true ? context.User.Identity.Name : null;
-    LogContext.PushProperty("user_name", username);
-    await next();
-});
+
+app.AddUserNameLogging();
+
 app.MapControllers();
 app.Run();

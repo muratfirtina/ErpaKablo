@@ -1,4 +1,4 @@
-using Application.Features.AuthorizationEndpoint.AssignRoleToEndpoint;
+using Application.Features.AuthorizationEndpoint.Commands.AssignRoleToEndpoint;
 using Application.Features.AuthorizationEndpoint.Queries.GetRolesToEndpoint;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

@@ -107,6 +107,18 @@
       <_ContentIncludedByDefault Remove="wwwroot\products\camper-erkek-ayakkabi-8994-d32d200228304a14\camper-pelotas-siyah2-20240819185524.jpg" />
       <_ContentIncludedByDefault Remove="wwwroot\products\camper-erkek-ayakkabi-8994-d32d200228304a14\camper-pelotas-siyah3-20240819185525.jpg" />
       <_ContentIncludedByDefault Remove="wwwroot\products\camper-erkek-ayakkabi-8994-d32d200228304a14\camper-pelotas-siyah4-20240819185527.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\brands\camper-894ce27d1d064566\camper-logo-20240820102317.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\brands\ziya-10f55a4234304584\ayakkabi-logo-20240912100809.jpeg" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\abrasives-46ab952225e94396\abrasives-20240821084859.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\adhesives-75a59b59e7ac4fdc\adhesives-20240821084932.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\ayakkabi-f78565301d2c4700\ayakkabi-logo-20240820142305.jpeg" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\bearings-ab60bed0a8e54499\bearings-20240821085454.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\cuttingtools-1cd3481dc5ff469a\cuttingtools-20240821085827.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\electrical-automation-d20111abe2944eb6\electricalautomation-20240821101055.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\facilities-maintenance-977ef07c548f45d7\facilitiesmaintenance-20240821101146.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\hose-0dbfc681e1ab435b\hose-20240821101220.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\hydraulics-9a1175b1881d45d9\hydraulicsl1-20240821101251.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\janitorial-a95da623936344ca\janitorial-20240821101338.avif" />
     </ItemGroup>
 
 </Project>

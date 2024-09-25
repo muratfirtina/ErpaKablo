@@ -2,7 +2,7 @@ using Application.Abstraction.Services;
 using Application.Dtos.Role;
 using MediatR;
 
-namespace Application.Features.AuthorizationEndpoint.AssignRoleToEndpoint;
+namespace Application.Features.AuthorizationEndpoint.Commands.AssignRoleToEndpoint;
 
 public class AssignRoleToEndpointRequest: IRequest<AssignRoleToEndpointResponse>
 {

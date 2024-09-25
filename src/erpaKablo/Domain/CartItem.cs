@@ -11,4 +11,9 @@ public class CartItem: Entity<string>
     public int Quantity { get; set; }
     public bool IsChecked { get; set; }
     public ICollection<ProductImageFile> ProductImageFiles { get; set; }
+    
+    public CartItem() : base("CartItem")
+    {
+        ProductImageFiles = new List<ProductImageFile>();
+    }
 }

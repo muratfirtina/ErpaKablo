@@ -30,10 +30,15 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<CompletedOrder> CompletedOrders { get; set; }
     public DbSet<Carousel> Carousel { get; set; }
     public DbSet<FilterGroup> FilterGroups { get; set; }
     public DbSet<FilterOption> FilterOptions { get; set; }
+    public DbSet<ProductLike> ProductLikes { get; set; }
+    public DbSet<ProductView> ProductViews { get; set; }
+    public DbSet<UserAddress> UserAddresses { get; set; }
+    public DbSet<PhoneNumber> PhoneNumbers { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)
@@ -48,24 +53,39 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<Cart>().HasQueryFilter(c => !c.DeletedDate.HasValue);
         builder.Entity<CartItem>().HasQueryFilter(ci => !ci.DeletedDate.HasValue);
         builder.Entity<Order>().HasQueryFilter(o => !o.DeletedDate.HasValue);
+        builder.Entity<OrderItem>().HasQueryFilter(oi => !oi.DeletedDate.HasValue);
         builder.Entity<CompletedOrder>().HasQueryFilter(co => !co.DeletedDate.HasValue);
         builder.Entity<Carousel>().HasQueryFilter(c => !c.DeletedDate.HasValue);
         builder.Entity<FilterGroup>().HasQueryFilter(fg => !fg.DeletedDate.HasValue);
         builder.Entity<FilterOption>().HasQueryFilter(fo => !fo.DeletedDate.HasValue);
+        builder.Entity<ProductLike>().HasQueryFilter(pl => !pl.DeletedDate.HasValue);
+        builder.Entity<ProductView>().HasQueryFilter(pv => !pv.DeletedDate.HasValue);
+        builder.Entity<UserAddress>().HasQueryFilter(ua => !ua.DeletedDate.HasValue);
+        builder.Entity<PhoneNumber>().HasQueryFilter(pn => !pn.DeletedDate.HasValue);
+        
         
         builder.Entity<Order>()
             .HasIndex(o=>o.OrderCode)
             .IsUnique();
-        
-        builder.Entity<Cart>()
-            .HasOne(c => c.Order)
-            .WithOne(o => o.Cart)
-            .HasForeignKey<Order>(o => o.Id);
+        builder.Entity<OrderItem>()
+            .HasOne(oi => oi.Order)
+            .WithMany(o => o.OrderItems)
+            .HasForeignKey(oi => oi.OrderId);
         
         builder.Entity<Order>()
             .HasOne(o => o.CompletedOrder)
             .WithOne(c => c.Order)
             .HasForeignKey<CompletedOrder>(c => c.OrderId);
+        
+        builder.Entity<UserAddress>()
+            .HasOne(ua => ua.User)
+            .WithMany(u => u.UserAddresses)
+            .HasForeignKey(ua => ua.UserId);
+            
+        builder.Entity<PhoneNumber>()
+            .HasOne(pn => pn.User)
+            .WithMany(u => u.PhoneNumbers)
+            .HasForeignKey(pn => pn.UserId);
         
         builder.Entity<Product>()
             .HasOne(p => p.Category)

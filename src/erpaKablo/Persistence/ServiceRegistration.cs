@@ -64,6 +64,10 @@ public static class ServiceRegistration
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IAuthorizationEndpointService, AuthorizationEndpointService>();
         services.AddScoped<ICarouselRepository, CarouselRepository>();
+        services.AddScoped<IProductLikeRepository, ProductLikeRepository>();
+        services.AddScoped<IProductViewRepository, ProductViewRepository>();
+        services.AddScoped<IUserAddressRepository, UserAddressRepository>();
+        services.AddScoped<IPhoneNumberRepository, PhoneNumberRepository>();
         
         return services;
     }
