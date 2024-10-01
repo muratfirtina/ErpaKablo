@@ -1,9 +1,10 @@
+using Application.Extensions;
 using Application.Features.Categories.Dtos;
 using Application.Features.Products.Dtos;
 
 namespace Application.Features.Categories.Queries.GetByDynamic;
 
-public class GetListCategoryByDynamicDto
+public class GetListCategoryByDynamicDto : IHasCategoryImage
 {
     public string Id { get; set; }
     public string Name { get; set; }

@@ -55,9 +55,15 @@ namespace Application.Features.Features.Commands.Update
                 var categories = await _categoryRepository.GetAllAsync(c => request.CategoryIds.Contains(c.Id));
                 feature.Categories = categories.ToList();
 
-                // Assign existing feature values
+                // Determine new feature value IDs
+                var existingFeatureValueIds = feature.FeatureValues.Select(fv => fv.Id).ToList();
+                var newFeatureValueIds = request.FeatureValueIds.Except(existingFeatureValueIds).ToList();
+
+                // Check only new feature value IDs
+                await _featureBusinessRules.FeatureValueIdShouldNotExistWhenSelected(newFeatureValueIds, cancellationToken);
+
+                // Assign feature values
                 var featureValues = await _featureValueRepository.GetAllAsync(fv => request.FeatureValueIds.Contains(fv.Id));
-                await _featureBusinessRules.FeatureValueIdShouldNotExistWhenSelected(request.FeatureValueIds, cancellationToken);
                 feature.FeatureValues = featureValues.ToList();
 
                 await _featureRepository.UpdateAsync(feature);

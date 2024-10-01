@@ -35,6 +35,11 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Images, opt => opt.MapFrom(src => src.ProductImageFiles))
 
             .ReverseMap();
+        CreateMap<Product, GetListResponse<GetAllProductQueryResponse>>()
+            .ForMember(dest 
+                => dest.Items, opt 
+                => opt.MapFrom(src => src));
+        
         CreateMap<List<Product>, GetListResponse<GetAllProductQueryResponse>>()
             .ForMember(dest 
                 => dest.Items, opt 

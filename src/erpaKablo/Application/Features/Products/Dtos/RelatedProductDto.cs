@@ -1,8 +1,9 @@
+using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
 
 namespace Application.Features.Products.Dtos;
 
-public class RelatedProductDto
+public class RelatedProductDto : IHasShowcaseImage
 {
     public string Id { get; set; }
     public string Name { get; set; }

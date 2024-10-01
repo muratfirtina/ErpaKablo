@@ -1,3 +1,4 @@
+using Application.Extensions;
 using Application.Features.Categories.Dtos;
 using Application.Features.Categories.Rules;
 using Application.Features.Products.Dtos;
@@ -51,6 +52,8 @@ public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCat
                     cancellationToken: cancellationToken);
 
                 var categoriesDtos = _mapper.Map<GetListResponse<GetListCategoryByDynamicDto>>(allCategories);
+                
+                categoriesDtos.Items.SetImageUrl(_storageService);
 
                 foreach (var category in categoriesDtos.Items)
                 {
@@ -63,8 +66,7 @@ public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCat
                         category.CategoryImage = _mapper.Map<CategoryImageFileDto>(categoryImageFile);
                     }
                 }
-                SetCategoryImageUrls(categoriesDtos.Items);
-
+                
                 return new GetListResponse<GetListCategoryByDynamicDto>
                 {
                     Items = categoriesDtos.Items,
@@ -90,6 +92,8 @@ public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCat
                     cancellationToken: cancellationToken);
 
                 var categoriesDtos = _mapper.Map<GetListResponse<GetListCategoryByDynamicDto>>(categories);
+                
+                categoriesDtos.Items.SetImageUrl(_storageService);
 
                 foreach (var category in categoriesDtos.Items)
                 {
@@ -102,7 +106,7 @@ public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCat
                         category.CategoryImage = _mapper.Map<CategoryImageFileDto>(categoryImageFile);
                     }
                 }
-                SetCategoryImageUrls(categoriesDtos.Items);
+                
 
                 return new GetListResponse<GetListCategoryByDynamicDto>
                 {
@@ -146,26 +150,5 @@ public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCat
             return subCategoryDtos;
         }
         
-        private void SetCategoryImageUrls(IEnumerable<GetListCategoryByDynamicDto> categories)
-        {
-            var baseUrl = _storageService.GetStorageUrl();
-            foreach (var category in categories)
-            {
-                if (category.CategoryImage != null)
-                {
-                    category.CategoryImage.Url = $"{baseUrl}{category.CategoryImage.EntityType}/{category.CategoryImage.Path}/{category.CategoryImage.FileName}";
-                }
-                else
-                {
-                    category.CategoryImage = new CategoryImageFileDto
-                    {
-                        EntityType = "categories",
-                        Path = "",
-                        FileName = "default-category-image.png",
-                        Url = $"{baseUrl}categories/default-category-image.png"
-                    };
-                }
-            }
-        }
     }
 }

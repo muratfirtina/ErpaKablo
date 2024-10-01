@@ -1,3 +1,4 @@
+using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Rules;
 using Application.Repositories;
@@ -47,7 +48,10 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
 
                 var productsDtos = _mapper.Map<GetListResponse<GetListProductByDynamicDto>>(allProducts);
                 
-                SetProductImageUrls(productsDtos.Items);
+                if (productsDtos?.Items != null)
+                {
+                    productsDtos.Items.SetImageUrls(_storageService);
+                }
 
                 return productsDtos;
             }
@@ -67,38 +71,12 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
                 
                 if (productsDtos?.Items != null)
                 {
-                    SetProductImageUrls(productsDtos.Items);
+                    productsDtos.Items.SetImageUrls(_storageService);
                 }
                 return productsDtos;
 
             }
         }
         
-        private void SetProductImageUrls(IEnumerable<GetListProductByDynamicDto> products)
-        {
-            if (products == null || _storageService == null) return;
-
-            var baseUrl = _storageService.GetStorageUrl();
-            if (string.IsNullOrEmpty(baseUrl)) return;
-
-            foreach (var product in products)
-            {
-                if (product == null) continue;
-
-                if (product.ShowcaseImage == null)
-                {
-                    product.ShowcaseImage = new ProductImageFileDto
-                    {
-                        EntityType = "products",
-                        Path = "",
-                        FileName = "ecommerce-default-product.png"
-                    };
-                }
-
-                product.ShowcaseImage.Url = product.ShowcaseImage.FileName == "ecommerce-default-product.png"
-                    ? $"{baseUrl}{product.ShowcaseImage.EntityType}/{product.ShowcaseImage.FileName}"
-                    : $"{baseUrl}{product.ShowcaseImage.EntityType}/{product.ShowcaseImage.Path}/{product.ShowcaseImage.FileName}";
-            }
-        }
     }
 }

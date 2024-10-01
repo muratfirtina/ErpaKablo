@@ -1,11 +1,10 @@
-using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Core.Application.Responses;
 
-namespace Application.Features.Products.Queries.SearchAndFilter.Search;
+namespace Application.Features.ProductLikes.Queries.GetProductsUserLiked;
 
-public class SearchProductQueryResponse: IResponse , IHasShowcaseImage
+public class GetUserLikedProductsQueryResponse : IResponse
 {
     public string Id { get; set; }
     public string Name { get; set; }
@@ -18,7 +17,7 @@ public class SearchProductQueryResponse: IResponse , IHasShowcaseImage
     public string Sku { get; set; }
     public string VaryantGroupID { get; set; }
     public int Stock{ get; set; }
-    public decimal Price { get; set; }
+    public decimal? Price { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
     public ProductImageFileDto? ShowcaseImage { get; set; }
 }

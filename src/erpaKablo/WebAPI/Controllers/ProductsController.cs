@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Application.Consts;
 using Application.CustomAttributes;
 using Application.Enums;
@@ -8,6 +9,7 @@ using Application.Features.Products.Dtos.FilterDto;
 using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
+using Application.Features.Products.Queries.GetRandoms;
 using Application.Features.Products.Queries.SearchAndFilter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter.GetAvailableFilter;

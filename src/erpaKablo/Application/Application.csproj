@@ -28,6 +28,8 @@
         <Folder Include="Features\ProductImageFiles\Consts\"/>
         <Folder Include="Features\ProductImageFiles\Queries\"/>
         <Folder Include="Features\ProductImageFiles\Rules\"/>
+        <Folder Include="Features\ProductLikes\Dtos\" />
+        <Folder Include="Features\ProductLikes\Rules\" />
         <Folder Include="Features\Roles\Commands\" />
     </ItemGroup>
 

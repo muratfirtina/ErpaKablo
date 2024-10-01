@@ -58,11 +58,21 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<Carousel>().HasQueryFilter(c => !c.DeletedDate.HasValue);
         builder.Entity<FilterGroup>().HasQueryFilter(fg => !fg.DeletedDate.HasValue);
         builder.Entity<FilterOption>().HasQueryFilter(fo => !fo.DeletedDate.HasValue);
-        builder.Entity<ProductLike>().HasQueryFilter(pl => !pl.DeletedDate.HasValue);
         builder.Entity<ProductView>().HasQueryFilter(pv => !pv.DeletedDate.HasValue);
         builder.Entity<UserAddress>().HasQueryFilter(ua => !ua.DeletedDate.HasValue);
         builder.Entity<PhoneNumber>().HasQueryFilter(pn => !pn.DeletedDate.HasValue);
         
+        builder.Entity<ProductLike>()
+            .HasOne(pl => pl.Product)
+            .WithMany(p => p.ProductLikes)
+            .HasForeignKey(pl => pl.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ProductLike>()
+            .HasOne(pl => pl.User)
+            .WithMany(u => u.ProductLikes)
+            .HasForeignKey(pl => pl.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
         
         builder.Entity<Order>()
             .HasIndex(o=>o.OrderCode)

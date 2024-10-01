@@ -15,5 +15,5 @@ public static class AuthorizeDefinitionConstants
     public const string Features = "Features";
     public const string FeatureValues = "Feature Values";
     public const string Roles = "Roles";
-    
+    public const string ProductLikes = "Product Likes";
 }

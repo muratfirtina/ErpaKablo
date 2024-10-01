@@ -1,9 +1,11 @@
+using Application.Extensions;
 using Application.Features.Categories.Dtos;
 using Application.Features.Features.Dtos;
+using Core.Application.Responses;
 
 namespace Application.Features.Categories.Queries.GetById;
 
-public class GetByIdCategoryResponse
+public class GetByIdCategoryResponse : IResponse, IHasCategoryImage
 {
     public string Id { get; set; }
     public string Name { get; set; }

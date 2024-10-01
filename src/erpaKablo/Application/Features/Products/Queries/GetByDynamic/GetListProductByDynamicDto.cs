@@ -1,9 +1,11 @@
+using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
+using Core.Application.Responses;
 
 namespace Application.Features.Products.Queries.GetByDynamic;
 
-public class GetListProductByDynamicDto
+public class GetListProductByDynamicDto : IResponse, IHasShowcaseImage
 {
     public string Id { get; set; }
     public string Name { get; set; }

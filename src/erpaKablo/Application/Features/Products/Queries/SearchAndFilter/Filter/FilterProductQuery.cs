@@ -1,3 +1,4 @@
+using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Repositories;
 using Application.Storage;
@@ -40,33 +41,12 @@ public class FilterProductWithPaginationQuery : IRequest<GetListResponse<FilterP
             );
             GetListResponse<FilterProductQueryResponse> response = _mapper.Map<GetListResponse<FilterProductQueryResponse>>(products);
             
-            SetProductImageUrls(response.Items);
+            response.Items.SetImageUrls(_storageService);
             
             return response;
         }
 
-        private void SetProductImageUrls(IEnumerable<FilterProductQueryResponse> products)
-        {
-            var baseUrl = _storageService.GetStorageUrl();
-            foreach (var product in products)
-            {
-                if (product.ShowcaseImage == null)
-                {
-                    // Eğer ShowcaseImage null ise, varsayılan bir ProductImageFileDto oluştur
-                    product.ShowcaseImage = new ProductImageFileDto
-                    {
-                        EntityType = "products",
-                        Path = "",
-                        FileName = "ecommerce-default-product.png"
-                    };
-                }   
-
-                // Her durumda URL'yi ayarla
-                product.ShowcaseImage.Url = product.ShowcaseImage.FileName == "ecommerce-default-product.png"
-                    ? $"{baseUrl}{product.ShowcaseImage.EntityType}/{product.ShowcaseImage.FileName}"
-                    : $"{baseUrl}{product.ShowcaseImage.EntityType}/{product.ShowcaseImage.Path}/{product.ShowcaseImage.FileName}";
-            }
-        }
+        
     }
 }
 

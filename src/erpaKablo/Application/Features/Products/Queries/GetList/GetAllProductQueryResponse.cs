@@ -1,9 +1,11 @@
+using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
+using Core.Application.Responses;
 
 namespace Application.Features.Products.Queries.GetList;
 
-public class GetAllProductQueryResponse
+public class GetAllProductQueryResponse:IResponse, IHasShowcaseImage
 {
     public string Id { get; set; }
     public string Name { get; set; }
@@ -17,6 +19,7 @@ public class GetAllProductQueryResponse
     public string VaryantGroupID { get; set; }
     public int Stock{ get; set; }
     public decimal Price { get; set; }
+    public bool IsLiked { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
     public ProductImageFileDto? ShowcaseImage { get; set; }
     

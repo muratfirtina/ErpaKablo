@@ -1,9 +1,11 @@
+using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
+using Core.Application.Responses;
 
 namespace Application.Features.Products.Queries.GetById;
 
-public class GetByIdProductResponse
+public class GetByIdProductResponse : IResponse , IHasRelatedProducts , IHasProductImageFiles
 {
     public string Name { get; set; }
     public float? Price { get; set; }

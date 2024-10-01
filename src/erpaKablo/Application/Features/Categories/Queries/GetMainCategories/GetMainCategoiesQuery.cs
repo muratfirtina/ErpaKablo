@@ -1,3 +1,4 @@
+using Application.Extensions;
 using Application.Features.Categories.Dtos;
 using Application.Repositories;
 using Application.Storage;
@@ -43,7 +44,7 @@ public class GetMainCategoiesQuery : IRequest<GetListResponse<GetMainCategoriesR
 
                 GetListResponse<GetMainCategoriesResponse> response =
                     _mapper.Map<GetListResponse<GetMainCategoriesResponse>>(categories);
-                SetCategoryImageUrls(response.Items);
+                response.Items.SetImageUrls(_storageService);
                 return response;
             }
             else
@@ -57,31 +58,11 @@ public class GetMainCategoiesQuery : IRequest<GetListResponse<GetMainCategoriesR
 
                 GetListResponse<GetMainCategoriesResponse> response =
                     _mapper.Map<GetListResponse<GetMainCategoriesResponse>>(categories);
-                SetCategoryImageUrls(response.Items);
+                response.Items.SetImageUrls(_storageService);
                 return response;
             }
         }
         
-        private void SetCategoryImageUrls(IEnumerable<GetMainCategoriesResponse> categories)
-        {
-            var baseUrl = _storageService.GetStorageUrl();
-            foreach (var category in categories)
-            {
-                if (category.CategoryImage != null)
-                {
-                    category.CategoryImage.Url = $"{baseUrl}{category.CategoryImage.EntityType}/{category.CategoryImage.Path}/{category.CategoryImage.FileName}";
-                }
-                else
-                {
-                    category.CategoryImage = new CategoryImageFileDto
-                    {
-                        EntityType = "categories",
-                        Path = "",
-                        FileName = "default-category-image.png",
-                        Url = $"{baseUrl}categories/default-category-image.png"
-                    };
-                }
-            }
-        }
+        
     }
 }

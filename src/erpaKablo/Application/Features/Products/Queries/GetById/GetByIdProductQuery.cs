@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using Application.Abstraction.Services;
+using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Application.Repositories;
@@ -6,7 +9,10 @@ using AutoMapper;
 using AutoMapper.Internal;
 using Core.Persistence.Paging;
 using Domain;
+using Domain.Identity;
 using MediatR;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetById;
@@ -32,40 +38,32 @@ public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
         public async Task<GetByIdProductResponse> Handle(GetByIdProductQuery request,
             CancellationToken cancellationToken)
         {
+            
             Product product = await _productRepository.GetAsync(
                 predicate: p => p.Id == request.Id,
                 cancellationToken: cancellationToken,
                 include: x => x.Include(x => x.Category)
                     .Include(x => x.Brand)
+                    .Include(x => x.ProductLikes)
                     .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
                     .Include(x => x.ProductImageFiles));
+         
 
             var relatedProducts = await _productRepository.GetListAsync(
                 predicate: p => p.VaryantGroupID == product.VaryantGroupID && p.Id != product.Id,
-                include: x => x.Include(x => x.Category).Include(x => x.Brand)
+                include: x => x.Include(x => x.Category).Include(x => x.Brand).Include(x => x.ProductLikes)
                     .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature).OrderBy(x => x.CreatedDate)
                     .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase == true)),
                 cancellationToken: cancellationToken);
-
+            
+            
             GetByIdProductResponse response = _mapper.Map<GetByIdProductResponse>(product);
+            
             response.RelatedProducts = _mapper.Map<List<RelatedProductDto>>(relatedProducts.Items);
 
             // URL'leri güncelle
-            var baseUrl = _storageService.GetStorageUrl();
-            foreach (var imageFile in response.ProductImageFiles)
-            {
-                imageFile.Url = $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
-            }
-
-            foreach (var relatedProduct in response.RelatedProducts)
-            {
-                if (relatedProduct.ShowcaseImage != null)
-                {
-                    relatedProduct.ShowcaseImage.Url =
-                        $"{baseUrl}{relatedProduct.ShowcaseImage.EntityType}/{relatedProduct.ShowcaseImage.Path}/{relatedProduct.ShowcaseImage.FileName}";
-                }
-            }
-
+            response.SetImageUrl(_storageService);
+            response.RelatedProducts.SetImageUrls(_storageService);
             // Mevcut özellikleri hesapla
             response.AvailableFeatures = new Dictionary<string, List<string>>();
             foreach (var relatedProduct in response.RelatedProducts)

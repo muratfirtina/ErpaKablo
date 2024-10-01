@@ -1,17 +1,21 @@
+using Application.Extensions;
 using Application.Features.Products.Queries.GetList;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Responses;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-public class GetRandomProductsByCategoryQuery : IRequest<List<GetAllProductQueryResponse>>
+namespace Application.Features.Products.Queries.GetRandoms;
+
+public class GetRandomProductsByCategoryQuery : IRequest<GetListResponse<GetAllProductQueryResponse>>
 {
     public string CategoryId { get; set; }
     public int Count { get; set; }
 }
 
-public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandomProductsByCategoryQuery, List<GetAllProductQueryResponse>>
+public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandomProductsByCategoryQuery, GetListResponse<GetAllProductQueryResponse>>
 {
     private readonly IProductRepository _productRepository;
     private readonly ICategoryRepository _categoryRepository;
@@ -26,7 +30,7 @@ public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandom
         _storageService = storageService;
     }
 
-    public async Task<List<GetAllProductQueryResponse>> Handle(GetRandomProductsByCategoryQuery request, CancellationToken cancellationToken)
+    public async Task<GetListResponse<GetAllProductQueryResponse>> Handle(GetRandomProductsByCategoryQuery request, CancellationToken cancellationToken)
     {
         var categoryIds = await GetAllSubcategoryIds(request.CategoryId);
 
@@ -43,16 +47,10 @@ public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandom
             .Take(request.Count)
             .ToList();
 
-        var mappedProducts = _mapper.Map<List<GetAllProductQueryResponse>>(randomProducts);
+        var mappedProducts = _mapper.Map<GetListResponse<GetAllProductQueryResponse>>(randomProducts);
 
         // URL'leri oluştur
-        foreach (var product in mappedProducts)
-        {
-            if (product.ShowcaseImage != null)
-            {
-                product.ShowcaseImage.Url = _storageService.GetStorageUrl() +  product.ShowcaseImage.EntityType + "/" + product.ShowcaseImage.Path + "/" + product.ShowcaseImage.FileName;
-            }
-        }
+        mappedProducts.Items.SetImageUrls(_storageService);
 
         return mappedProducts;
     }
