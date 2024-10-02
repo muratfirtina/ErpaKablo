@@ -103,7 +103,7 @@ public class ProductLikeRepository : EfRepositoryBase<ProductLike, string, ErpaK
         var user = await GetCurrentUser();
         if (user == null)
         {
-            throw new Exception("User not found.");
+            return false;
         }
 
         return await AnyAsync(pl => pl.ProductId == productId && pl.UserId == user.Id);

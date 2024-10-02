@@ -7,6 +7,7 @@ using Application.Features.Products.Dtos.FilterDto;
 using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
+using Application.Features.Products.Queries.GetRandomProductsByProductId;
 using Application.Features.Products.Queries.SearchAndFilter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter;
 using Application.Features.Products.Queries.SearchAndFilter.Search;
@@ -156,5 +157,12 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options))
             .ReverseMap();
         
+        CreateMap<Product, GetRandomProductsByProductIdQueryResponse>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => src.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)))
+            .ReverseMap();
+        CreateMap<List<Product>, GetListResponse<GetRandomProductsByProductIdQueryResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
     }
 }

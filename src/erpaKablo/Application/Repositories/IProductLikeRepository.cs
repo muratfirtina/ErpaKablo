@@ -12,5 +12,7 @@ public interface IProductLikeRepository : IAsyncRepository<ProductLike, string>,
     
     Task<List<string>> GetUserLikedProductIdsAsync(string searchProductIdsString);// Yeni eklenen metod
 
+    public Task<bool> IsProductLikedAsync(string productId);
+
 
 }

@@ -9,6 +9,7 @@ using Application.Features.Products.Dtos.FilterDto;
 using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
+using Application.Features.Products.Queries.GetRandomProductsByProductId;
 using Application.Features.Products.Queries.GetRandoms;
 using Application.Features.Products.Queries.SearchAndFilter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter;
@@ -114,6 +115,13 @@ namespace WebAPI.Controllers
         {
             List<FilterGroupDto> filters = await Mediator.Send(new GetAvailableFiltersQuery { SearchTerm = searchTerm });
             return Ok(filters);
+        }
+        
+        [HttpGet("GetRandomsByProductId/{productId}")]
+        public async Task<IActionResult> GetRandomsByProductId([FromRoute]string productId)
+        {
+            GetListResponse<GetRandomProductsByProductIdQueryResponse> response = await Mediator.Send(new GetRandomProductsByProductIdQuery { ProductId = productId });
+            return Ok(response);
         }
     }
 }

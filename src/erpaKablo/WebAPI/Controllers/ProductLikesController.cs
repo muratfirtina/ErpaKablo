@@ -5,6 +5,7 @@ using Application.Features.ProductLikes.Commands.AddProductLike;
 using Application.Features.ProductLikes.Queries;
 using Application.Features.ProductLikes.Queries.GetProductsUserLiked;
 using Application.Features.ProductLikes.Queries.GetUserLikedProductIds;
+using Application.Features.ProductLikes.Queries.IsProductLiked;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -41,5 +42,15 @@ namespace WebAPI.Controllers
             var response = await Mediator.Send(query);
             return Ok(response);
         }
+        [HttpGet("isLiked/{productId}")]
+        [AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Is Liked", Menu = AuthorizeDefinitionConstants.ProductLikes)]
+        public async Task<IActionResult> IsLiked([FromRoute] string productId)
+        {
+            var query = new IsProductLikedQuery { ProductId = productId };
+            var response = await Mediator.Send(query);
+            return Ok(response);
+        }
+            
+            
     }
 }

@@ -7,6 +7,7 @@ namespace Application.Features.Products.Queries.GetById;
 
 public class GetByIdProductResponse : IResponse , IHasRelatedProducts , IHasProductImageFiles
 {
+    public string Id { get; set; }
     public string Name { get; set; }
     public float? Price { get; set; }
     public string? Description { get; set; }
