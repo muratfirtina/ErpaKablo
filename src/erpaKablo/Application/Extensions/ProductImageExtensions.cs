@@ -1,6 +1,7 @@
 using Application.Features.Brands.Dtos;
 using Application.Features.Carousels.Dtos;
 using Application.Features.Categories.Dtos;
+using Application.Features.Categories.Queries.GetById;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Application.Storage;
@@ -48,7 +49,7 @@ namespace Application.Extensions
                 }
             }
 
-            if (item is IHasCategoryImage categoryItem)
+            if (item is IHasCategoryImage categoryItem && categoryItem.CategoryImage != null)
             {
                 SetCategoryImageUrl(categoryItem.CategoryImage, baseUrl);
             }
@@ -89,8 +90,10 @@ namespace Application.Extensions
                 : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
         }
         
-        private static void SetCategoryImageUrl(CategoryImageFileDto imageFile, string baseUrl)
+        private static void SetCategoryImageUrl(CategoryImageFileDto? imageFile, string baseUrl)
         {
+            if (imageFile == null) return;
+
             imageFile.Url = imageFile.FileName == "ecommerce-default-category.png"
                 ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
                 : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";

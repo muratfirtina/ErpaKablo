@@ -18,11 +18,11 @@ public class AddProductLikeCommand : IRequest<AddProductLikeResponse>
 
         public async Task<AddProductLikeResponse> Handle(AddProductLikeCommand request, CancellationToken cancellationToken)
         {
-            var existingLike = await _productLikeRepository.GetAsync(x => x.ProductId == request.ProductId);
+            var isLiked = await _productLikeRepository.IsProductLikedAsync(request.ProductId);
 
-            if (existingLike != null)
+            if (isLiked)
             {
-                await _productLikeRepository.DeleteAsync(existingLike);
+                var removed = await _productLikeRepository.RemoveProductLikeAsync(request.ProductId);
                 return new AddProductLikeResponse { IsLiked = false };
             }
             else

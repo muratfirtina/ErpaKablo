@@ -76,13 +76,16 @@ public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>
     else
     {
         // ParentCategoryId null olduğunda, kategoriyi en üst seviye kategori yap
-        category.ParentCategory = null;
-        category.ParentCategoryId = null;
+        if (category != null)
+        {
+            category.ParentCategory = null;
+            category.ParentCategoryId = null;
+        }
     }
 
     if (request.FeatureIds != null)
     {
-        category.Features.Clear(); // Mevcut özellikleri temizle
+        category?.Features?.Clear(); // Mevcut özellikleri temizle
         foreach (var featureId in request.FeatureIds)
         {
             var feature = await _featureRepository.GetAsync(feature => feature.Id == featureId);
@@ -91,12 +94,12 @@ public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>
                 throw new Exception($"Feature with id {featureId} not found");
             }
 
-            category.Features.Add(feature);
+            category?.Features?.Add(feature);
         }
     }
     else
     {
-        category.Features.Clear(); // FeatureIds null ise tüm özellikleri kaldır
+        category?.Features?.Clear(); // FeatureIds null ise tüm özellikleri kaldır
     }
 
     category.Name = request.Name ?? category.Name;
@@ -105,10 +108,10 @@ public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>
     // Eğer yeni bir fotoğraf yüklendiyse eski fotoğrafı sil
     if (request.RemoveExistingImage)
     {
-        var existingImage = category.CategoryImageFiles.FirstOrDefault();
+        var existingImage = category.CategoryImageFiles?.FirstOrDefault();
         if (existingImage != null)
         {
-            category.CategoryImageFiles.Remove(existingImage);
+            category.CategoryImageFiles?.Remove(existingImage);
             await _imageFileRepository.DeleteAsync(existingImage);
             await _storageService.DeleteFromAllStoragesAsync("categories", existingImage.Path, existingImage.Name);
         }
@@ -117,7 +120,7 @@ public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>
     if (request.NewCategoryImage != null && request.NewCategoryImage.Any())
     {
         // Eğer mevcut resim varsa ve yeni resim yükleniyorsa, mevcut resmi sil
-        if (category.CategoryImageFiles.Any())
+        if (category.CategoryImageFiles != null && category.CategoryImageFiles.Count != 0)
         {
             var existingImage = category.CategoryImageFiles.First();
             category.CategoryImageFiles.Remove(existingImage);
@@ -129,7 +132,7 @@ public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>
         foreach (var file in uploadedImage)
         {
             var categoryImageFile = new CategoryImageFile(file.fileName, file.entityType, file.path, file.storageType);
-            category.CategoryImageFiles.Add(categoryImageFile);
+            category.CategoryImageFiles?.Add(categoryImageFile);
         }
     }
 

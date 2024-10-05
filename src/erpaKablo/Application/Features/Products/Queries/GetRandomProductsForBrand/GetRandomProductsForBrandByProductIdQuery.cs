@@ -1,0 +1,53 @@
+using Application.Extensions;
+using Application.Repositories;
+using Application.Storage;
+using AutoMapper;
+using Core.Application.Responses;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
+namespace Application.Features.Products.Queries.GetRandomProductsForBrand;
+
+public class GetRandomProductsForBrandByProductIdQuery : IRequest<GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse>>
+{
+    public string ProductId { get; set; }
+    
+    public class GetRandomProductsForBrandByProductIdQueryHandler : IRequestHandler<GetRandomProductsForBrandByProductIdQuery, GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse>>
+    {
+        private readonly IProductRepository _productRepository;
+        private readonly IStorageService _storageService;
+        private readonly IMapper _mapper;
+
+        public GetRandomProductsForBrandByProductIdQueryHandler(IProductRepository productRepository, IStorageService storageService, IMapper mapper)
+        {
+            _productRepository = productRepository;
+            _storageService = storageService;
+            _mapper = mapper;
+        }
+
+        public async Task<GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse>> Handle(GetRandomProductsForBrandByProductIdQuery request, CancellationToken cancellationToken)
+        {
+            var product = await _productRepository.GetAsync(predicate: x => x.Id == request.ProductId, include: x => x.Include(x => x.Brand));
+            var brandId = product.BrandId;
+            
+            var products = await _productRepository.GetListAsync(
+                predicate: x => x.BrandId == brandId && x.Id != request.ProductId,
+                include: x => x
+                    .Include(x => x.Category)
+                    .Include(x => x.Brand)
+                    .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase == true))
+                    .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
+                );
+            
+            var randomProducts = products.Items
+                .OrderBy(x => Guid.NewGuid())
+                .Take(10)
+                .ToList();
+            
+            GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse> response = _mapper.Map<GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse>>(randomProducts);
+            response.Items.SetImageUrls(_storageService);
+            return response;
+
+        }
+    }
+}

@@ -5,7 +5,7 @@ namespace Application.Features.ProductLikes.Queries.GetUserLikedProductIds;
 
 public class GetUserLikedProductIdsQuery : IRequest<GetUserLikedProductIdsResponse>
 {
-    public string SearchProductIds { get; set; }
+    public string? SearchProductIds { get; set; }
 
     public class GetUserLikedProductIdsQueryHandler : IRequestHandler<GetUserLikedProductIdsQuery, GetUserLikedProductIdsResponse>
     {

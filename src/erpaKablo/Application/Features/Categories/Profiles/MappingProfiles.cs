@@ -28,9 +28,10 @@ public class MappingProfiles : Profile
                 =>dest.CategoryImage,opt
                 =>opt.MapFrom(src
                     => src.CategoryImageFiles.FirstOrDefault()));
-        
-        CreateMap<Category, GetListSubCategoryDto>().ReverseMap();
-        
+
+        CreateMap<Category, GetListSubCategoryDto>()
+            .ForMember(dest => dest.CategoryImage, opt => opt.MapFrom(src => src.CategoryImageFiles.FirstOrDefault()))
+            .ForMember(dest => dest.SubCategories, opt => opt.MapFrom(src => src.SubCategories));
         CreateMap<Category, GetByIdCategoryResponse>()
             .ForMember(dest=>dest.ParentCategoryName,opt=>opt.MapFrom(src=> src.ParentCategory.Name))
             .ForMember(dest=>dest.SubCategories,opt=>opt.MapFrom(src=> src.SubCategories))

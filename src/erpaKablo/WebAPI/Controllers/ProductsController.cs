@@ -9,7 +9,9 @@ using Application.Features.Products.Dtos.FilterDto;
 using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
+using Application.Features.Products.Queries.GetMostLikedProducts;
 using Application.Features.Products.Queries.GetRandomProductsByProductId;
+using Application.Features.Products.Queries.GetRandomProductsForBrand;
 using Application.Features.Products.Queries.GetRandoms;
 using Application.Features.Products.Queries.SearchAndFilter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter;
@@ -121,6 +123,21 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetRandomsByProductId([FromRoute]string productId)
         {
             GetListResponse<GetRandomProductsByProductIdQueryResponse> response = await Mediator.Send(new GetRandomProductsByProductIdQuery { ProductId = productId });
+            return Ok(response);
+        }
+        
+        [HttpGet("most-liked")]
+        public async Task<IActionResult> GetMostLikedProducts([FromQuery] int count = 10)
+        {
+            var query = new GetMostLikedProductQuery() { Count = count };
+            var products = await Mediator.Send(query);
+            return Ok(products);
+        }
+        
+        [HttpGet("GetRandomsForBrand/{productId}")]
+        public async Task<IActionResult> GetRandomsForBrand([FromRoute]string productId)
+        {
+            GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse> response = await Mediator.Send(new GetRandomProductsForBrandByProductIdQuery { ProductId = productId });
             return Ok(response);
         }
     }

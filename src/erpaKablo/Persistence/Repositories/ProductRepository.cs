@@ -181,70 +181,78 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
     }
 
     public async Task<List<FilterGroup>> GetAvailableFilters(string searchTerm)
+{
+    var filterDefinitions = new List<FilterGroup>();
+
+    IQueryable<Product> productsQuery = Context.Products
+        .Include(p => p.Brand)
+        .Include(p => p.Category)
+        .Include(p => p.ProductFeatureValues)
+        .ThenInclude(pfv => pfv.FeatureValue)
+        .ThenInclude(fv => fv.Feature);
+
+    if (!string.IsNullOrWhiteSpace(searchTerm))
     {
-        var filterDefinitions = new List<FilterGroup>();
+        var category = await Context.Categories.FirstOrDefaultAsync(c => c.Id == searchTerm);
+        var brand = await Context.Brands.FirstOrDefaultAsync(b => b.Id == searchTerm);
 
-        IQueryable<Product> productsQuery = Context.Products
-            .Include(p => p.Brand)
-            .Include(p => p.Category)
-            .Include(p => p.ProductFeatureValues)
-            .ThenInclude(pfv => pfv.FeatureValue)
-            .ThenInclude(fv => fv.Feature);
-
-        if (!string.IsNullOrWhiteSpace(searchTerm))
+        if (category != null)
         {
-            var category = await Context.Categories.FirstOrDefaultAsync(c => c.Id == searchTerm);
-            if (category != null)
-            {
-                var allSubcategoryIds = await GetAllSubcategoryIds(new List<string> { category.Id });
-                productsQuery = productsQuery.Where(p => allSubcategoryIds.Contains(p.CategoryId));
-            }
-            else
-            {
-                productsQuery = productsQuery.Where(p =>
-                    EF.Functions.Like(p.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
-                    EF.Functions.Like(p.Description.ToLower(), $"%{searchTerm.ToLower()}%") ||
-                    EF.Functions.Like(p.Title.ToLower(), $"%{searchTerm.ToLower()}%") ||
-                    EF.Functions.Like(p.Brand.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
-                    EF.Functions.Like(p.Category.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
-                    p.ProductFeatureValues.Any(pfv =>
-                        EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{searchTerm.ToLower()}%"))
-                );
-            }
+            var allSubcategoryIds = await GetAllSubcategoryIds(new List<string> { category.Id });
+            productsQuery = productsQuery.Where(p => allSubcategoryIds.Contains(p.CategoryId));
         }
-
-        var products = await productsQuery.ToListAsync();
-
-        var categoryIds = products.Select(p => p.CategoryId).Distinct().ToList();
-        var allRelevantCategories = await GetAllRelevantCategories(categoryIds);
-        var categoryTree = BuildCategoryTree(allRelevantCategories);
-
-        if (categoryTree.Any())
+        else if (brand != null)
         {
-            filterDefinitions.Add(new FilterGroup
-            {
-                Name = "Category",
-                DisplayName = "Kategori",
-                Type = FilterType.Checkbox,
-                Options = GetCategoryOptions(categoryTree)
-            });
+            productsQuery = productsQuery.Where(p => p.BrandId == brand.Id);
         }
-
-        var brands = products.Select(p => p.Brand).Where(b => b != null).DistinctBy(b => b.Id).ToList();
-        if (brands.Any())
+        else
         {
-            filterDefinitions.Add(new FilterGroup
-            {
-                Name = "Brand",
-                DisplayName = "Marka",
-                Type = FilterType.Checkbox,
-                Options = brands.Select(b => new FilterOption
-                {
-                    Value = b.Id,
-                    DisplayValue = b.Name
-                }).ToList()
-            });
+            productsQuery = productsQuery.Where(p =>
+                EF.Functions.Like(p.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                EF.Functions.Like(p.Description.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                EF.Functions.Like(p.Title.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                EF.Functions.Like(p.Brand.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                EF.Functions.Like(p.Category.Name.ToLower(), $"%{searchTerm.ToLower()}%") ||
+                p.ProductFeatureValues.Any(pfv =>
+                    EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{searchTerm.ToLower()}%"))
+            );
         }
+    }
+
+    var products = await productsQuery.ToListAsync();
+
+    // Category filter
+    var categoryIds = products.Select(p => p.CategoryId).Distinct().ToList();
+    var allRelevantCategories = await GetAllRelevantCategories(categoryIds);
+    var categoryTree = BuildCategoryTree(allRelevantCategories);
+
+    if (categoryTree.Any())
+    {
+        filterDefinitions.Add(new FilterGroup
+        {
+            Name = "Category",
+            DisplayName = "Kategori",
+            Type = FilterType.Checkbox,
+            Options = GetCategoryOptions(categoryTree)
+        });
+    }
+
+    // Brand filter
+    var brands = products.Select(p => p.Brand).Where(b => b != null).DistinctBy(b => b.Id).ToList();
+    if (brands.Any())
+    {
+        filterDefinitions.Add(new FilterGroup
+        {
+            Name = "Brand",
+            DisplayName = "Marka",
+            Type = FilterType.Checkbox,
+            Options = brands.Select(b => new FilterOption
+            {
+                Value = b.Id,
+                DisplayValue = b.Name
+            }).ToList()
+        });
+    }
 
         var features = products
             .SelectMany(p => p.ProductFeatureValues)

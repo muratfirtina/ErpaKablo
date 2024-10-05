@@ -89,13 +89,13 @@ public class ProductLikeRepository : EfRepositoryBase<ProductLike, string, ErpaK
             throw new Exception("User not found.");
         }
 
-        var productLike = await GetAsync(pl => pl.ProductId == productId && pl.UserId == user.Id);
-        if (productLike == null)
-        {
-            throw new Exception("Product like not found.");
-        }
+        var productLike = await Context.ProductLikes
+            .FirstOrDefaultAsync(pl => pl.ProductId == productId && pl.UserId == user.Id);
 
-        return await DeleteAsync(productLike);
+        Context.ProductLikes.Remove(productLike); // Hard delete
+        await Context.SaveChangesAsync();
+        
+        return productLike;
     }
 
     public async Task<bool> IsProductLikedAsync(string productId)
@@ -109,23 +109,29 @@ public class ProductLikeRepository : EfRepositoryBase<ProductLike, string, ErpaK
         return await AnyAsync(pl => pl.ProductId == productId && pl.UserId == user.Id);
     }
 
-    public async Task<List<string>> GetUserLikedProductIdsAsync(string searchProductIdsString)
+    public async Task<List<string>?> GetUserLikedProductIdsAsync(string? searchProductIdsString)
     {
+        // searchProductIdsString null veya boş ise null dön
+        if (string.IsNullOrWhiteSpace(searchProductIdsString))
+        {
+            return null;
+        }
+
         // Gelen string'i ayrı ID'lere bölelim
         var searchProductIds = searchProductIdsString.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(id => id.Trim())
             .ToList();
 
-
+        // Eğer bölme işleminden sonra liste boş ise null dön
         if (!searchProductIds.Any())
         {
-            return new List<string>();
+            return null;
         }
 
         var user = await GetCurrentUser();
         if (user == null)
         {
-            return new List<string>();
+            return null;
         }
 
         var likedProductIds = await Context.ProductLikes
@@ -133,7 +139,6 @@ public class ProductLikeRepository : EfRepositoryBase<ProductLike, string, ErpaK
             .Where(pl => searchProductIds.Contains(pl.ProductId))
             .Select(pl => pl.ProductId)
             .ToListAsync();
-
 
         return likedProductIds;
     }
