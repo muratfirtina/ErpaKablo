@@ -54,7 +54,7 @@ namespace Application.Extensions
                 SetCategoryImageUrl(categoryItem.CategoryImage, baseUrl);
             }
 
-            if (item is IHasBrandImage brandItem)
+            if (item is IHasBrandImage brandItem && brandItem.BrandImage != null)
             {
                 SetBrandImageUrl(brandItem.BrandImage, baseUrl);
             }
@@ -74,9 +74,10 @@ namespace Application.Extensions
             {
                 item.ShowcaseImage = new ProductImageFileDto
                 {
-                    EntityType = "products",
-                    Path = "",
-                    FileName = "ecommerce-default-product.png"
+                    FileName = string.Empty,
+                    Path = string.Empty,
+                    EntityType = string.Empty,
+                    Storage = string.Empty
                 };
             }
 
@@ -85,7 +86,7 @@ namespace Application.Extensions
 
         private static void SetProductImageFileUrl(ProductImageFileDto imageFile, string baseUrl)
         {
-            imageFile.Url = imageFile.FileName == "ecommerce-default-product.png"
+            imageFile.Url = imageFile.FileName == string.Empty
                 ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
                 : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
         }
@@ -94,21 +95,21 @@ namespace Application.Extensions
         {
             if (imageFile == null) return;
 
-            imageFile.Url = imageFile.FileName == "ecommerce-default-category.png"
+            imageFile.Url = imageFile.FileName == string.Empty
                 ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
                 : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
         }
         
         private static void SetBrandImageUrl(BrandImageFileDto imageFile, string baseUrl)
         {
-            imageFile.Url = imageFile.FileName == "ecommerce-default-brand.png"
+            imageFile.Url = imageFile.FileName == string.Empty
                 ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
                 : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
         }
         
         private static void SetCarouselImageUrl(CarouselImageFileDto imageFile, string baseUrl)
         {
-            imageFile.Url = imageFile.FileName == "ecommerce-default-carousel.png"
+            imageFile.Url = imageFile.FileName == string.Empty
                 ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
                 : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
         }

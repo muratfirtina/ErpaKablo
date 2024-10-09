@@ -65,7 +65,7 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetListByDynamic([FromQuery] PageRequest pageRequest, [FromBody] DynamicQuery? dynamicQuery = null)
         {
             GetListBrandByDynamicQuery query = new GetListBrandByDynamicQuery { PageRequest = pageRequest, DynamicQuery = dynamicQuery };
-            GetListResponse<GetListBrandByDynamicDto> response = await Mediator.Send(query);
+            GetListResponse<GetListBrandByDynamicQueryResponse> response = await Mediator.Send(query);
             return Ok(response);
         }
         

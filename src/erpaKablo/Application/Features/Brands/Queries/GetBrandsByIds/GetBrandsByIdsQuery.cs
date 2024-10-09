@@ -1,3 +1,4 @@
+using Application.Extensions;
 using Application.Features.Brands.Dtos;
 using Application.Repositories;
 using Application.Storage;
@@ -39,30 +40,9 @@ public class GetBrandsByIdsQuery : IRequest<GetListResponse<GetBrandsByIdsQueryR
             );
 
             GetListResponse<GetBrandsByIdsQueryResponse> response = _mapper.Map<GetListResponse<GetBrandsByIdsQueryResponse>>(brands);
-            SetBrandImageUrls(response.Items);
+            response.Items.SetImageUrls(_storageService);
             return response;
         }
         
-        private void SetBrandImageUrls(IEnumerable<GetBrandsByIdsQueryResponse> brands)
-        {
-            var baseUrl = _storageService.GetStorageUrl();
-            foreach (var brand in brands)
-            {
-                if (brand.BrandImage != null)
-                {
-                    brand.BrandImage.Url = $"{baseUrl}{brand.BrandImage.EntityType}/{brand.BrandImage.Path}/{brand.BrandImage.FileName}";
-                }
-                else
-                {
-                    brand.BrandImage = new BrandImageFileDto
-                    {
-                        EntityType = "brands",
-                        Path = "",
-                        FileName = "default-brand-image.png",
-                        Url = $"{baseUrl}brands/default-brand-image.png"
-                    };
-                }
-            }
-        }
     }
 }

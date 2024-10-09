@@ -1,3 +1,4 @@
+using Application.Extensions;
 using Application.Features.Brands.Dtos;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Repositories;
@@ -37,7 +38,7 @@ public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryRespons
                     include: x => x.Include(x => x.BrandImageFiles),
                     cancellationToken: cancellationToken);
                 GetListResponse<GetAllBrandQueryResponse> response = _mapper.Map<GetListResponse<GetAllBrandQueryResponse>>(brands);
-                SetBrandImageUrls(response.Items);
+                response.Items.SetImageUrl(_storageService);
                 return response;
             }
             else
@@ -49,31 +50,11 @@ public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryRespons
                     cancellationToken: cancellationToken
                 );
                 GetListResponse<GetAllBrandQueryResponse> response = _mapper.Map<GetListResponse<GetAllBrandQueryResponse>>(brands);
-                SetBrandImageUrls(response.Items);
+                response.Items.SetImageUrls(_storageService);
                 return response;
             }
         }
 
-        private void SetBrandImageUrls(IEnumerable<GetAllBrandQueryResponse> brands)
-        {
-            var baseUrl = _storageService.GetStorageUrl();
-            foreach (var brand in brands)
-            {
-                if (brand.BrandImage != null)
-                {
-                    brand.BrandImage.Url = $"{baseUrl}{brand.BrandImage.EntityType}/{brand.BrandImage.Path}/{brand.BrandImage.FileName}";
-                }
-                else
-                {
-                    brand.BrandImage = new BrandImageFileDto
-                    {
-                        EntityType = "brands",
-                        Path = "",
-                        FileName = "default-brand-image.png",
-                        Url = $"{baseUrl}brands/default-brand-image.png"
-                    };
-                }
-            }
-        }
+        
     }
 }

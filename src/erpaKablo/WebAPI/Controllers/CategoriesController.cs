@@ -9,6 +9,8 @@ using Application.Features.Categories.Queries.GetById;
 using Application.Features.Categories.Queries.GetCategoriesByIds;
 using Application.Features.Categories.Queries.GetList;
 using Application.Features.Categories.Queries.GetMainCategories;
+using Application.Features.Categories.Queries.GetSubCategoriesByBrandId;
+using Application.Features.Categories.Queries.GetSubCategoriesByCategoryId;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -80,5 +82,20 @@ namespace WebAPI.Controllers
             GetListResponse<GetCategoriesByIdsQueryResponse> response = await Mediator.Send(new GetCategoriesByIdsQuery { Ids = ids });
             return Ok(response);
         }
+        
+        [HttpGet("GetSubCategoriesByCategoryId/{parentCategoryId}")]
+        public async Task<IActionResult> GetSubCategoriesByCategoryId([FromRoute] string parentCategoryId)
+        {
+            GetListResponse<GetSubCategoriesByCategoryIdQueryReponse> response = await Mediator.Send(new GetSubCategoriesByCategoryIdQuery { ParentCategoryId = parentCategoryId });
+            return Ok(response);
+        }
+        
+        [HttpGet("GetSubCategoriesByBrandId/{brandId}")]
+        public async Task<IActionResult> GetSubCategoriesByBrandId([FromRoute] string brandId)
+        {
+            GetListResponse<GetSubCategoriesByBrandIdQueryReponse> response = await Mediator.Send(new GetSubCategoriesByBrandIdQuery { BrandId = brandId});
+            return Ok(response);
+        }
+
     }
 }

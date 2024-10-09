@@ -1,8 +1,10 @@
+using Application.Extensions;
 using Application.Features.Brands.Dtos;
 using Application.Features.Brands.Queries.GetById;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.CrossCuttingConcerns.Exceptions;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -33,33 +35,11 @@ public class GetByIdBrandQuery : IRequest<GetByIdBrandResponse>
 
             if (brand == null)
             {
-                throw new Exception("Brand not found");
+                throw new BusinessException("Brand not found");
             }
 
-            var response = _mapper.Map<GetByIdBrandResponse>(brand);
-
-            if (brand.BrandImageFiles != null && brand.BrandImageFiles.Any())
-            {
-                var brandImage = brand.BrandImageFiles.First();
-                response.BrandImage = new BrandImageFileDto
-                {
-                    Id = brandImage.Id,
-                    FileName = brandImage.Name,
-                    Path = brandImage.Path,
-                    EntityType = brandImage.EntityType,
-                    Storage = brandImage.Storage,
-                    Url = _storageService.GetStorageUrl() + brandImage.EntityType + "/" + brandImage.Path + "/" + brandImage.Name
-                };
-            }
-            else
-            {
-                response.BrandImage = new BrandImageFileDto
-                {
-                    EntityType = "brands",
-                    FileName = "default-brand-image.png",
-                    Url = _storageService.GetStorageUrl() + "brands/default-brand-image.png"
-                };
-            }
+            GetByIdBrandResponse response = _mapper.Map<GetByIdBrandResponse>(brand);
+            response.SetImageUrl(_storageService);
 
             return response;
         }

@@ -1,3 +1,4 @@
+using Application.Extensions;
 using Application.Features.Brands.Dtos;
 using Application.Features.Brands.Rules;
 using Application.Repositories;
@@ -13,12 +14,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Brands.Queries.GetByDynamic;
 
-public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandByDynamicDto>>
+public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandByDynamicQueryResponse>>
 {
     public PageRequest PageRequest { get; set; }
     public DynamicQuery DynamicQuery { get; set; }
     
-    public class GetListByDynamicBrandQueryHandler : IRequestHandler<GetListBrandByDynamicQuery, GetListResponse<GetListBrandByDynamicDto>>
+    public class GetListByDynamicBrandQueryHandler : IRequestHandler<GetListBrandByDynamicQuery, GetListResponse<GetListBrandByDynamicQueryResponse>>
     {
         private readonly IBrandRepository _brandRepository;
         private readonly IMapper _mapper;
@@ -33,7 +34,7 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
             _storageService = storageService;
         }
 
-        public async Task<GetListResponse<GetListBrandByDynamicDto>> Handle(GetListBrandByDynamicQuery request, CancellationToken cancellationToken)
+        public async Task<GetListResponse<GetListBrandByDynamicQueryResponse>> Handle(GetListBrandByDynamicQuery request, CancellationToken cancellationToken)
         {
 
             if (request.PageRequest.PageIndex == -1 && request.PageRequest.PageSize == -1)
@@ -43,8 +44,8 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
                     include: x => x.Include(x => x.BrandImageFiles),
                     cancellationToken: cancellationToken);
 
-                var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicDto>>(allBrands);
-                SetBrandImageUrls(brandsDtos.Items);
+                var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicQueryResponse>>(allBrands);
+                brandsDtos.Items.SetImageUrl(_storageService);
                 return brandsDtos;
             }
             else
@@ -56,32 +57,10 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
                     include: x => x.Include(x => x.BrandImageFiles),
                     cancellationToken: cancellationToken);
                 
-                var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicDto>>(brands);
-                SetBrandImageUrls(brandsDtos.Items);
+                var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicQueryResponse>>(brands);
+                brandsDtos.Items.SetImageUrl(_storageService);
                 return brandsDtos;
 
-            }
-        }
-        
-        private void SetBrandImageUrls(IEnumerable<GetListBrandByDynamicDto> brands)
-        {
-            var baseUrl = _storageService.GetStorageUrl();
-            foreach (var brand in brands)
-            {
-                if (brand.BrandImage != null)
-                {
-                    brand.BrandImage.Url = $"{baseUrl}{brand.BrandImage.EntityType}/{brand.BrandImage.Path}/{brand.BrandImage.FileName}";
-                }
-                else
-                {
-                    brand.BrandImage = new BrandImageFileDto
-                    {
-                        EntityType = "brands",
-                        Path = "",
-                        FileName = "default-brand-image.png",
-                        Url = $"{baseUrl}brands/default-brand-image.png"
-                    };
-                }
             }
         }
     }

@@ -65,8 +65,8 @@ public class StorageService : IStorageService
         fileStream.Position = 0;
         await _cloudinaryStorage.UploadFileToStorage(entityType, path, fileName, new MemoryStream(fileStream.ToArray()));
         
-        fileStream.Position = 0;
-        await _googleStorage.UploadFileToStorage(entityType, path, fileName, new MemoryStream(fileStream.ToArray()));
+        /*fileStream.Position = 0;
+        await _googleStorage.UploadFileToStorage(entityType, path, fileName, new MemoryStream(fileStream.ToArray()));*/
     }
     
     public async Task<List<T>?> GetFiles<T>(string entityId, string entityType, string preferredStorage = null) where T : ImageFile, new()
@@ -79,8 +79,8 @@ public class StorageService : IStorageService
                 return await _localStorage.GetFiles<T>(entityId, entityType);
             case "cloudinary":
                 return await _cloudinaryStorage.GetFiles<T>(entityId, entityType);
-            case "google":
-                return await _googleStorage.GetFiles<T>(entityId, entityType);
+            /*case "google":
+                return await _googleStorage.GetFiles<T>(entityId, entityType);*/
             default:
                 throw new ArgumentException("Invalid storage provider", nameof(preferredStorage));
         }
@@ -93,7 +93,7 @@ public class StorageService : IStorageService
         {
             "localstorage" => _storageSettings.Value.Providers.LocalStorage.Url,
             "cloudinary" => _storageSettings.Value.Providers.Cloudinary.Url,
-            "google" => _storageSettings.Value.Providers.Google.Url,
+            //"google" => _storageSettings.Value.Providers.Google.Url,
             _ => throw new ArgumentException("Invalid storage provider", nameof(storageType))
         };
     }
@@ -126,13 +126,13 @@ public class StorageService : IStorageService
             Console.WriteLine($"Error deleting from Cloudinary: {ex.Message}");
         }
 
-        try
+        /*try
         {
             await _googleStorage.DeleteAsync(entityType, path, fileName);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error deleting from Google Storage: {ex.Message}");
-        }
+        }*/
     }
 }

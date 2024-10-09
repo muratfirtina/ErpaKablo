@@ -23,10 +23,7 @@ public class MappingProfiles : Profile
                     => opt.MapFrom(src =>
                     src.BrandImageFiles.FirstOrDefault()));
         CreateMap<Brand, GetByIdBrandResponse>()
-            .ForMember(dest => dest.BrandImage, opt => opt.MapFrom(src => 
-                src.BrandImageFiles != null && src.BrandImageFiles.Any() 
-                    ? new BrandImageFileDto { Url = src.BrandImageFiles.First().Url } 
-                    : null));
+            .ForMember(dest => dest.BrandImage, opt => opt.MapFrom(src => src.BrandImageFiles.FirstOrDefault()));
         CreateMap<List<Brand>, GetListResponse<GetAllBrandQueryResponse>>()
             .ForMember(dest 
                 => dest.Items, opt 
@@ -37,20 +34,20 @@ public class MappingProfiles : Profile
                 => opt.MapFrom(src => src.Items))
             .ReverseMap();
 
-        CreateMap<Brand, GetListBrandByDynamicDto>()
+        CreateMap<Brand, GetListBrandByDynamicQueryResponse>()
             .ForMember(dest 
                 => dest.BrandImage, opt 
                 => opt.MapFrom(src => src.BrandImageFiles.FirstOrDefault()));
 
 
-        CreateMap<List<Brand>, GetListResponse<GetListBrandByDynamicDto>>()
+        CreateMap<List<Brand>, GetListResponse<GetListBrandByDynamicQueryResponse>>()
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
         
-        CreateMap<IPaginate<Brand>, GetListResponse<GetListBrandByDynamicDto>>()
+        CreateMap<IPaginate<Brand>, GetListResponse<GetListBrandByDynamicQueryResponse>>()
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
             .ReverseMap();
 
-        CreateMap<IPaginate<Brand>, List<GetListBrandByDynamicDto>>();
+        CreateMap<IPaginate<Brand>, List<GetListBrandByDynamicQueryResponse>>();
         
         CreateMap<Brand, CreateBrandCommand>().ReverseMap();
         CreateMap<Brand, CreatedBrandResponse>()
