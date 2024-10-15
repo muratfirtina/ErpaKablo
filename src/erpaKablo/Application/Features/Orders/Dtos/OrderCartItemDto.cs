@@ -1,6 +1,6 @@
 using Application.Features.ProductImageFiles.Dtos;
 
-namespace Application.Dtos.Order;
+namespace Application.Features.Orders.Dtos;
 
 public class OrderCartItemDto
 {

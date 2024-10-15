@@ -1,4 +1,4 @@
-using Application.Dtos.Order;
+using Application.Features.Orders.Dtos;
 
 namespace Application.Abstraction.Services;
 

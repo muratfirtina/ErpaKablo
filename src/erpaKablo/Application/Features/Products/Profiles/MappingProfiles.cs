@@ -97,11 +97,11 @@ public class MappingProfiles : Profile
                     FeatureValueName = pfv.FeatureValue.Name
                 })))
             .ReverseMap();
-
+        
         CreateMap<Product, UpdateProductCommand>()
             .ForMember(dest => dest.BrandId, opt => opt.MapFrom(src => src.Brand.Id))
             .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.Category.Id))
-            //.ForMember(dest => dest.ProductFeatures, opt => opt.MapFrom(src => src.Features))
+            .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))  // Title alanını doğrudan eşliyoruz
             .ReverseMap()
             .ForMember(dest => dest.Brand, opt => opt.Ignore())
             .ForMember(dest => dest.Category, opt => opt.Ignore());

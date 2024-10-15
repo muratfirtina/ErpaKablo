@@ -10,11 +10,11 @@ public class Order:Entity<string>
     public string UserId { get; set; }
     public AppUser User { get; set; } // Siparişi veren kullanıcı
     public DateTime OrderDate { get; set; }
-    public decimal TotalPrice { get; set; } // Toplam fiyat
+    public decimal? TotalPrice { get; set; } // Toplam fiyat
     public OrderStatus Status { get; set; }  // Sipariş durumu (Pending, Completed vb.)
     public ICollection<OrderItem> OrderItems { get; set; } // Sipariş öğeleri
-    public string UserAddressId { get; set; }
-    public UserAddress UserAddress { get; set; }
+    public string? UserAddressId { get; set; }
+    public UserAddress? UserAddress { get; set; }
     public string? Description { get; set; }
 
     public string OrderCode { get; set; }

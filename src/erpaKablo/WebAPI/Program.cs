@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 using Application;
 using Application.Abstraction.Services;
 using Application.Storage;
@@ -35,7 +36,12 @@ builder.Services.AddControllers(options =>
     {
         options.Filters.Add<ValidationFilter>();
         options.Filters.Add<RolePermissionFilter>();
+        
     })
+    /*.AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    })*/
     //.AddFluentValidation(options => options.RegisterValidatorsFromAssemblyContaining<CreateProductValidator>())
     .ConfigureApiBehaviorOptions(options => options.SuppressModelStateInvalidFilter = true);
 

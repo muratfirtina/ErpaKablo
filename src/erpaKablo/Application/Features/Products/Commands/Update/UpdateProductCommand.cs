@@ -68,6 +68,7 @@ public class UpdateProductCommand : IRequest<UpdatedProductResponse>
             {
                 // Update basic information
                 product.Name = request.Name;
+                product.Title = request.Title;
                 product.Description = request.Description;
                 product.CategoryId = request.CategoryId;
                 product.BrandId = request.BrandId;

@@ -20,10 +20,11 @@ namespace Application.Extensions
             }
         }
 
-        public static void SetImageUrl<T>(this T item, IStorageService storageService) where T : class
+        public static ProductImageFileDto SetImageUrl<T>(this T item, IStorageService storageService) where T : class
         {
             var baseUrl = storageService.GetStorageUrl();
             SetImageUrl(item, baseUrl);
+            return null;
         }
 
         private static void SetImageUrl<T>(T item, string baseUrl) where T : class

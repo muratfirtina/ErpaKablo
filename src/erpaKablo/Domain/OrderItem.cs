@@ -11,9 +11,12 @@ public class OrderItem : Entity<string>
     public int Quantity { get; set; } // Sipariş edilen miktar
     public bool IsChecked { get; set; } // Ürünün seçili olup olmadığı
     public ICollection<ProductImageFile> ProductImageFiles { get; set; } // Ürünün resimleri
+    public ICollection<ProductFeatureValue> ProductFeatureValues { get; set; }
+    
         
     public OrderItem() : base("OrderItem")
     {
         ProductImageFiles = new List<ProductImageFile>();
+        ProductFeatureValues = new List<ProductFeatureValue>();
     }
 }

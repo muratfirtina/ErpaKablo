@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Text;
 using Application.Abstraction.Services;
-using Application.Dtos.Order;
+using Application.Features.Orders.Dtos;
 using Microsoft.Extensions.Configuration;
 
 namespace Infrastructure.Services;
