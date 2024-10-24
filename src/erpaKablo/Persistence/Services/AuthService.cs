@@ -6,6 +6,7 @@ using Application.Exceptions;
 using Application.Tokens;
 using Domain.Identity;
 using Google.Apis.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -14,14 +15,16 @@ namespace Persistence.Services;
 
 public class AuthService : IAuthService
 {
-    readonly IConfiguration _configuration;
-    readonly UserManager<AppUser> _userManager;
-    readonly ITokenHandler _tokenHandler;
-    readonly SignInManager<AppUser> _signInManager;
-    readonly IUserService _userService;
-    readonly IMailService _mailService;
+    private readonly IConfiguration _configuration;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly ITokenHandler _tokenHandler;
+    private readonly SignInManager<AppUser> _signInManager;
+    private readonly IUserService _userService;
+    private readonly IMailService _mailService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    
 
-    public AuthService(IConfiguration configuration, UserManager<AppUser> userManager, ITokenHandler tokenHandler, SignInManager<AppUser> signInManager, IUserService userService, IMailService mailService, HttpClient httpClient)
+    public AuthService(IConfiguration configuration, UserManager<AppUser> userManager, ITokenHandler tokenHandler, SignInManager<AppUser> signInManager, IUserService userService, IMailService mailService, HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
     {
         _configuration = configuration;
         _userManager = userManager;
@@ -29,9 +32,8 @@ public class AuthService : IAuthService
         _signInManager = signInManager;
         _userService = userService;
         _mailService = mailService;
+        _httpContextAccessor = httpContextAccessor;
     }
-
-
 
     async Task<Token>CreateUserExternalLoginAsync(AppUser? user,string email, string name, int accessTokenLifetime, UserLoginInfo info)
     {
@@ -121,14 +123,26 @@ public class AuthService : IAuthService
             user = await _userManager.FindByEmailAsync(userNameOrEmail);
         if (user == null)
             throw new NotFoundUserExceptions();
-        
-        var result = await _signInManager.PasswordSignInAsync(user,password, false,false);
-        if (result.Succeeded)//Authentication başarılı
+
+        var result = await _signInManager.PasswordSignInAsync(user, password, false, false);
+        if (result.Succeeded) // Authentication başarılı
         {
             Token token = _tokenHandler.CreateAccessToken(accessTokenLifetime, user);
-            await _userService.UpdateRefreshTokenAsync(token.RefreshToken, user, token.Expiration,refreshTokenLifetime:12000);
+            await _userService.UpdateRefreshTokenAsync(token.RefreshToken, user, token.Expiration, refreshTokenLifetime: 12000);
+
+            // HTTPOnly Cookie olarak token set ediliyor.
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true, // JavaScript'ten erişilmez
+                Secure = true,   // HTTPS üzerinde çalışır
+                Expires = token.Expiration
+            };
+
+            _httpContextAccessor.HttpContext.Response.Cookies.Append("access_token", token.AccessToken, cookieOptions);
+        
             return token;
         }
+    
         throw new AuthenticationErrorException();
     }
 

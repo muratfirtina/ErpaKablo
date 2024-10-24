@@ -1,5 +1,4 @@
 using Application.Extensions;
-using Application.Features.Orders.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
@@ -11,8 +10,8 @@ namespace Application.Features.Orders.Queries.GetById;
 public class GetOrderByIdQuery : IRequest<GetOrderByIdQueryResponse>
 {
     public string Id { get; set; }
-    
-    public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery,GetOrderByIdQueryResponse>
+
+    public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery, GetOrderByIdQueryResponse>
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IMapper _mapper;
@@ -27,24 +26,27 @@ public class GetOrderByIdQuery : IRequest<GetOrderByIdQueryResponse>
 
         public async Task<GetOrderByIdQueryResponse> Handle(GetOrderByIdQuery request, CancellationToken cancellationToken)
         {
+            // Siparişi veritabanından getiriyoruz ve ilgili ilişkileri (OrderItems ve Product) yüklüyoruz
             var order = await _orderRepository.GetAsync(
-                predicate: x => x.Id == request.Id,
-                include: x => x
-                    .Include(x => x.OrderItems).ThenInclude(x => x.Product).ThenInclude(x => x.ProductImageFiles)
-                    .Include(x => x.OrderItems).ThenInclude(x => x.Product).ThenInclude(x => x.Brand)
-                    .Include(x => x.OrderItems).ThenInclude(x => x.Product).ThenInclude(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
-                    .Include(x => x.User) // Kullanıcı bilgilerini dahil ediyoruz
-                    .Include(x => x.UserAddress), // Adres bilgilerini dahil ediyoruz
-                cancellationToken: cancellationToken);
+                predicate: o => o.Id == request.Id,
+                include: o => o
+                    .Include(o => o.OrderItems).ThenInclude(oi => oi.Product).ThenInclude(p => p.ProductImageFiles)
+                    .Include(o => o.OrderItems).ThenInclude(oi => oi.Product).ThenInclude(p => p.Brand)
+                    .Include(o => o.OrderItems).ThenInclude(oi => oi.Product).ThenInclude(p => p.ProductFeatureValues).ThenInclude(pfv => pfv.FeatureValue).ThenInclude(fv => fv.Feature)
+                    .Include(o => o.User) // Kullanıcı bilgilerini dahil ediyoruz
+                    .Include(o => o.UserAddress), // Adres bilgilerini dahil ediyoruz
+                cancellationToken: cancellationToken
+            );
 
-                
             if (order == null)
-                throw new Exception($"Order not found with ID: {request.Id}");
-            
+                throw new Exception($"Sipariş bulunamadı: {request.Id}");
+
+            // Order'dan GetOrderByIdQueryResponse DTO'suna dönüştürüyoruz
             var response = _mapper.Map<GetOrderByIdQueryResponse>(order);
-            
+
+            // Sipariş öğelerinin resim URL'lerini ayarlıyoruz (resim dosyalarını dinamik olarak alıyoruz)
             response.OrderItems.SetImageUrls(_storageService);
-            
+
             return response;
         }
     }

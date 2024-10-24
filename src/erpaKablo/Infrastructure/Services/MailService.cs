@@ -1,47 +1,86 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Mail;
 using System.Text;
 using Application.Abstraction.Services;
 using Application.Features.Orders.Dtos;
+using Domain;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Graph;
+using Microsoft.Identity.Client;
 
 namespace Infrastructure.Services;
 
 public class MailService : IMailService
 {
     readonly IConfiguration _configuration;
+    private readonly IConfidentialClientApplication _confidentialClientApp;
+        private readonly string _tenantId;
+        private readonly string _clientId;
+        private readonly string _clientSecret;
 
-    public MailService(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
-
-    public async Task SendEmailAsync(string to, string subject, string body, bool isBodyHtml = true)
-    {
-        await SendEmailAsync(new []{to}, subject, body, isBodyHtml);
-        
-    }
-
-    public async Task SendEmailAsync(string[] tos, string subject, string body, bool isBodyHtml = true)
-    {
-        MailMessage mail = new();
-        mail.IsBodyHtml = isBodyHtml;
-        foreach (var to in tos)
+        public MailService(IConfiguration configuration)
         {
-            mail.To.Add(to);
+            _configuration = configuration;
+            _tenantId = _configuration["AzureAd:TenantId"];
+            _clientId = _configuration["AzureAd:ClientId"];
+            _clientSecret = _configuration["AzureAd:ClientSecret"];
+
+            _confidentialClientApp = ConfidentialClientApplicationBuilder.Create(_clientId)
+                .WithClientSecret(_clientSecret)
+                .WithAuthority(new Uri($"https://login.microsoftonline.com/{_tenantId}"))
+                .Build();
         }
-        mail.Subject = subject;
-        mail.Body = body;
-        mail.From = new MailAddress(_configuration["Mail:Username"] , "Mini-ETicaret", Encoding.UTF8);
-        
-        SmtpClient smtpClient = new();
-        smtpClient.Credentials = new NetworkCredential(_configuration["Mail:Username"], _configuration["Mail:Password"]);
-        smtpClient.Host = "smtp.office365.com"; // _configuration["Mail:Host"];
-        smtpClient.Port = 587; //int.Parse(_configuration["Mail:Port"]);
-        smtpClient.EnableSsl = true;
-        await smtpClient.SendMailAsync(mail);
-        
-    }
+
+        // OAuth 2.0 üzerinden AccessToken alır
+        private async Task<string> GetAccessTokenAsync()
+        {
+            var scopes = new[] { "https://graph.microsoft.com/.default" };
+            var authResult = await _confidentialClientApp.AcquireTokenForClient(scopes).ExecuteAsync();
+            return authResult.AccessToken;
+        }
+
+        // Microsoft Graph API kullanarak mail gönderir
+        public async Task SendEmailAsync(string to, string subject, string body, bool isBodyHtml = true)
+        {
+            await SendEmailAsync(new[] { to }, subject, body, isBodyHtml);
+        }
+
+        // Microsoft Graph API kullanarak birden fazla alıcıya mail gönderir
+        public async Task SendEmailAsync(string[] tos, string subject, string body, bool isBodyHtml = true)
+        {
+            // OAuth 2.0 token al
+            var accessToken = await GetAccessTokenAsync();
+
+            // Graph API istemcisi oluştur
+            var graphClient = new GraphServiceClient(new DelegateAuthenticationProvider(request =>
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                return Task.CompletedTask;
+            }));
+
+            // Mail içeriği oluştur
+            var message = new Message
+            {
+                Subject = subject,
+                Body = new ItemBody
+                {
+                    ContentType = isBodyHtml ? BodyType.Html : BodyType.Text,
+                    Content = body
+                },
+                ToRecipients = tos.Select(to => new Recipient
+                {
+                    EmailAddress = new EmailAddress
+                    {
+                        Address = to
+                    }
+                }).ToList()
+            };
+
+            // Mail gönder
+            await graphClient.Users["muratfirtina@hotmail.com"].SendMail(message, true).Request().PostAsync();
+        }
+
 
     public async Task SendPasswordResetEmailAsync(string to, string userId, string resetToken)
     {
@@ -55,7 +94,9 @@ public class MailService : IMailService
         body += "İyi günler dileriz.";
             await SendEmailAsync(to, subject, body);
     }
-    public Task SendCompletedOrderEmailAsync(string to, string orderCode, string orderDescription, string orderAddress, DateTime orderCreatedDate, string userName, List<OrderCartItemDto> orderCartItems, float orderTotalPrice)
+    public Task SendCompletedOrderEmailAsync(string to, string orderCode, string orderDescription,
+        UserAddress orderAddress, DateTime orderCreatedDate, string userName, List<OrderItemDto> orderCartItems,
+        decimal? orderTotalPrice)
     {
         string subject = "Siparişiniz Tamamlandı";
         string body = $"Merhaba {userName},<br><br>";
@@ -66,16 +107,14 @@ public class MailService : IMailService
         foreach (var item in orderCartItems)
         {
             body += "<tr>";
-            body += $"<td style=\"border: 1px solid black; padding: 8px;\">{item.Name}</td>";
+            body += $"<td style=\"border: 1px solid black; padding: 8px;\">{item.BrandName}</td>";
+            body += $"<td style=\"border: 1px solid black; padding: 8px;\">{item.ProductName}</td>";
             body += $"<td style=\"border: 1px solid black; padding: 8px;\">{item.Price}</td>";
             body += $"<td style=\"border: 1px solid black; padding: 8px;\">{item.Quantity}</td>";
-            body += $"<td style=\"border: 1px solid black; padding: 8px;\">{item.TotalPrice}</td>";
+            body += $"<td style=\"border: 1px solid black; padding: 8px;\">{item.Price}</td>";
             body += "<td style=\"border: 1px solid black; padding: 8px;\">";
+            body += $"<img src=\"{_configuration["Storage:Providers:LocalStorage:Url"]}/{item.ShowcaseImage?.EntityType}/{item.ShowcaseImage?.Path}/{item.ShowcaseImage?.FileName}\" style=\"max-width: 100px; max-height: 100px;\"><br>";
 
-            foreach (var imageFile in item.ProductImageFiles)
-            {
-                body += $"<img src=\"{_configuration["BaseStorageUrl"]}/{imageFile.Path}\" style=\"max-width: 100px; max-height: 100px;\"><br>";
-            }
 
             body += "</td>";
             body += "</tr>";

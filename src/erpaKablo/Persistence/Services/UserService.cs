@@ -9,6 +9,7 @@ using Core.Application.Requests;
 using Core.Persistence.Dynamic;
 using Core.Persistence.Paging;
 using Domain.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -21,12 +22,24 @@ public class UserService: IUserService
     private readonly UserManager<AppUser> _userManager;
     private readonly RoleManager<AppRole> _roleManager;
     private readonly IEndpointRepository _endpointRepository;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserService(UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, IEndpointRepository endpointRepository)
+    public UserService(UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, IEndpointRepository endpointRepository, IHttpContextAccessor httpContextAccessor)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _endpointRepository = endpointRepository;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    public async Task<AppUser> GetUserByUsernameAsync(string userName)
+    {
+        var user = await _userManager.FindByNameAsync(userName);
+        if (user == null)
+        {
+            throw new NotFoundUserExceptions();
+        }
+        return user;
     }
 
     public async Task UpdateRefreshTokenAsync(string refreshToken, AppUser? user, DateTime accessTokenDateTime, int refreshTokenLifetime)
@@ -75,6 +88,8 @@ public class UserService: IUserService
         }
     }
 
+    
+
 
     public async Task AssignRoleToUserAsync(string userId, List<RoleDto>? roles)
     {
@@ -104,6 +119,31 @@ public class UserService: IUserService
         }
 
         return new List<RoleDto>();
+    }
+    
+    private async Task<AppUser?> GetCurrentUserAsync()
+    {
+        var userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name;
+        if (!string.IsNullOrEmpty(userName))
+        {
+            AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+            if (user != null)
+            {
+                return user;
+            }
+        }
+        throw new Exception("User not found.");
+    }
+    
+    public async Task<bool> IsAdminAsync()
+    {
+        AppUser? user = await GetCurrentUserAsync();
+        if (user != null)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            return roles.Select(x => x.ToLower()).Contains("admin");
+        }
+        return false;
     }
 
     public async Task<bool> HasRolePermissionToEndpointAsync(string name, string code)

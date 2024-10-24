@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Core.Persistence.Repositories;
 
 namespace Domain;
@@ -10,6 +11,10 @@ public class OrderItem : Entity<string>
     public Product Product { get; set; }
     public int Quantity { get; set; } // Sipariş edilen miktar
     public bool IsChecked { get; set; } // Ürünün seçili olup olmadığı
+    public decimal? Price { get; set; } // Sabitlenen fiyat
+    public string? ProductName { get; set; } // Ürün adı
+    public string? ProductTitle { get; set; } // Ürünün başlığı
+    public string? BrandName { get; set; } // Ürünün markası
     public ICollection<ProductImageFile> ProductImageFiles { get; set; } // Ürünün resimleri
     public ICollection<ProductFeatureValue> ProductFeatureValues { get; set; }
     

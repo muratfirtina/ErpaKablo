@@ -27,6 +27,8 @@ public class GetAllOrdersQuery : IRequest<GetListResponse<GetAllOrdersQueryRespo
         public async Task<GetListResponse<GetAllOrdersQueryResponse>> Handle(GetAllOrdersQuery request, CancellationToken cancellationToken)
         {
             IPaginate<Order> orders = await _orderRepository.GetListAsync(
+                index: request.PageRequest.PageIndex,
+                size: request.PageRequest.PageSize,
                 include: o => o
                     .Include(o => o.OrderItems)
                     .Include(o => o.User),

@@ -61,6 +61,8 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<ProductView>().HasQueryFilter(pv => !pv.DeletedDate.HasValue);
         builder.Entity<UserAddress>().HasQueryFilter(ua => !ua.DeletedDate.HasValue);
         builder.Entity<PhoneNumber>().HasQueryFilter(pn => !pn.DeletedDate.HasValue);
+        builder.Entity<ProductLike>()
+            .HasQueryFilter(pl => !pl.Product.DeletedDate.HasValue);
         
         builder.Entity<ProductLike>()
             .HasOne(pl => pl.Product)
@@ -73,6 +75,7 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
             .WithMany(u => u.ProductLikes)
             .HasForeignKey(pl => pl.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+        
         
         builder.Entity<Order>()
             .HasIndex(o=>o.OrderCode)

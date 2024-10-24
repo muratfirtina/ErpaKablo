@@ -11,9 +11,11 @@ using Application.Features.Orders.Queries;
 using Application.Features.Orders.Queries.GetAll;
 using Application.Features.Orders.Queries.GetById;
 using Application.Features.Orders.Queries.GetOrdersByDynamic;
+using Application.Features.Orders.Queries.GetOrdersByUser;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
+using Domain.Enum;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -101,5 +103,14 @@ namespace WebAPI.Controllers
 
             return Ok(new { Message = "Order item updated successfully." });
         }
+        
+        [HttpGet("user-orders")]
+        [AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get Orders By User", Menu = AuthorizeDefinitionConstants.Orders)]
+        public async Task<IActionResult> GetOrdersByUser([FromQuery] PageRequest pageRequest, [FromQuery] string? searchTerm, [FromQuery] string? dateRange, [FromQuery] OrderStatus orderStatus)
+        {
+            GetListResponse<GetOrdersByUserQueryResponse> response = await Mediator.Send(new GetOrdersByUserQuery { PageRequest = pageRequest, SearchTerm = searchTerm, DateRange = dateRange, OrderStatus = orderStatus });
+            return Ok(response);
+        }
+        
     }
 }

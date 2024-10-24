@@ -13,5 +13,6 @@ public enum OrderStatus
     Completed,  // Sipariş tamamlandı
     Shipped,    // Sipariş gönderildi
     Cancelled,  // Sipariş iptal edildi
-    Refunded    // Sipariş iade edildi
+    Refunded,    // Sipariş iade edildi
+    All         // Tüm siparişler
 }

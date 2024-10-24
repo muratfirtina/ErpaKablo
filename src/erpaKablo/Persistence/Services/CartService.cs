@@ -73,13 +73,18 @@ public class CartService : ICartService
     {
         AppUser? user = await GetCurrentUserAsync();
         Cart? cart = await GetOrCreateCartAsync(user);
-
         var result = await _cartRepository.GetAsync(
             predicate: c => c.Id == cart.Id,
             include: c => c
                 .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Product)
                 .ThenInclude(p => p.ProductImageFiles)
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Product)
+                .ThenInclude(p => p.Brand)
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Product)
+                .ThenInclude(p => p.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
         );
 
         return result?.CartItems?.ToList() ?? new List<CartItem?>();

@@ -101,7 +101,7 @@ public class MappingProfiles : Profile
         CreateMap<Product, UpdateProductCommand>()
             .ForMember(dest => dest.BrandId, opt => opt.MapFrom(src => src.Brand.Id))
             .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.Category.Id))
-            .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))  // Title alanını doğrudan eşliyoruz
+            .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))  // ProductTitle alanını doğrudan eşliyoruz
             .ReverseMap()
             .ForMember(dest => dest.Brand, opt => opt.Ignore())
             .ForMember(dest => dest.Category, opt => opt.Ignore());

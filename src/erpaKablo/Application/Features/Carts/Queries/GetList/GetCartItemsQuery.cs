@@ -1,4 +1,6 @@
+using Application.Extensions;
 using Application.Features.ProductImageFiles.Dtos;
+using Application.Features.Products.Dtos;
 using Application.Services;
 using Application.Storage;
 using Core.Application.Responses;
@@ -26,6 +28,13 @@ public class GetCartItemsQuery :IRequest<List<GetCartItemsQueryResponse>>
             {
                 CartItemId = ci.Id.ToString(),
                 ProductName = ci.Product.Name,
+                BrandName = ci.Product.Brand.Name,
+                ProductFeatureValues =
+                    ci.Product.ProductFeatureValues.Select(pfv => new ProductFeatureValueDto()
+                    {
+                        FeatureName = pfv.FeatureValue.Feature.Name,
+                        FeatureValueName = pfv.FeatureValue.Name
+                    }).ToList(),
                 Quantity = ci.Quantity,
                 ShowcaseImage = new ProductImageFileDto()
                 {
@@ -39,23 +48,9 @@ public class GetCartItemsQuery :IRequest<List<GetCartItemsQueryResponse>>
                 IsChecked = ci.IsChecked
             }).ToList();
 
-            SetProductImageUrls(response);
+            response.SetImageUrls(_storageService);
             return response;
         }
-    
-        private void SetProductImageUrls(List<GetCartItemsQueryResponse> cartItems)
-        {
-            var baseUrl = _storageService.GetStorageUrl();
-            if (string.IsNullOrEmpty(baseUrl)) return;
-            foreach (var cartItem in cartItems)
-            {
-                if (cartItem.ShowcaseImage != null)
-                {
-                    cartItem.ShowcaseImage.Url = cartItem.ShowcaseImage.FileName == "ecommerce-default-product.png"
-                        ? $"{baseUrl}{cartItem.ShowcaseImage.EntityType}/{cartItem.ShowcaseImage.FileName}"
-                        : $"{baseUrl}{cartItem.ShowcaseImage.EntityType}/{cartItem.ShowcaseImage.Path}/{cartItem.ShowcaseImage.FileName}";
-                }
-            }
-        }
+        
     }
 }

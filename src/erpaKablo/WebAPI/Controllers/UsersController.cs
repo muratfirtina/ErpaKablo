@@ -7,7 +7,9 @@ using Application.Features.Users.Commands.LoginUser;
 using Application.Features.Users.Commands.UpdateForgetPassword;
 using Application.Features.Users.Queries.GetAllUsers;
 using Application.Features.Users.Queries.GetByDynamic;
+using Application.Features.Users.Queries.GetCurrentUser;
 using Application.Features.Users.Queries.GetRolesToUser;
+using Application.Features.Users.Queries.IsAdmin;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -23,8 +25,8 @@ namespace WebAPI.Controllers
     {
 
         [HttpGet]
-        //[Authorize(AuthenticationSchemes = "Admin")]
-        //[AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get All Users")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get All Users")]
         public async Task<IActionResult> GetList([FromQuery] PageRequest pageRequest)
         {
             GetListResponse<GetAllUsersQueryResponse> response = await Mediator.Send(new GetAllUsersQuery { PageRequest = pageRequest });
@@ -55,8 +57,8 @@ namespace WebAPI.Controllers
         }
         
         [HttpGet("get-roles-to-user/{UserId}")]
-        //[Authorize(AuthenticationSchemes = "Admin")]
-        //[AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get Roles To User", Menu = AuthorizeDefinitionConstants.Users)]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get Roles To User", Menu = AuthorizeDefinitionConstants.Users)]
         public async Task<IActionResult> GetRolesToUser([FromRoute]GetRolesToUserQuery getRolesToUserQuery)
         {
             var response = await Mediator.Send(getRolesToUserQuery);
@@ -64,11 +66,31 @@ namespace WebAPI.Controllers
         }
         
         [HttpPost("GetList/ByDynamic")]
-        //[Authorize(AuthenticationSchemes = "Admin")]
-        //[AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get List User By Dynamic", Menu = AuthorizeDefinitionConstants.Users)]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get List User By Dynamic", Menu = AuthorizeDefinitionConstants.Users)]
         public async Task<IActionResult> GetListByDynamic([FromQuery] PageRequest pageRequest, [FromBody] DynamicQuery? dynamicQuery = null)
         {
             GetListResponse<GetListUserByDynamicQueryResponse> response = await Mediator.Send(new GetListUserByDynamicQuery { DynamicQuery = dynamicQuery, PageRequest = pageRequest });
+            return Ok(response);
+        }
+        
+        [HttpGet("is-admin")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Is Admin", Menu = AuthorizeDefinitionConstants.Users)]
+        public async Task<IActionResult> IsAdmin([FromQuery] IsUserAdminQuery isUserAdminQuery)
+        {
+            var response = await Mediator.Send(isUserAdminQuery);
+            return Ok(response);
+        }
+        
+        [HttpGet("current-user")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get Current User", Menu = AuthorizeDefinitionConstants.Users)]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var userName = User.Identity.Name;
+            var response = await Mediator.Send(new GetCurrentUserQuery { UserName = userName });
+
             return Ok(response);
         }
         

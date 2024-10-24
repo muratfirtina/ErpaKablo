@@ -73,7 +73,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 validationParameters) => expires != null ? expires > DateTime.UtcNow : false,
             
             NameClaimType = ClaimTypes.Name
-
+        };
+        
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Cookies["access_token"];
+                if (!string.IsNullOrEmpty(token))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
