@@ -1,3 +1,4 @@
+using Application.Features.Orders.Commands.Delete;
 using Application.Features.Orders.Dtos;
 using Application.Features.Orders.Queries;
 using Application.Features.Orders.Queries.GetAll;
@@ -25,6 +26,8 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
             .ReverseMap();
+
+        CreateMap<Order, DeletedOrderCommandResponse>();
 
 
         CreateMap<IPaginate<Order>, GetListResponse<GetAllOrdersQueryResponse>>()

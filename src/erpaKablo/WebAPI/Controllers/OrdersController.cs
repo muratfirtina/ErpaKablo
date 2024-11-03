@@ -73,13 +73,10 @@ namespace WebAPI.Controllers
         
         [HttpDelete("{id}")]
         [AuthorizeDefinition(ActionType = ActionType.Deleting, Definition = "Delete Order", Menu = AuthorizeDefinitionConstants.Orders)]
-        public async Task<IActionResult> DeleteOrder([FromRoute] string id)
+        public async Task<IActionResult> Delete([FromRoute] string id)
         {
-            var result = await Mediator.Send(new DeleteOrderCommand { Id = id});
-            if (!result)
-                return BadRequest("Failed to delete the order.");
-
-            return Ok(new { Message = "Order deleted successfully." });
+            DeletedOrderCommandResponse response = await Mediator.Send(new DeleteOrderCommand { Id = id });
+            return Ok(response);
         }
 
         [HttpDelete("delete-item/{id}")]
