@@ -1,4 +1,5 @@
 using Application.Features.Users.Commands.LoginUser;
+using Application.Features.Users.Commands.LogoutUser;
 using Application.Features.Users.Commands.PasswordReset;
 using Application.Features.Users.Commands.RefreshTokenLogin;
 using Application.Features.Users.Commands.VerifyResetPasswordToken;
@@ -17,6 +18,28 @@ namespace WebAPI.Controllers
             var response = await Mediator.Send(loginUserRequest);
             return Ok(response);
         }
+        
+        [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                var response = await Mediator.Send(new LogoutUserCommand());
+                if (response)
+                {
+                    return Ok(new { message = "Logged out successfully" });
+                }
+                return BadRequest(new { message = "Logout failed" });
+            }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    new { message = "An error occurred during logout" });
+            }
+        }
+        
         
         [HttpPost("[action]")]
         public async Task<IActionResult> RefreshTokenLogin([FromBody]RefreshTokenLoginRequest refreshTokenLoginRequest)

@@ -146,6 +146,20 @@ public class AuthService : IAuthService
         throw new AuthenticationErrorException();
     }
 
+    public async Task<AppUser?> LogoutAsync()
+    {
+        
+        AppUser? user = await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
+        if (user != null)
+        {
+            user.RefreshToken = null;
+            user.RefreshTokenEndDateTime = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+        }
+        return null;
+        
+    }
+
     public async Task<Token> RefreshTokenLoginAsync(string refreshToken)
     {
         AppUser? user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);

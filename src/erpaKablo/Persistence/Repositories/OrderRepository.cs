@@ -218,7 +218,7 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
     }
 
     public async Task<IPaginate<Order>> GetOrdersByUserAsync(PageRequest pageRequest, OrderStatus orderStatus,
-    string? dateRange, string? searchTerm) // searchTerm nullable yapılmış
+    string? dateRange, string? searchTerm)
 {
     AppUser? user = await GetCurrentUserAsync();
     if (user == null)
@@ -229,9 +229,37 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
     var query = Context.Orders.AsQueryable();
 
     // Kullanıcıya göre filtrele
-    query = query.Where(o => o.UserId == user.Id); // Kullanıcıya ait siparişleri filtreleme
+    query = query.Where(o => o.UserId == user.Id);
 
-    // Eğer searchTerm boş değilse arama yap
+    // OrderStatus gruplarına göre filtreleme
+    if (orderStatus != OrderStatus.All)
+    {
+        switch (orderStatus)
+        {
+            case OrderStatus.Processing: // Devam Edenler grubu
+                query = query.Where(o => 
+                    o.Status == OrderStatus.Pending || 
+                    o.Status == OrderStatus.Processing || 
+                    o.Status == OrderStatus.Confirmed || 
+                    o.Status == OrderStatus.Shipped);
+                break;
+            case OrderStatus.Cancelled: // İptal Edilenler grubu
+                query = query.Where(o => 
+                    o.Status == OrderStatus.Cancelled || 
+                    o.Status == OrderStatus.Rejected);
+                break;
+            case OrderStatus.Returned: // İade Edilenler grubu
+                query = query.Where(o => 
+                    o.Status == OrderStatus.Returned);
+                break;
+            case OrderStatus.Completed: // Tamamlananlar grubu
+                query = query.Where(o => 
+                    o.Status == OrderStatus.Completed);
+                break;
+        }
+    }
+
+    // Diğer filtreler aynı kalacak
     if (!string.IsNullOrWhiteSpace(searchTerm))
     {
         var terms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -248,13 +276,6 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
         }
     }
 
-    // OrderStatus'a göre filtreleme
-    if (orderStatus != OrderStatus.All)
-    {
-        query = query.Where(o => o.Status == orderStatus);
-    }
-
-    // Tarih aralığına göre filtreleme
     if (!string.IsNullOrWhiteSpace(dateRange))
     {
         var dates = dateRange.Split('-');
@@ -266,7 +287,6 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
         }
     }
 
-    // Sonuçları sıralayıp gerekli ilişkileri dahil ederek getir
     query = query
         .OrderByDescending(o => o.OrderDate)
         .Include(o => o.OrderItems)
@@ -279,34 +299,4 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
 
     return await query.ToPaginateAsync(pageRequest.PageIndex, pageRequest.PageSize);
 }
-    /*
-    public async Task<IPaginate<Order>> GetOrdersByUserAsync(PageRequest pageRequest, DynamicQuery dynamicQuery)
-    {
-        // Kullanıcıyı çekiyoruz
-        AppUser? user = await GetCurrentUserAsync();
-        if (user == null)
-        {
-            throw new Exception("User not found.");
-        }
-
-        // Kullanıcının siparişlerini sorguluyoruz ve UserAddress'i dahil ediyoruz
-        IPaginate<Order> orders = await GetListByDynamicAsync(
-            dynamicQuery,
-            predicate: o => o.UserId == user.Id,
-            include: o => o.Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-                .ThenInclude(p => p.ProductImageFiles) // ShowcaseImage için
-                .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-                .ThenInclude(p => p.Brand)
-                .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product).ThenInclude(p => p.ProductFeatureValues).ThenInclude(pfv => pfv.FeatureValue).ThenInclude(fv => fv.Feature) // BrandName için
-                .Include(o => o.User), // UserAddress bilgilerini ekledik
-            index: pageRequest.PageIndex,
-            size: pageRequest.PageSize
-        );
-
-        return orders; // Siparişleri döndürüyoruz
-    }
-    */
 }

@@ -25,6 +25,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<StorageSettings>(
             builder.Configuration.GetSection("Storage"));
 
+/*builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(5199); // HTTPS için
+    serverOptions.ListenAnyIP(5198); // HTTP için
+});*/
+
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 

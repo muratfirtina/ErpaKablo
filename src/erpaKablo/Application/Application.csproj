@@ -24,6 +24,10 @@
 
     <ItemGroup>
         <Folder Include="Features\AuthorizationEndpoint\Commands\" />
+        <Folder Include="Features\Orders\Consts\" />
+        <Folder Include="Features\Orders\Rules\" />
+        <Folder Include="Features\PhoneNumbers\Consts\" />
+        <Folder Include="Features\PhoneNumbers\Rules\" />
         <Folder Include="Features\ProductImageFiles\Commands\"/>
         <Folder Include="Features\ProductImageFiles\Consts\"/>
         <Folder Include="Features\ProductImageFiles\Queries\"/>
@@ -31,6 +35,8 @@
         <Folder Include="Features\ProductLikes\Dtos\" />
         <Folder Include="Features\ProductLikes\Rules\" />
         <Folder Include="Features\Roles\Commands\" />
+        <Folder Include="Features\UserAddresses\Consts\" />
+        <Folder Include="Features\UserAddresses\Rules\" />
     </ItemGroup>
 
     <ItemGroup>

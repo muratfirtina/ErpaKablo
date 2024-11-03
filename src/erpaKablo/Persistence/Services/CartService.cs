@@ -96,35 +96,37 @@ public class CartService : ICartService
         Cart? cart = await GetOrCreateCartAsync(user);
 
         var product = await _productRepository.GetAsync(predicate: p => p.Id == cartItem.ProductId);
-        if (product.Stock <= 0)
+    
+        // Toplam talep edilen miktar + mevcut sepetteki miktar kontrolü
+        var existingCartItem = await _cartItemRepository.GetAsync(
+            predicate: ci => ci.CartId == cart.Id && ci.ProductId == cartItem.ProductId);
+
+        int totalRequestedQuantity = cartItem.Quantity; // Yeni eklenecek miktar
+        if (existingCartItem != null)
+            totalRequestedQuantity += existingCartItem.Quantity; // Mevcut miktar
+
+        // Stok kontrolü
+        if (totalRequestedQuantity > product.Stock)
         {
             throw new Exception("Product stock is not enough.");
         }
 
-        var _cartItem = await _cartItemRepository.GetAsync(
-            predicate: ci => ci.CartId == cart.Id && ci.ProductId == cartItem.ProductId);
-
-        if (_cartItem != null)
+        if (existingCartItem != null)
         {
-            if (_cartItem.Quantity < product.Stock)
-            {
-                _cartItem.Quantity++;
-                if (!cartItem.IsChecked)
-                    _cartItem.IsChecked = false;
-                await _cartItemRepository.UpdateAsync(_cartItem);
-            }
-            else
-            {
-                throw new Exception("Product stock is not enough.");
-            }
+            // Mevcut ürünün miktarını güncelle
+            existingCartItem.Quantity = totalRequestedQuantity;
+            if (!cartItem.IsChecked)
+                existingCartItem.IsChecked = false;
+            await _cartItemRepository.UpdateAsync(existingCartItem);
         }
         else
         {
+            // Yeni ürün ekle
             await _cartItemRepository.AddAsync(new CartItem
             {
                 CartId = cart.Id,
                 ProductId = cartItem.ProductId,
-                Quantity = 1,
+                Quantity = cartItem.Quantity,
                 IsChecked = cartItem.IsChecked
             });
         }
