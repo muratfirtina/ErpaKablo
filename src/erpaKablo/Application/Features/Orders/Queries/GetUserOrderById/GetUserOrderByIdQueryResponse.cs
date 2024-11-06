@@ -1,10 +1,10 @@
+using Application.Features.Orders.Dtos;
 using Application.Features.PhoneNumbers.Dtos;
 using Application.Features.UserAddresses.Dtos;
-using Domain;
 
-namespace Application.Features.Orders.Dtos;
+namespace Application.Features.Orders.Queries.GetUserOrderById;
 
-public class OrderDto
+public class GetUserOrderByIdQueryResponse
 {
     public string OrderId { get; set; }
     public string OrderCode { get; set; }

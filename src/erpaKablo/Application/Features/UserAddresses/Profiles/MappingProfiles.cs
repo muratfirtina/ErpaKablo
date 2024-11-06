@@ -13,6 +13,7 @@ public class MappingProfiles : Profile
 {
     public MappingProfiles()
     {
+        CreateMap<UserAddress, UserAddressDto>().ReverseMap();
         CreateMap<UserAddress, CreateUserAddressDto>().ReverseMap();
         CreateMap<UserAddress, UpdateUserAddressDto>().ReverseMap();
         CreateMap<UserAddress, GetListUserAdressesQueryResponse>();

@@ -34,7 +34,8 @@ public class GetOrderByIdQuery : IRequest<GetOrderByIdQueryResponse>
                     .Include(o => o.OrderItems).ThenInclude(oi => oi.Product).ThenInclude(p => p.Brand)
                     .Include(o => o.OrderItems).ThenInclude(oi => oi.Product).ThenInclude(p => p.ProductFeatureValues).ThenInclude(pfv => pfv.FeatureValue).ThenInclude(fv => fv.Feature)
                     .Include(o => o.User) // Kullanıcı bilgilerini dahil ediyoruz
-                    .Include(o => o.UserAddress), // Adres bilgilerini dahil ediyoruz
+                    .Include(o => o.UserAddress)
+                    .Include(o => o.PhoneNumber), // Adres bilgilerini dahil ediyoruz
                 cancellationToken: cancellationToken
             );
 

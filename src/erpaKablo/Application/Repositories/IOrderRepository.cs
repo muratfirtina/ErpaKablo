@@ -11,8 +11,12 @@ namespace Application.Repositories;
 
 public interface IOrderRepository: IAsyncRepository<Order, string>, IRepository<Order, string>
 {
-    Task<(bool, OrderDto)> ConvertCartToOrderAsync();
+    Task<(bool, OrderDto)> ConvertCartToOrderAsync(string addressId, string phoneNumberId,
+        string description);
     Task<bool> CompleteOrderAsync(string orderId);
-    //kullanının siparişlerini getir.
+    
+    //GetUserOrderByIdAsync
+    Task<Order> GetUserOrderByIdAsync(string orderId);
+    
     Task<IPaginate<Order>> GetOrdersByUserAsync(PageRequest pageRequest, OrderStatus orderStatus, string? dateRange, string? searchTerm);
 }

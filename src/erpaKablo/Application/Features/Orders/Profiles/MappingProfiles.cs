@@ -5,6 +5,7 @@ using Application.Features.Orders.Queries.GetAll;
 using Application.Features.Orders.Queries.GetById;
 using Application.Features.Orders.Queries.GetOrdersByDynamic;
 using Application.Features.Orders.Queries.GetOrdersByUser;
+using Application.Features.Orders.Queries.GetUserOrderById;
 using Application.Features.Products.Dtos;
 using AutoMapper;
 using Core.Application.Responses;
@@ -58,9 +59,8 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString())) // Enum string olarak dönüyor
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.UserName))
             .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.User.PhoneNumber))
-            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
-            .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress != null
-                ? $"{src.UserAddress.AddressLine1}, {src.UserAddress.City}" : null))
+            .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
             .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems))
             .ReverseMap();
 
@@ -98,6 +98,45 @@ public class MappingProfiles : Profile
         
         CreateMap<IPaginate<Order>, GetListResponse<GetOrdersByUserQueryResponse>>()
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items)) // IPaginate'den gelen Order'ları GetListResponse'daki Items'a mapler
+            .ReverseMap();
+        CreateMap<OrderDto, GetUserOrderByIdQueryResponse>()
+            .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.OrderId))
+            .ForMember(dest => dest.OrderCode, opt => opt.MapFrom(src => src.OrderCode))
+            .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
+            .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => src.OrderDate))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+            .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems))
+            .ReverseMap();
+        
+        CreateMap<Order ,OrderDto>()
+            .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.OrderCode, opt => opt.MapFrom(src => src.OrderCode))
+            .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
+            .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => src.OrderDate))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.UserName))
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+            .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
+            .ReverseMap();
+        
+        CreateMap<Order, GetUserOrderByIdQueryResponse>()
+            .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.OrderCode, opt => opt.MapFrom(src => src.OrderCode))
+            .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
+            .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => src.OrderDate))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.UserName))
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+            .ForMember(dest => dest.UserAddress, opt => opt.MapFrom(src => src.UserAddress))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems))
             .ReverseMap();
         
     }

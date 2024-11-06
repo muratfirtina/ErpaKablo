@@ -29,6 +29,7 @@ public class GetCartItemsQuery :IRequest<List<GetCartItemsQueryResponse>>
                 CartItemId = ci.Id.ToString(),
                 ProductName = ci.Product.Name,
                 BrandName = ci.Product.Brand.Name,
+                Title = ci.Product.Title,
                 ProductFeatureValues =
                     ci.Product.ProductFeatureValues.Select(pfv => new ProductFeatureValueDto()
                     {
@@ -45,6 +46,7 @@ public class GetCartItemsQuery :IRequest<List<GetCartItemsQueryResponse>>
                     Url = ci.Product.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)?.Url
                 },
                 UnitPrice = ci.Product.Price,
+                TotalPrice = ci.Product.Price * ci.Quantity,
                 IsChecked = ci.IsChecked
             }).ToList();
 

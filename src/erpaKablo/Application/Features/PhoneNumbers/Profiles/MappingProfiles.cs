@@ -12,6 +12,7 @@ public class MappingProfiles : Profile
 {
     public MappingProfiles()
     {
+        CreateMap<PhoneNumber, PhoneNumberDto>().ReverseMap();
         CreateMap<PhoneNumber, CreatePhoneNumberDto>().ReverseMap();
         CreateMap<PhoneNumber, UpdatePhoneNumberDto>().ReverseMap();
         CreateMap<PhoneNumber, GetListPhoneNumberQueryResponse>();
@@ -24,5 +25,6 @@ public class MappingProfiles : Profile
         
         CreateMap<CreatePhoneNumberCommand, CreatePhoneNumberDto>();
         CreateMap<UpdatePhoneNumberCommand, UpdatePhoneNumberDto>();
+        
     }
 }

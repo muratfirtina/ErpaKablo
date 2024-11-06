@@ -15,6 +15,8 @@ public class Order:Entity<string>
     public ICollection<OrderItem> OrderItems { get; set; } // Sipariş öğeleri
     public string? UserAddressId { get; set; }
     public UserAddress? UserAddress { get; set; }
+    public string? PhoneNumberId { get; set; }
+    public PhoneNumber? PhoneNumber { get; set; }
     public string? Description { get; set; }
 
     public string OrderCode { get; set; }

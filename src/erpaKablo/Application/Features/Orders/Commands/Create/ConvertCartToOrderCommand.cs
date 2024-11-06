@@ -6,10 +6,13 @@ using MediatR;
 
 namespace Application.Features.Orders.Commands.Create;
 
-public class ConvertCartToOrderCommand : IRequest<string>
+public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandResponse>
 {
+    public string? AddressId { get; set; }
+    public string? PhoneNumberId { get; set; }
+    public string? Description { get; set; }
 
-    public class ConvertCartToOrderCommandHandler : IRequestHandler<ConvertCartToOrderCommand, string>
+    public class ConvertCartToOrderCommandHandler : IRequestHandler<ConvertCartToOrderCommand, ConvertCartToOrderCommandResponse>
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IMailService _mailService;
@@ -22,21 +25,34 @@ public class ConvertCartToOrderCommand : IRequest<string>
             _mailService = mailService;
         }
 
-        public async Task<string> Handle(ConvertCartToOrderCommand request, CancellationToken cancellationToken)
+        public async Task<ConvertCartToOrderCommandResponse> Handle(ConvertCartToOrderCommand request, CancellationToken cancellationToken)
         {
-            // Siparişi dönüştür ve sipariş ID'sini döndür
-            (bool succeeded, OrderDto orderDto) = await _orderRepository.ConvertCartToOrderAsync();
+            (bool succeeded, OrderDto orderDto) = await _orderRepository.ConvertCartToOrderAsync(
+                request.AddressId,
+                request.PhoneNumberId,
+                request.Description
+            );
     
             if (!succeeded || orderDto == null)
             {
-                // Sipariş dönüşümünde bir hata varsa, uygun bir hata mesajı döndürebilir veya hata fırlatabilirsiniz.
                 throw new Exception("Sepet siparişe dönüştürülemedi.");
             }
 
-            // Sipariş tamamlandı e-postasını gönder
-            await _mailService.SendCompletedOrderEmailAsync(orderDto.Email, orderDto.OrderCode, orderDto.Description, orderDto.UserAddress, orderDto.OrderDate, orderDto.UserName, orderDto.OrderItems, orderDto.TotalPrice);
+            /*await _mailService.SendCompletedOrderEmailAsync(
+                orderDto.Email, 
+                orderDto.OrderCode,
+                orderDto.Description,
+                orderDto.UserAddress,
+                orderDto.OrderDate,
+                orderDto.UserName,
+                orderDto.OrderItems,
+                orderDto.TotalPrice
+            );*/
 
-            return orderDto.OrderId;
+            return new ConvertCartToOrderCommandResponse
+            {
+                OrderId = orderDto.OrderId
+            };
         }
     }
 }

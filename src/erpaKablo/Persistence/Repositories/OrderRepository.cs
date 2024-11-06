@@ -1,7 +1,10 @@
 using System.Globalization;
 using Application.Extensions;
 using Application.Features.Orders.Dtos;
+using Application.Features.PhoneNumbers.Dtos;
+using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
+using Application.Features.UserAddresses.Dtos;
 using Application.Repositories;
 using Application.Services;
 using Application.Storage;
@@ -61,7 +64,8 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
         throw new Exception("Unexpected error occurred.");
     }
 
-    public async Task<(bool, OrderDto)> ConvertCartToOrderAsync()
+    public async Task<(bool, OrderDto)> ConvertCartToOrderAsync(string addressId, string phoneNumberId,
+        string description)
     {
         try
         {
@@ -75,76 +79,64 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
             if (!selectedItems.Any())
                 throw new Exception("Sepette seçili ürün yok.");
 
+            // Stok kontrolü...
             foreach (var cartItem in selectedItems)
             {
                 var product = await _productRepository.GetAsync(p => p.Id == cartItem.ProductId);
                 if (product == null)
-                    throw new Exception($"Ürün bulunamadı: {cartItem.ProductId}");
+                    throw new Exception("Ürün bulunamadı.");
 
-                if (cartItem.Quantity > product.Stock)
-                    throw new Exception($"Yeterli stok yok: {product.Name}, mevcut stok: {product.Stock}");
+                if (product.Stock < cartItem.Quantity)
+                    throw new Exception($"{product.Name} ürününden stokta yeterli miktarda bulunmamaktadır.");
             }
 
-            // Kullanıcının varsayılan adresini al
-            var user = await _userManager.Users.Include(u => u.UserAddresses)
+            // 3. Seçilen adresi ve telefon numarasını al
+            var user = await _userManager.Users
+                .Include(u => u.UserAddresses)
+                .Include(u => u.PhoneNumbers)
                 .FirstOrDefaultAsync(u => u.Id == activeCart.UserId);
+
             if (user == null)
                 throw new Exception("Kullanıcı bulunamadı.");
 
-            var defaultAddress = user.UserAddresses.FirstOrDefault(a => a.IsDefault);
-            if (defaultAddress == null)
-                throw new Exception("Varsayılan adres bulunamadı.");
+            var selectedAddress = user.UserAddresses.FirstOrDefault(a => a.Id == addressId);
+            if (selectedAddress == null)
+                throw new Exception("Seçilen adres bulunamadı.");
 
-            // Sipariş kodu üretimi (benzersiz)
-            var orderCode = (new Random().NextDouble() * 10000).ToString(CultureInfo.InvariantCulture);
-            orderCode = orderCode.Substring(orderCode.IndexOf(".", StringComparison.Ordinal) + 1,
-                orderCode.Length - orderCode.IndexOf(".", StringComparison.Ordinal) - 1);
+            var selectedPhone = user.PhoneNumbers.FirstOrDefault(p => p.Id == phoneNumberId);
+            if (selectedPhone == null)
+                throw new Exception("Seçilen telefon numarası bulunamadı.");
 
-            // 3. Siparişi oluştur
+            // 4. Siparişi oluştur
             var order = new Order
             {
                 UserId = activeCart.UserId,
                 User = activeCart.User,
                 OrderDate = DateTime.UtcNow,
                 Status = OrderStatus.Pending,
-                OrderCode = orderCode,
-                UserAddressId = defaultAddress.Id,
-                // Seçili ürünlerin bilgilerini OrderItem'a sabitle
+                OrderCode = GenerateOrderCode(),
+                UserAddressId = selectedAddress.Id,
+                PhoneNumberId = selectedPhone.Id,
+                Description = description,
                 OrderItems = selectedItems.Select(item => new OrderItem
                 {
-                    ProductId = item.ProductId, // Ürünün ID'si
-                    ProductName = item.Product.Name, // Ürün adı
-                    ProductTitle = item.Product.Title, // Ürün başlığı
-                    Price = item.Product.Price, // Ürün fiyatını sabitle
-                    BrandName = item.Product.Brand?.Name, // Ürün markasını sabitle
-                    Quantity = item.Quantity, // Miktar
+                    ProductId = item.ProductId,
+                    ProductName = item.Product.Name,
+                    ProductTitle = item.Product.Title,
+                    Price = item.Product.Price,
+                    BrandName = item.Product.Brand?.Name,
+                    Quantity = item.Quantity,
                     ProductFeatureValues = item.Product.ProductFeatureValues.Select(fv => new ProductFeatureValue
                     {
                         FeatureValue = fv.FeatureValue,
                         FeatureValueId = fv.FeatureValueId
                     }).ToList(),
-                    // Resimleri sabitlemek istemediğiniz için ProductImageFiles listesi dahil edilmiyor
                     IsChecked = true
                 }).ToList(),
                 TotalPrice = selectedItems.Sum(item => item.Product.Price * item.Quantity)
             };
 
-            await AddAsync(order); // Siparişi kaydet
-
-            // 4. Seçili olmayan ürünler için yeni bir sepet oluştur
-            var unselectedItems = activeCart.CartItems.Where(item => !item.IsChecked).ToList();
-            if (unselectedItems.Any())
-            {
-                var newCart = new Cart
-                {
-                    UserId = activeCart.UserId,
-                    User = activeCart.User,
-                    CartItems = unselectedItems
-                };
-
-                // Yeni sepeti veritabanına ekle
-                await Context.Set<Cart>().AddAsync(newCart);
-            }
+            await AddAsync(order);
 
             // 5. Eski sepeti sil (aktif olan sepet)
             await _cartService.RemoveCartAsync(activeCart.Id);
@@ -171,12 +163,29 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
                 Email = user.Email,
                 OrderDate = order.OrderDate,
                 TotalPrice = order.TotalPrice,
-                UserAddress = order.UserAddress,
+                UserAddress = new UserAddressDto
+                {
+                    Id = selectedAddress.Id,
+                    Name = selectedAddress.Name,
+                    AddressLine1 = selectedAddress.AddressLine1,
+                    AddressLine2 = selectedAddress.AddressLine2,
+                    State = selectedAddress.State,
+                    City = selectedAddress.City,
+                    Country = selectedAddress.Country,
+                    PostalCode = selectedAddress.PostalCode,
+                    IsDefault = selectedAddress.IsDefault
+                },
+                PhoneNumber = new PhoneNumberDto
+                {
+                    Name = selectedPhone.Name,
+                    Number = selectedPhone.Number,
+                },
+                Description = order.Description,
                 OrderItems = order.OrderItems.Select(oi => new OrderItemDto
                 {
                     ProductName = oi.ProductName,
                     Quantity = oi.Quantity,
-                    Price = oi.Price, // Sabitlenmiş fiyat
+                    Price = oi.Price,
                     ProductTitle = oi.ProductTitle,
                     BrandName = oi.BrandName,
                     ProductFeatureValues = oi.ProductFeatureValues.Select(fv => new ProductFeatureValueDto
@@ -184,40 +193,80 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
                         FeatureName = fv.FeatureValue.Feature.Name,
                         FeatureValueName = fv.FeatureValue.Name
                     }).ToList(),
-                    ShowcaseImage = oi.Product.ProductImageFiles.FirstOrDefault(img => img.Showcase) // Dinamik resim
+                    ShowcaseImage = oi.Product.ProductImageFiles.FirstOrDefault(img => img.Showcase)
                         ?.SetImageUrl(_storageService)
                 }).ToList()
             };
 
-            return (true, orderDto); // Başarıyla sipariş oluşturuldu, orderDto döndürülüyor
+            return (true, orderDto);
         }
         catch (Exception ex)
         {
-            // Hata durumunda false döndürülüyor ve boş bir OrderDto dönüyor
             return (false, null);
         }
     }
 
     public async Task<bool> CompleteOrderAsync(string orderId)
-    {
-        // 1. Siparişi veritabanından sorgula
-        var order = await Query()
-            .FirstOrDefaultAsync(o => o.Id == orderId);
-
-        if (order == null)
         {
-            throw new Exception("Order not found.");
+            // 1. Siparişi veritabanından sorgula
+            var order = await Query()
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order == null)
+            {
+                throw new Exception("Order not found.");
+            }
+
+            // 2. Siparişin durumunu güncelle (OrderStatus.Confirmed)
+            order.Status = OrderStatus.Confirmed;
+
+            // 3. Siparişi güncelle ve kaydet
+            await UpdateAsync(order);
+            return true;
         }
 
-        // 2. Siparişin durumunu güncelle (OrderStatus.Confirmed)
-        order.Status = OrderStatus.Confirmed;
+    // Persistence/Repositories/OrderRepository.cs
 
-        // 3. Siparişi güncelle ve kaydet
-        await UpdateAsync(order);
-        return true;
+    public async Task<Order> GetUserOrderByIdAsync(string orderId)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user == null)
+        {
+            throw new Exception("User not found.");
+        }
+
+        var order = await Query()
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ThenInclude(p => p.ProductImageFiles)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ThenInclude(p => p.Brand)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ThenInclude(p => p.ProductFeatureValues)
+            .ThenInclude(pfv => pfv.FeatureValue)
+            .ThenInclude(fv => fv.Feature)
+            .Include(o => o.User)
+            .Include(o => o.UserAddress)
+            .Include(o => o.PhoneNumber)
+            .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == user.Id);
+
+        if (order == null)
+            throw new Exception("Order not found or you don't have permission to view this order.");
+
+        return order;
     }
 
-    public async Task<IPaginate<Order>> GetOrdersByUserAsync(PageRequest pageRequest, OrderStatus orderStatus,
+    private string GenerateOrderCode()
+        {
+            var orderCode = (new Random().NextDouble() * 10000).ToString(CultureInfo.InvariantCulture);
+            orderCode = orderCode.Substring(orderCode.IndexOf(".", StringComparison.Ordinal) + 1,
+                orderCode.Length - orderCode.IndexOf(".", StringComparison.Ordinal) - 1);
+            return orderCode;
+        }
+
+        public async Task<IPaginate<Order>> GetOrdersByUserAsync(PageRequest pageRequest, OrderStatus orderStatus,
     string? dateRange, string? searchTerm)
 {
     AppUser? user = await GetCurrentUserAsync();
@@ -231,35 +280,68 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
     // Kullanıcıya göre filtrele
     query = query.Where(o => o.UserId == user.Id);
 
+    // Tarih filtreleme
+    if (!string.IsNullOrWhiteSpace(dateRange))
+    {
+        var currentDate = DateTime.UtcNow;
+        
+        switch (dateRange)
+        {
+            case "30":
+                query = query.Where(o => o.OrderDate >= currentDate.AddDays(-30));
+                break;
+            case "180":
+                query = query.Where(o => o.OrderDate >= currentDate.AddDays(-180));
+                break;
+            case "365":
+                query = query.Where(o => o.OrderDate >= currentDate.AddDays(-365));
+                break;
+            case "older1":
+                var oneYearAgo = currentDate.AddYears(-1);
+                var twoYearsAgo = currentDate.AddYears(-2);
+                query = query.Where(o => o.OrderDate <= oneYearAgo && o.OrderDate >= twoYearsAgo);
+                break;
+            case "older2":
+                var twoYearsAgo2 = currentDate.AddYears(-2);
+                var threeYearsAgo = currentDate.AddYears(-3);
+                query = query.Where(o => o.OrderDate <= twoYearsAgo2 && o.OrderDate >= threeYearsAgo);
+                break;
+            case "older3":
+                var threeYearsAgo2 = currentDate.AddYears(-3);
+                query = query.Where(o => o.OrderDate <= threeYearsAgo2);
+                break;
+        }
+    }
+
     // OrderStatus gruplarına göre filtreleme
     if (orderStatus != OrderStatus.All)
     {
         switch (orderStatus)
         {
             case OrderStatus.Processing: // Devam Edenler grubu
-                query = query.Where(o => 
-                    o.Status == OrderStatus.Pending || 
-                    o.Status == OrderStatus.Processing || 
-                    o.Status == OrderStatus.Confirmed || 
+                query = query.Where(o =>
+                    o.Status == OrderStatus.Pending ||
+                    o.Status == OrderStatus.Processing ||
+                    o.Status == OrderStatus.Confirmed ||
                     o.Status == OrderStatus.Shipped);
                 break;
             case OrderStatus.Cancelled: // İptal Edilenler grubu
-                query = query.Where(o => 
-                    o.Status == OrderStatus.Cancelled || 
+                query = query.Where(o =>
+                    o.Status == OrderStatus.Cancelled ||
                     o.Status == OrderStatus.Rejected);
                 break;
             case OrderStatus.Returned: // İade Edilenler grubu
-                query = query.Where(o => 
+                query = query.Where(o =>
                     o.Status == OrderStatus.Returned);
                 break;
             case OrderStatus.Completed: // Tamamlananlar grubu
-                query = query.Where(o => 
+                query = query.Where(o =>
                     o.Status == OrderStatus.Completed);
                 break;
         }
     }
 
-    // Diğer filtreler aynı kalacak
+    // Arama filtresi
     if (!string.IsNullOrWhiteSpace(searchTerm))
     {
         var terms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -276,17 +358,6 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
         }
     }
 
-    if (!string.IsNullOrWhiteSpace(dateRange))
-    {
-        var dates = dateRange.Split('-');
-        if (dates.Length == 2)
-        {
-            var startDate = DateTime.Parse(dates[0]);
-            var endDate = DateTime.Parse(dates[1]);
-            query = query.Where(o => o.OrderDate >= startDate && o.OrderDate <= endDate);
-        }
-    }
-
     query = query
         .OrderByDescending(o => o.OrderDate)
         .Include(o => o.OrderItems)
@@ -295,8 +366,12 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
         .Include(o => o.OrderItems)
         .ThenInclude(oi => oi.Product)
         .ThenInclude(p => p.Brand)
+        .Include(o => o.OrderItems)
+        .ThenInclude(oi => oi.Product)
+        .ThenInclude(p => p.ProductFeatureValues)
+        .ThenInclude(pfv => pfv.FeatureValue)
         .Include(o => o.User);
 
     return await query.ToPaginateAsync(pageRequest.PageIndex, pageRequest.PageSize);
 }
-}
+    }

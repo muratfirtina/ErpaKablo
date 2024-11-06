@@ -12,6 +12,7 @@ using Application.Features.Orders.Queries.GetAll;
 using Application.Features.Orders.Queries.GetById;
 using Application.Features.Orders.Queries.GetOrdersByDynamic;
 using Application.Features.Orders.Queries.GetOrdersByUser;
+using Application.Features.Orders.Queries.GetUserOrderById;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -32,8 +33,8 @@ namespace WebAPI.Controllers
         [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Convert Cart To Order", Menu = AuthorizeDefinitionConstants.Orders)]
         public async Task<IActionResult> ConvertCartToOrder([FromBody] ConvertCartToOrderCommand command)
         {
-            string orderId = await Mediator.Send(command); // Sipariş ID'si döner
-            return Ok(new { Message = "Sepet başarıyla siparişe dönüştürüldü.", OrderId = orderId });
+            ConvertCartToOrderCommandResponse response = await Mediator.Send(command);
+            return Ok(response);
         }
         
         [HttpGet]
@@ -106,6 +107,14 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetOrdersByUser([FromQuery] PageRequest pageRequest, [FromQuery] string? searchTerm, [FromQuery] string? dateRange, [FromQuery] OrderStatus orderStatus)
         {
             GetListResponse<GetOrdersByUserQueryResponse> response = await Mediator.Send(new GetOrdersByUserQuery { PageRequest = pageRequest, SearchTerm = searchTerm, DateRange = dateRange, OrderStatus = orderStatus });
+            return Ok(response);
+        }
+        
+        [HttpGet("user-order/{id}")]
+        [AuthorizeDefinition(ActionType = ActionType.Reading, Definition = "Get User Order By Id", Menu = AuthorizeDefinitionConstants.Orders)]
+        public async Task<IActionResult> GetUserOrderById([FromRoute] GetUserOrderByIdQuery getUserOrderByIdQuery)
+        {
+            GetUserOrderByIdQueryResponse response = await Mediator.Send(getUserOrderByIdQuery);
             return Ok(response);
         }
         

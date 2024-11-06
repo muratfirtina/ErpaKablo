@@ -10,7 +10,9 @@ public class GetCartItemsQueryResponse :IResponse, IHasShowcaseImage
     public string CartItemId { get; set; }
     public string? BrandName { get; set; }
     public string? ProductName { get; set; }
+    public string? Title { get; set; }
     public decimal? UnitPrice { get; set; }
+    public decimal? TotalPrice { get; set; }
     public int Quantity { get; set; }
     public ProductImageFileDto? ShowcaseImage { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
