@@ -19,4 +19,9 @@ public interface IOrderRepository: IAsyncRepository<Order, string>, IRepository<
     Task<Order> GetUserOrderByIdAsync(string orderId);
     
     Task<IPaginate<Order>> GetOrdersByUserAsync(PageRequest pageRequest, OrderStatus orderStatus, string? dateRange, string? searchTerm);
+    Task<bool> UpdateOrderWithAdminNotesAsync(
+        string orderId, 
+        string adminNote, 
+        string adminUserName,
+        List<(string OrderItemId, decimal? UpdatedPrice, int? LeadTime)> itemUpdates);
 }

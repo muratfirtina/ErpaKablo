@@ -13,6 +13,8 @@ public class OrderItemDto : IHasShowcaseImage
     public string? ProductTitle { get; set; }
     public int? Quantity { get; set; }
     public decimal? Price { get; set; }
+    public decimal? UpdatedPrice { get; set; }
+    public int? LeadTime { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
     public ProductImageFileDto? ShowcaseImage { get; set; }
     

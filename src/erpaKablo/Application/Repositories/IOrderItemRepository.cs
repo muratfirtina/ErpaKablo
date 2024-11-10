@@ -8,4 +8,5 @@ public interface IOrderItemRepository : IAsyncRepository<OrderItem, string>, IRe
     Task<bool> RemoveOrderItemAsync(string? orderItemId);
 
     Task<bool> UpdateOrderItemQuantityAsync(string orderItemId, int newQuantity);
+    Task<bool> UpdateOrderItemDetailsAsync(string orderItemId, decimal? updatedPrice, int? leadTime);
 }

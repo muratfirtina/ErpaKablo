@@ -15,6 +15,10 @@ public class OrderItem : Entity<string>
     public string? ProductName { get; set; } // Ürün adı
     public string? ProductTitle { get; set; } // Ürünün başlığı
     public string? BrandName { get; set; } // Ürünün markası
+    
+    public decimal? UpdatedPrice { get; set; }  // Güncellenmiş fiyat
+    public int? LeadTime { get; set; }  // Termin süresi (gün cinsinden)
+    public DateTime? PriceUpdateDate { get; set; } // Fiyat güncelleme tarihi
     public ICollection<ProductImageFile> ProductImageFiles { get; set; } // Ürünün resimleri
     public ICollection<ProductFeatureValue> ProductFeatureValues { get; set; }
     

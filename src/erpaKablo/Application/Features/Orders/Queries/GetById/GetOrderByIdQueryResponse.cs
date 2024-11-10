@@ -21,6 +21,7 @@ public class GetOrderByIdQueryResponse :IResponse
     public string UserName { get; set; }
     public UserAddressDto UserAddress { get; set; }
     public string Description { get; set; }
+    public string AdminNote { get; set; }
     public PhoneNumberDto PhoneNumber { get; set; }
    
 }

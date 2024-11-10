@@ -89,5 +89,38 @@ namespace Persistence.Repositories
                 throw;
             }
         }
+        public async Task<bool> UpdateOrderItemDetailsAsync(string orderItemId, decimal? updatedPrice, int? leadTime)
+        {
+            using var transaction = await Context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var orderItem = await Query()
+                    .Include(oi => oi.Product)
+                    .FirstOrDefaultAsync(oi => oi.Id == orderItemId);
+
+                if (orderItem == null) throw new Exception("Order Item not found.");
+
+                if (updatedPrice.HasValue)
+                {
+                    orderItem.UpdatedPrice = updatedPrice;
+                    orderItem.PriceUpdateDate = DateTime.UtcNow;
+                }
+
+                if (leadTime.HasValue)
+                {
+                    orderItem.LeadTime = leadTime;
+                }
+
+                await UpdateAsync(orderItem);
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
 }

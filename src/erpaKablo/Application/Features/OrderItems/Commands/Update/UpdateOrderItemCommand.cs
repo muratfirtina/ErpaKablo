@@ -11,6 +11,9 @@ namespace Application.Features.OrderItems.Commands.Update
     {
         public string Id { get; set; }  // OrderItem ID
         public int Quantity { get; set; }  // Güncellenecek miktar
+        public decimal? Price { get; set; }  // Guncellenecek fiyat
+        public int? LeadTime { get; set; }  // Güncellenecek lead time
+        public decimal? UpdatedPrice { get; set; }  // Yeni fiyat
 
         public class UpdateOrderItemCommandHandler : IRequestHandler<UpdateOrderItemCommand, bool>
         {
@@ -23,11 +26,18 @@ namespace Application.Features.OrderItems.Commands.Update
 
             public async Task<bool> Handle(UpdateOrderItemCommand request, CancellationToken cancellationToken)
             {
-                // Stok miktarını kontrol etmek ve miktarı güncellemek için repository kullanılır
-                var result = await _orderItemRepository.UpdateOrderItemQuantityAsync(request.Id, request.Quantity);
+                
+                var orderItem = await _orderItemRepository.GetAsync(x => x.Id == request.Id, cancellationToken: cancellationToken);
+                if (orderItem == null) throw new Exception("Order Item not found");
 
-                // Eğer işlem başarılı olduysa true döner, değilse false döner
-                return result;
+                orderItem.Quantity = request.Quantity;
+                orderItem.Price = request.Price;
+                orderItem.LeadTime = request.LeadTime;
+                orderItem.UpdatedPrice = request.UpdatedPrice;
+
+                await _orderItemRepository.UpdateAsync(orderItem);
+                return true;
+                
             }
         }
     }

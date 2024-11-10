@@ -10,5 +10,11 @@ public interface IMailService
     Task SendPasswordResetEmailAsync(string to,string userId, string resetToken);
     Task SendCompletedOrderEmailAsync(string to, string orderCode, string orderDescription, UserAddress orderAddress,
         DateTime orderCreatedDate, string userName, List<OrderItemDto> orderCartItems, decimal? orderTotalPrice);
+    Task SendOrderUpdateNotificationAsync(
+        string to, 
+        string orderCode, 
+        string adminNote,
+        List<OrderItem> updatedItems,
+        decimal? totalPrice);
 
 }

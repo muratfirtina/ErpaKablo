@@ -8,8 +8,9 @@ namespace Application.Features.Orders.Commands.Update;
 public class UpdateOrderCommand : IRequest<bool>
 {
     public string Id { get; set; }
-    public OrderStatus Status { get; set; }
+    public OrderStatus? Status { get; set; }
     public decimal? TotalPrice { get; set; }
+    public string? AdminNote { get; set; }
    
 
     public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand, bool>
@@ -28,6 +29,7 @@ public class UpdateOrderCommand : IRequest<bool>
 
             order.Status = request.Status;
             order.TotalPrice = request.TotalPrice;
+            order.AdminNote = request.AdminNote;
    
 
             await _orderRepository.UpdateAsync(order);

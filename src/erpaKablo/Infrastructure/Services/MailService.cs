@@ -134,5 +134,42 @@ public class MailService : IMailService
         return SendEmailAsync(to, subject, body);
     }
 
+    public async Task SendOrderUpdateNotificationAsync(
+        string to, 
+        string orderCode, 
+        string adminNote,
+        List<OrderItem> updatedItems,
+        decimal? totalPrice)
+    {
+        string subject = "Siparişinizde Güncelleme";
+        
+        StringBuilder body = new StringBuilder();
+        body.AppendLine($"<h2>Sipariş Güncelleme Bildirimi</h2>");
+        body.AppendLine($"<p>Sipariş Kodu: {orderCode}</p>");
+        body.AppendLine($"<p>Admin Notu: {adminNote}</p>");
+        
+        body.AppendLine("<h3>Güncellenen Ürünler:</h3>");
+        body.AppendLine("<table style='border-collapse: collapse; width: 100%;'>");
+        body.AppendLine("<tr style='background-color: #f2f2f2;'>");
+        body.AppendLine("<th style='border: 1px solid #ddd; padding: 8px;'>Ürün</th>");
+        body.AppendLine("<th style='border: 1px solid #ddd; padding: 8px;'>Eski Fiyat</th>");
+        body.AppendLine("<th style='border: 1px solid #ddd; padding: 8px;'>Yeni Fiyat</th>");
+        body.AppendLine("<th style='border: 1px solid #ddd; padding: 8px;'>Termin Süresi</th>");
+        body.AppendLine("</tr>");
+
+        foreach (var item in updatedItems)
+        {
+            body.AppendLine("<tr>");
+            body.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px;'>{item.ProductName}</td>");
+            body.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px;'>{item.Price:C2}</td>");
+            body.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px;'>{item.UpdatedPrice:C2}</td>");
+            body.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px;'>{item.LeadTime} gün</td>");
+            body.AppendLine("</tr>");
+        }
+        
+        body.AppendLine("</table>");
+        
+        await SendEmailAsync(to, subject, body.ToString(), true);
+    }
     
 }

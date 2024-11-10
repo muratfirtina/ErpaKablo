@@ -207,23 +207,23 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
     }
 
     public async Task<bool> CompleteOrderAsync(string orderId)
+    {
+        // 1. Siparişi veritabanından sorgula
+        var order = await Query()
+            .FirstOrDefaultAsync(o => o.Id == orderId);
+
+        if (order == null)
         {
-            // 1. Siparişi veritabanından sorgula
-            var order = await Query()
-                .FirstOrDefaultAsync(o => o.Id == orderId);
-
-            if (order == null)
-            {
-                throw new Exception("Order not found.");
-            }
-
-            // 2. Siparişin durumunu güncelle (OrderStatus.Confirmed)
-            order.Status = OrderStatus.Confirmed;
-
-            // 3. Siparişi güncelle ve kaydet
-            await UpdateAsync(order);
-            return true;
+            throw new Exception("Order not found.");
         }
+
+        // 2. Siparişin durumunu güncelle (OrderStatus.Confirmed)
+        order.Status = OrderStatus.Confirmed;
+
+        // 3. Siparişi güncelle ve kaydet
+        await UpdateAsync(order);
+        return true;
+    }
 
     // Persistence/Repositories/OrderRepository.cs
 
@@ -259,119 +259,175 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
     }
 
     private string GenerateOrderCode()
-        {
-            var orderCode = (new Random().NextDouble() * 10000).ToString(CultureInfo.InvariantCulture);
-            orderCode = orderCode.Substring(orderCode.IndexOf(".", StringComparison.Ordinal) + 1,
-                orderCode.Length - orderCode.IndexOf(".", StringComparison.Ordinal) - 1);
-            return orderCode;
-        }
-
-        public async Task<IPaginate<Order>> GetOrdersByUserAsync(PageRequest pageRequest, OrderStatus orderStatus,
-    string? dateRange, string? searchTerm)
-{
-    AppUser? user = await GetCurrentUserAsync();
-    if (user == null)
     {
-        throw new Exception("User not found.");
+        var orderCode = (new Random().NextDouble() * 10000).ToString(CultureInfo.InvariantCulture);
+        orderCode = orderCode.Substring(orderCode.IndexOf(".", StringComparison.Ordinal) + 1,
+            orderCode.Length - orderCode.IndexOf(".", StringComparison.Ordinal) - 1);
+        return orderCode;
     }
 
-    var query = Context.Orders.AsQueryable();
-
-    // Kullanıcıya göre filtrele
-    query = query.Where(o => o.UserId == user.Id);
-
-    // Tarih filtreleme
-    if (!string.IsNullOrWhiteSpace(dateRange))
+    public async Task<IPaginate<Order>> GetOrdersByUserAsync(PageRequest pageRequest, OrderStatus orderStatus,
+        string? dateRange, string? searchTerm)
     {
-        var currentDate = DateTime.UtcNow;
-        
-        switch (dateRange)
+        AppUser? user = await GetCurrentUserAsync();
+        if (user == null)
         {
-            case "30":
-                query = query.Where(o => o.OrderDate >= currentDate.AddDays(-30));
-                break;
-            case "180":
-                query = query.Where(o => o.OrderDate >= currentDate.AddDays(-180));
-                break;
-            case "365":
-                query = query.Where(o => o.OrderDate >= currentDate.AddDays(-365));
-                break;
-            case "older1":
-                var oneYearAgo = currentDate.AddYears(-1);
-                var twoYearsAgo = currentDate.AddYears(-2);
-                query = query.Where(o => o.OrderDate <= oneYearAgo && o.OrderDate >= twoYearsAgo);
-                break;
-            case "older2":
-                var twoYearsAgo2 = currentDate.AddYears(-2);
-                var threeYearsAgo = currentDate.AddYears(-3);
-                query = query.Where(o => o.OrderDate <= twoYearsAgo2 && o.OrderDate >= threeYearsAgo);
-                break;
-            case "older3":
-                var threeYearsAgo2 = currentDate.AddYears(-3);
-                query = query.Where(o => o.OrderDate <= threeYearsAgo2);
-                break;
+            throw new Exception("User not found.");
         }
+
+        var query = Context.Orders.AsQueryable();
+
+        // Kullanıcıya göre filtrele
+        query = query.Where(o => o.UserId == user.Id);
+
+        // Tarih filtreleme
+        if (!string.IsNullOrWhiteSpace(dateRange))
+        {
+            var currentDate = DateTime.UtcNow;
+
+            switch (dateRange)
+            {
+                case "30":
+                    query = query.Where(o => o.OrderDate >= currentDate.AddDays(-30));
+                    break;
+                case "180":
+                    query = query.Where(o => o.OrderDate >= currentDate.AddDays(-180));
+                    break;
+                case "365":
+                    query = query.Where(o => o.OrderDate >= currentDate.AddDays(-365));
+                    break;
+                case "older1":
+                    var oneYearAgo = currentDate.AddYears(-1);
+                    var twoYearsAgo = currentDate.AddYears(-2);
+                    query = query.Where(o => o.OrderDate <= oneYearAgo && o.OrderDate >= twoYearsAgo);
+                    break;
+                case "older2":
+                    var twoYearsAgo2 = currentDate.AddYears(-2);
+                    var threeYearsAgo = currentDate.AddYears(-3);
+                    query = query.Where(o => o.OrderDate <= twoYearsAgo2 && o.OrderDate >= threeYearsAgo);
+                    break;
+                case "older3":
+                    var threeYearsAgo2 = currentDate.AddYears(-3);
+                    query = query.Where(o => o.OrderDate <= threeYearsAgo2);
+                    break;
+            }
+        }
+
+        // OrderStatus gruplarına göre filtreleme
+        if (orderStatus != OrderStatus.All)
+        {
+            switch (orderStatus)
+            {
+                case OrderStatus.Processing: // Devam Edenler grubu
+                    query = query.Where(o =>
+                        o.Status == OrderStatus.Pending ||
+                        o.Status == OrderStatus.Processing ||
+                        o.Status == OrderStatus.Confirmed ||
+                        o.Status == OrderStatus.Shipped);
+                    break;
+                case OrderStatus.Cancelled: // İptal Edilenler grubu
+                    query = query.Where(o =>
+                        o.Status == OrderStatus.Cancelled ||
+                        o.Status == OrderStatus.Rejected);
+                    break;
+                case OrderStatus.Returned: // İade Edilenler grubu
+                    query = query.Where(o =>
+                        o.Status == OrderStatus.Returned);
+                    break;
+                case OrderStatus.Completed: // Tamamlananlar grubu
+                    query = query.Where(o =>
+                        o.Status == OrderStatus.Completed);
+                    break;
+            }
+        }
+
+        // Arama filtresi
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var terms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var term in terms)
+            {
+                var termParam = term.ToLower();
+                query = query.Where(o =>
+                    EF.Functions.Like(o.Description.ToLower(), $"%{termParam}%") ||
+                    EF.Functions.Like(o.OrderCode.ToLower(), $"%{termParam}%") ||
+                    EF.Functions.Like(o.OrderItems.Select(oi => oi.ProductName).FirstOrDefault().ToLower(),
+                        $"%{termParam}%") ||
+                    EF.Functions.Like(o.OrderItems.Select(oi => oi.ProductTitle).FirstOrDefault().ToLower(),
+                        $"%{termParam}%"));
+            }
+        }
+
+        query = query
+            .OrderByDescending(o => o.OrderDate)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ThenInclude(p => p.ProductImageFiles)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ThenInclude(p => p.Brand)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .ThenInclude(p => p.ProductFeatureValues)
+            .ThenInclude(pfv => pfv.FeatureValue)
+            .Include(o => o.User);
+
+        return await query.ToPaginateAsync(pageRequest.PageIndex, pageRequest.PageSize);
     }
 
-    // OrderStatus gruplarına göre filtreleme
-    if (orderStatus != OrderStatus.All)
+    public async Task<bool> UpdateOrderWithAdminNotesAsync(
+        string orderId, 
+        string adminNote, 
+        string adminUserName,
+        List<(string OrderItemId, decimal? UpdatedPrice, int? LeadTime)> itemUpdates)
     {
-        switch (orderStatus)
+        using var transaction = await Context.Database.BeginTransactionAsync();
+
+        try
         {
-            case OrderStatus.Processing: // Devam Edenler grubu
-                query = query.Where(o =>
-                    o.Status == OrderStatus.Pending ||
-                    o.Status == OrderStatus.Processing ||
-                    o.Status == OrderStatus.Confirmed ||
-                    o.Status == OrderStatus.Shipped);
-                break;
-            case OrderStatus.Cancelled: // İptal Edilenler grubu
-                query = query.Where(o =>
-                    o.Status == OrderStatus.Cancelled ||
-                    o.Status == OrderStatus.Rejected);
-                break;
-            case OrderStatus.Returned: // İade Edilenler grubu
-                query = query.Where(o =>
-                    o.Status == OrderStatus.Returned);
-                break;
-            case OrderStatus.Completed: // Tamamlananlar grubu
-                query = query.Where(o =>
-                    o.Status == OrderStatus.Completed);
-                break;
+            var order = await Query()
+                .Include(o => o.OrderItems)
+                .Include(o => o.User)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order == null) throw new Exception("Order not found");
+
+            // Update order details
+            order.AdminNote = adminNote;
+            order.LastModifiedBy = adminUserName;
+
+            // Update order items
+            foreach (var item in itemUpdates)
+            {
+                var orderItem = order.OrderItems.FirstOrDefault(oi => oi.Id == item.OrderItemId);
+                if (orderItem != null)
+                {
+                    orderItem.UpdatedPrice = item.UpdatedPrice;
+                    orderItem.LeadTime = item.LeadTime;
+                    orderItem.PriceUpdateDate = DateTime.UtcNow;
+                }
+            }
+
+            await UpdateAsync(order);
+
+            // Send notification email
+            /*if (order.User?.Email != null)
+            {
+                await _mailService.SendOrderUpdateNotificationAsync(
+                    order.User.Email,
+                    order.OrderCode,
+                    adminNote,
+                    order.OrderItems.ToList(),
+                    order.TotalPrice);
+            }*/
+
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
-
-    // Arama filtresi
-    if (!string.IsNullOrWhiteSpace(searchTerm))
-    {
-        var terms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        foreach (var term in terms)
-        {
-            var termParam = term.ToLower();
-            query = query.Where(o =>
-                EF.Functions.Like(o.Description.ToLower(), $"%{termParam}%") ||
-                EF.Functions.Like(o.OrderCode.ToLower(), $"%{termParam}%") ||
-                EF.Functions.Like(o.OrderItems.Select(oi => oi.ProductName).FirstOrDefault().ToLower(),
-                    $"%{termParam}%") ||
-                EF.Functions.Like(o.OrderItems.Select(oi => oi.ProductTitle).FirstOrDefault().ToLower(),
-                    $"%{termParam}%"));
-        }
-    }
-
-    query = query
-        .OrderByDescending(o => o.OrderDate)
-        .Include(o => o.OrderItems)
-        .ThenInclude(oi => oi.Product)
-        .ThenInclude(p => p.ProductImageFiles)
-        .Include(o => o.OrderItems)
-        .ThenInclude(oi => oi.Product)
-        .ThenInclude(p => p.Brand)
-        .Include(o => o.OrderItems)
-        .ThenInclude(oi => oi.Product)
-        .ThenInclude(p => p.ProductFeatureValues)
-        .ThenInclude(pfv => pfv.FeatureValue)
-        .Include(o => o.User);
-
-    return await query.ToPaginateAsync(pageRequest.PageIndex, pageRequest.PageSize);
 }
-    }
