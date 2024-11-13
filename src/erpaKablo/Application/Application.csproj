@@ -15,14 +15,19 @@
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="13.0.1"/>
+        <PackageReference Include="Elasticsearch.Net" Version="7.17.5" />
         <PackageReference Include="FluentValidation" Version="11.9.1"/>
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.9.1" />
         <PackageReference Include="MediatR" Version="12.2.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17"/>
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.4"/>
+        <PackageReference Include="NEST" Version="7.17.5" />
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="Abstraction\Services\Elasticsearch\Events\" />
+        <Folder Include="Abstraction\Services\Elasticsearch\Exceptions\" />
+        <Folder Include="Dtos\Elasticsearch\" />
         <Folder Include="Features\AuthorizationEndpoint\Commands\" />
         <Folder Include="Features\Orders\Consts\" />
         <Folder Include="Features\Orders\Rules\" />
@@ -35,6 +40,7 @@
         <Folder Include="Features\ProductLikes\Dtos\" />
         <Folder Include="Features\ProductLikes\Rules\" />
         <Folder Include="Features\Roles\Commands\" />
+        <Folder Include="Features\Search\Profiles\" />
         <Folder Include="Features\UserAddresses\Consts\" />
         <Folder Include="Features\UserAddresses\Rules\" />
     </ItemGroup>
@@ -43,6 +49,20 @@
       <Reference Include="Microsoft.AspNetCore.Http.Abstractions">
         <HintPath>..\..\..\..\..\..\..\..\usr\local\share\dotnet\shared\Microsoft.AspNetCore.App\8.0.4\Microsoft.AspNetCore.Http.Abstractions.dll</HintPath>
       </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Abstraction\Services\Elasticsearch\ElasticSearchIndexer.cs" />
+      <Compile Remove="Dtos\Elasticsearch\FilterValueDto.cs" />
+      <Compile Remove="Dtos\Elasticsearch\FilterOptionsDto.cs" />
+      <Compile Remove="Dtos\Elasticsearch\FeatureValueFilterDto.cs" />
+      <Compile Remove="Dtos\Elasticsearch\FeatureFilterDto.cs" />
+      <Compile Remove="Abstraction\Services\Elasticsearch\IElasticsearchService.cs" />
+      <Compile Remove="Abstraction\Services\Elasticsearch\IElasticSearchService2.cs" />
+      <Compile Remove="Dtos\Elasticsearch\SearchFilterDto.cs" />
+      <Compile Remove="Features\Search\SearchQuery.cs" />
+      <Compile Remove="Dtos\Elasticsearch\SearchResultDto.cs" />
+      <Compile Remove="Dtos\ProductSearchDto.cs" />
     </ItemGroup>
 
 </Project>

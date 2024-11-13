@@ -35,7 +35,8 @@ public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryRespons
             if (request.PageRequest.PageIndex == -1 && request.PageRequest.PageSize == -1)
             {
                 List<Brand> brands = await _brandRepository.GetAllAsync(
-                    include: x => x.Include(x => x.BrandImageFiles),
+                    include: x => x.Include(x => x.BrandImageFiles)
+                                 .Include(x => x.Products),
                     cancellationToken: cancellationToken);
                 GetListResponse<GetAllBrandQueryResponse> response = _mapper.Map<GetListResponse<GetAllBrandQueryResponse>>(brands);
                 response.Items.SetImageUrl(_storageService);
@@ -46,7 +47,8 @@ public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryRespons
                 IPaginate<Brand> brands = await _brandRepository.GetListAsync(
                     index: request.PageRequest.PageIndex,
                     size: request.PageRequest.PageSize,
-                    include: x => x.Include(x => x.BrandImageFiles),
+                    include: x => x.Include(x => x.BrandImageFiles)
+                                 .Include(x => x.Products),
                     cancellationToken: cancellationToken
                 );
                 GetListResponse<GetAllBrandQueryResponse> response = _mapper.Map<GetListResponse<GetAllBrandQueryResponse>>(brands);
@@ -54,7 +56,5 @@ public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryRespons
                 return response;
             }
         }
-
-        
     }
 }

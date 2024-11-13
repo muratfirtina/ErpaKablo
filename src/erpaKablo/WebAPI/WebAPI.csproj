@@ -122,4 +122,8 @@
       <_ContentIncludedByDefault Remove="wwwroot\categories\janitorial-a95da623936344ca\janitorial-20240821101338.avif" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Controllers\SearchController.cs" />
+    </ItemGroup>
+
 </Project>

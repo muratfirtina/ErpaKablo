@@ -9,16 +9,20 @@
     <ItemGroup>
         <ProjectReference Include="..\..\corePackages\Core.CrossCuttingConcerns\Core.CrossCuttingConcerns.csproj"/>
         <ProjectReference Include="..\Application\Application.csproj"/>
+        <ProjectReference Include="..\Persistence\Persistence.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="CloudinaryDotNet" Version="1.26.2"/>
+        <PackageReference Include="Elasticsearch.Net" Version="7.17.5" />
         <PackageReference Include="Google.Cloud.Storage.V1" Version="4.10.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17"/>
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0"/>
         <PackageReference Include="Microsoft.Graph" Version="4.0.0" />
         <PackageReference Include="Microsoft.Identity.Client" Version="4.65.0" />
+        <PackageReference Include="NEST" Version="7.17.5" />
         <PackageReference Include="SkiaSharp" Version="2.88.8"/>
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
     </ItemGroup>
@@ -30,6 +34,16 @@
       <Reference Include="Microsoft.AspNetCore.Mvc.Core">
         <HintPath>..\..\..\..\..\..\..\..\usr\local\share\dotnet\shared\Microsoft.AspNetCore.App\8.0.4\Microsoft.AspNetCore.Mvc.Core.dll</HintPath>
       </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Services\Elasticsearch\ElasticsearchSyncService.cs" />
+      <Compile Remove="Services\Elasticsearch\ElasticsearchService.cs" />
+      <Compile Remove="Services\Elasticsearch\ElasticSearchManager.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Services\Elasticsearch\" />
     </ItemGroup>
 
 </Project>

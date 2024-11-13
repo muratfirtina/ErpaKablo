@@ -18,10 +18,12 @@ public class MappingProfiles : Profile
     public MappingProfiles()
     {
         CreateMap<Brand, GetAllBrandQueryResponse>()
-            .ForMember(dest 
-                    => dest.BrandImage, opt
-                    => opt.MapFrom(src =>
-                    src.BrandImageFiles.FirstOrDefault()));
+            .ForMember(dest
+                => dest.BrandImage, opt
+                => opt.MapFrom(src =>
+                    src.BrandImageFiles.FirstOrDefault()))
+            .ForMember(dest => dest.ProductCount, opt
+                => opt.MapFrom(src => src.Products != null ? src.Products.Count : 0));
         CreateMap<Brand, GetByIdBrandResponse>()
             .ForMember(dest => dest.BrandImage, opt => opt.MapFrom(src => src.BrandImageFiles.FirstOrDefault()));
         CreateMap<List<Brand>, GetListResponse<GetAllBrandQueryResponse>>()
