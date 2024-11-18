@@ -38,16 +38,7 @@ public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandRespo
                 throw new Exception("Sepet siparişe dönüştürülemedi.");
             }
 
-            /*await _mailService.SendCompletedOrderEmailAsync(
-                orderDto.Email, 
-                orderDto.OrderCode,
-                orderDto.Description,
-                orderDto.UserAddress,
-                orderDto.OrderDate,
-                orderDto.UserName,
-                orderDto.OrderItems,
-                orderDto.TotalPrice
-            );*/
+            //await _mailService.SendOrderCreatedEmailAsync(orderDto);
 
             return new ConvertCartToOrderCommandResponse
             {

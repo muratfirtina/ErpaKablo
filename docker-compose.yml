@@ -1,0 +1,80 @@
+services:
+  # Elasticsearch ve Kibana servislerini şimdilik yorum satırı olarak tutuyoruz
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.17.25
+  #   container_name: els
+  #   environment:
+  #     - xpack.security.enabled=false
+  #     - discovery.type=single-node
+  #   ports:
+  #     - 9200:9200
+  #   networks:
+  #     - erpaKabloNetwork
+  #   volumes:
+  #     - elasticsearch-data:/usr/share/elasticsearch/data
+  #
+  # kibana:
+  #   image: docker.elastic.co/kibana/kibana:7.17.25
+  #   container_name: kibana
+  #   ports:
+  #     - 5601:5601
+  #   networks:
+  #     - erpaKabloNetwork
+  #   depends_on:
+  #     - elasticsearch
+  #   environment:
+  #     - ELASTICSEARCH_URL=http://elasticsearch:9200
+
+  # Prometheus Configuration
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      # Prometheus config dosyası
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      # Alert ve recording rules
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules
+      # Prometheus veri depolama
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - erpaKabloNetwork
+    restart: always
+
+  # Grafana Configuration
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      # Grafana konfigürasyon dosyaları
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      # Grafana veri depolama
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - erpaKabloNetwork
+    depends_on:
+      - prometheus
+    restart: always
+
+# Volume tanımlamaları
+volumes:
+  elasticsearch-data:  # Elasticsearch için kalıcı veri depolama
+  prometheus-data:     # Prometheus için kalıcı veri depolama
+  grafana-data:       # Grafana için kalıcı veri depolama
+
+# Network tanımlaması
+networks:
+  erpaKabloNetwork:
+    driver: bridge

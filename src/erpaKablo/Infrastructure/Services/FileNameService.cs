@@ -69,7 +69,13 @@ public class FileNameService : IFileNameService
         {
             var newWidth = (int)Math.Round(originalBitmap.Width * percentage / 100.0);
             var newHeight = (int)Math.Round(originalBitmap.Height * percentage / 100.0);
-            var scaledBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKBitmapResizeMethod.Lanczos3);
+        
+            // Eski:
+            // var scaledBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKBitmapResizeMethod.Lanczos3);
+        
+            // Yeni:
+            var scaledBitmap = originalBitmap.Resize(new SKImageInfo(newWidth, newHeight), SKFilterQuality.High);
+        
             using (var image = SKImage.FromBitmap(scaledBitmap))
             {
                 using (var jpegData = image.Encode(SKEncodedImageFormat.Jpeg, 70))
@@ -87,9 +93,7 @@ public class FileNameService : IFileNameService
                         pngData.SaveTo(stream);
                     }
                 }
-                    
             }
-                
         }
     }
     

@@ -39,6 +39,8 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<ProductView> ProductViews { get; set; }
     public DbSet<UserAddress> UserAddresses { get; set; }
     public DbSet<PhoneNumber> PhoneNumbers { get; set; }
+    public DbSet<SecurityLog> SecurityLogs { get; set; }
+    public DbSet<AlertLog> AlertLogs { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)
@@ -63,6 +65,8 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<PhoneNumber>().HasQueryFilter(pn => !pn.DeletedDate.HasValue);
         builder.Entity<ProductLike>()
             .HasQueryFilter(pl => !pl.Product.DeletedDate.HasValue);
+        builder.Entity<SecurityLog>().HasQueryFilter(sl => !sl.DeletedDate.HasValue);
+        builder.Entity<AlertLog>().HasQueryFilter(al => !al.DeletedDate.HasValue);
         
         builder.Entity<ProductLike>()
             .HasOne(pl => pl.Product)
@@ -138,6 +142,12 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
             .WithMany(p => p.ProductFeatureValues)
             .HasForeignKey(pfv => pfv.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.Entity<SecurityLog>(entity =>
+        { 
+            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => e.Level);
+        });
         
         
         base.OnModelCreating(builder);

@@ -8,49 +8,54 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Infrastructure.Services.Token;
 
-public class TokenHandler: ITokenHandler
+public class TokenHandler : ITokenHandler
 {
-    readonly IConfiguration _configuration;
+    private readonly IConfiguration _configuration;
 
     public TokenHandler(IConfiguration configuration)
     {
-        _configuration = configuration;
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
     public Application.Dtos.Token.Token CreateAccessToken(int second, AppUser appUser)
     {
-        Application.Dtos.Token.Token token = new ();
+        var securityKey = _configuration["Security:Token:SecurityKey"];
+        if (string.IsNullOrEmpty(securityKey))
+            throw new InvalidOperationException("Security key is not configured");
+
+        var issuer = _configuration["Security:Token:Issuer"];
+        var audience = _configuration["Security:Token:Audience"];
+
+        Application.Dtos.Token.Token token = new();
         
-        SymmetricSecurityKey securityKey = new(System.Text.Encoding.UTF8.GetBytes(_configuration["Token:SecurityKey"]));
+        SymmetricSecurityKey symmetricSecurityKey = new(System.Text.Encoding.UTF8.GetBytes(securityKey));
         
-        SigningCredentials signingCredentials = new(securityKey, SecurityAlgorithms.HmacSha256);
+        SigningCredentials signingCredentials = new(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
         
         token.Expiration = DateTime.UtcNow.AddSeconds(second);
         JwtSecurityToken securityToken = new(
-            issuer: _configuration["Token:Issuer"],
-            audience: _configuration["Token:Audience"],
+            issuer: issuer,
+            audience: audience,
             expires: token.Expiration,
             notBefore: DateTime.UtcNow,
             signingCredentials: signingCredentials,
-            claims: new List<Claim>()
+            claims: new List<Claim>
             {
-                new(ClaimTypes.Name, appUser.UserName),
-                
+                new(ClaimTypes.Name, appUser.UserName)
             }
         );
         
-        
         JwtSecurityTokenHandler tokenHandler = new();
         token.AccessToken = tokenHandler.WriteToken(securityToken);
-
         token.RefreshToken = CreateRefreshToken();
+        
         return token;
-
     }
 
     public Application.Dtos.Token.Token CreateAccessToken(AppUser user)
     {
-        throw new NotImplementedException();
+        var accessTokenLifetime = _configuration.GetValue<int>("Security:JwtSettings:AccessTokenLifetimeMinutes", 120);
+        return CreateAccessToken(accessTokenLifetime * 60, user); // Convert minutes to seconds
     }
 
     public string CreateRefreshToken()

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Application.Abstraction.Services;
 using Application.Features.Users.Commands.LoginUser;
 using Application.Features.Users.Commands.LogoutUser;
 using Application.Features.Users.Commands.PasswordReset;
@@ -12,11 +14,39 @@ namespace WebAPI.Controllers
     [ApiController]
     public class AuthController : BaseController
     {
+        private readonly IMetricsService _metricsService;
+
+        public AuthController(IMetricsService metricsService)
+        {
+            _metricsService = metricsService;
+        }
+
         [HttpPost("[action]")]
         public async Task<IActionResult> Login(LoginUserRequest loginUserRequest)
         {
-            var response = await Mediator.Send(loginUserRequest);
-            return Ok(response);
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                var response = await Mediator.Send(loginUserRequest);
+                stopwatch.Stop();
+
+                // Başarılı login metriği
+                _metricsService.IncrementUserLogins("jwt", "standard");
+                _metricsService.UpdateActiveUsers("authenticated", 1);
+                _metricsService.RecordRequestDuration(
+                    "auth",
+                    "login",
+                    stopwatch.Elapsed.TotalMilliseconds);
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _metricsService.IncrementFailedLogins(
+                    ex.GetType().Name,
+                    "standard");
+                throw;
+            }
         }
         
         [HttpPost("logout")]

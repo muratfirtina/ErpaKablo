@@ -1,52 +1,81 @@
 using Application.Features.Brands.Dtos;
 using Application.Features.Carousels.Dtos;
 using Application.Features.Categories.Dtos;
-using Application.Features.Categories.Queries.GetById;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Application.Storage;
-using Core.Application.Responses;
 
-namespace Application.Extensions
+namespace Application.Extensions;
+
+public static class ProductImageExtensions
 {
-    public static class ProductImageExtensions
+    public static void SetImageUrls<T>(this IEnumerable<T> items, IStorageService storageService) where T : class
     {
-        public static void SetImageUrls<T>(this IEnumerable<T> items, IStorageService storageService) where T : class
+        if (items == null || storageService == null)
+            return;
+
+        try
         {
-            var baseUrl = storageService.GetStorageUrl();
+            var baseUrl = storageService.GetStorageUrl()?.TrimEnd('/');
+            if (string.IsNullOrEmpty(baseUrl))
+                return;
+
             foreach (var item in items)
             {
                 SetImageUrl(item, baseUrl);
             }
         }
-
-        public static ProductImageFileDto SetImageUrl<T>(this T item, IStorageService storageService) where T : class
+        catch (Exception)
         {
-            var baseUrl = storageService.GetStorageUrl();
-            SetImageUrl(item, baseUrl);
+            // Hata durumunda sessizce devam et
+        }
+    }
+
+    public static ProductImageFileDto SetImageUrl<T>(this T item, IStorageService storageService) where T : class
+    {
+        if (item == null || storageService == null)
             return null;
+
+        try
+        {
+            var baseUrl = storageService.GetStorageUrl()?.TrimEnd('/');
+            if (string.IsNullOrEmpty(baseUrl))
+                return null;
+
+            SetImageUrl(item, baseUrl);
+        }
+        catch (Exception)
+        {
+            // Hata durumunda sessizce devam et
         }
 
-        private static void SetImageUrl<T>(T item, string baseUrl) where T : class
+        return null;
+    }
+
+    private static void SetImageUrl<T>(T item, string baseUrl) where T : class
+    {
+        try
         {
-            if (item is IHasShowcaseImage showcaseItem)
+            if (item is IHasShowcaseImage showcaseItem && showcaseItem.ShowcaseImage != null)
             {
                 SetShowcaseImageUrl(showcaseItem, baseUrl);
             }
 
-            if (item is IHasProductImageFiles productImagesItem)
+            if (item is IHasProductImageFiles productImagesItem && productImagesItem.ProductImageFiles != null)
             {
                 foreach (var imageFile in productImagesItem.ProductImageFiles)
                 {
-                    SetProductImageFileUrl(imageFile, baseUrl);
+                    if (imageFile != null)
+                        SetProductImageFileUrl(imageFile, baseUrl);
                 }
             }
 
-            if (item is IHasRelatedProducts relatedProductsItem)
+            if (item is IHasRelatedProducts relatedProductsItem && relatedProductsItem.RelatedProducts != null)
             {
                 foreach (var relatedProduct in relatedProductsItem.RelatedProducts)
                 {
-                    SetShowcaseImageUrl(relatedProduct, baseUrl);
+                    if (relatedProduct != null)
+                        SetShowcaseImageUrl(relatedProduct, baseUrl);
                 }
             }
 
@@ -60,88 +89,104 @@ namespace Application.Extensions
                 SetBrandImageUrl(brandItem.BrandImage, baseUrl);
             }
 
-            if (item is IHasCarouselImageFiles carouselItem)
+            if (item is IHasCarouselImageFiles carouselItem && carouselItem.CarouselImageFiles != null)
             {
                 foreach (var imageFile in carouselItem.CarouselImageFiles)
                 {
-                    SetCarouselImageUrl(imageFile, baseUrl);
+                    if (imageFile != null)
+                        SetCarouselImageUrl(imageFile, baseUrl);
                 }
             }
         }
-
-        private static void SetShowcaseImageUrl(IHasShowcaseImage item, string baseUrl)
+        catch (Exception)
         {
-            if (item.ShowcaseImage == null)
+            // Hata durumunda sessizce devam et
+        }
+    }
+
+    private static void SetShowcaseImageUrl(IHasShowcaseImage item, string baseUrl)
+    {
+        if (item.ShowcaseImage == null)
+        {
+            item.ShowcaseImage = new ProductImageFileDto
             {
-                item.ShowcaseImage = new ProductImageFileDto
-                {
-                    FileName = string.Empty,
-                    Path = string.Empty,
-                    EntityType = string.Empty,
-                    Storage = string.Empty
-                };
-            }
-
-            SetProductImageFileUrl(item.ShowcaseImage, baseUrl);
+                FileName = string.Empty,
+                Path = string.Empty,
+                EntityType = string.Empty,
+                Storage = string.Empty
+            };
         }
 
-        private static void SetProductImageFileUrl(ProductImageFileDto imageFile, string baseUrl)
-        {
-            imageFile.Url = imageFile.FileName == string.Empty
-                ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
-                : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
-        }
-        
-        private static void SetCategoryImageUrl(CategoryImageFileDto? imageFile, string baseUrl)
-        {
-            if (imageFile == null) return;
-
-            imageFile.Url = imageFile.FileName == string.Empty
-                ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
-                : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
-        }
-        
-        private static void SetBrandImageUrl(BrandImageFileDto imageFile, string baseUrl)
-        {
-            imageFile.Url = imageFile.FileName == string.Empty
-                ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
-                : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
-        }
-        
-        private static void SetCarouselImageUrl(CarouselImageFileDto imageFile, string baseUrl)
-        {
-            imageFile.Url = imageFile.FileName == string.Empty
-                ? $"{baseUrl}{imageFile.EntityType}/{imageFile.FileName}"
-                : $"{baseUrl}{imageFile.EntityType}/{imageFile.Path}/{imageFile.FileName}";
-        }
+        SetProductImageFileUrl(item.ShowcaseImage, baseUrl);
     }
 
-    public interface IHasShowcaseImage
+    private static void SetProductImageFileUrl(ProductImageFileDto imageFile, string baseUrl)
     {
-        ProductImageFileDto ShowcaseImage { get; set; }
+        if (imageFile == null || string.IsNullOrEmpty(baseUrl))
+            return;
+
+        imageFile.Url = string.IsNullOrEmpty(imageFile.FileName)
+            ? $"{baseUrl}/{imageFile.EntityType}"
+            : $"{baseUrl}/{imageFile.EntityType}/{imageFile.Path?.TrimStart('/')}/{imageFile.FileName}";
     }
 
-    public interface IHasProductImageFiles
+    private static void SetCategoryImageUrl(CategoryImageFileDto imageFile, string baseUrl)
     {
-        ICollection<ProductImageFileDto> ProductImageFiles { get; set; }
+        if (imageFile == null || string.IsNullOrEmpty(baseUrl))
+            return;
+
+        imageFile.Url = string.IsNullOrEmpty(imageFile.FileName)
+            ? $"{baseUrl}/{imageFile.EntityType}"
+            : $"{baseUrl}/{imageFile.EntityType}/{imageFile.Path?.TrimStart('/')}/{imageFile.FileName}";
     }
 
-    public interface IHasRelatedProducts
+    private static void SetBrandImageUrl(BrandImageFileDto imageFile, string baseUrl)
     {
-        List<RelatedProductDto> RelatedProducts { get; set; }
+        if (imageFile == null || string.IsNullOrEmpty(baseUrl))
+            return;
+
+        imageFile.Url = string.IsNullOrEmpty(imageFile.FileName)
+            ? $"{baseUrl}/{imageFile.EntityType}"
+            : $"{baseUrl}/{imageFile.EntityType}/{imageFile.Path?.TrimStart('/')}/{imageFile.FileName}";
     }
-    
-    public interface IHasCategoryImage
+
+    private static void SetCarouselImageUrl(CarouselImageFileDto imageFile, string baseUrl)
     {
-        CategoryImageFileDto CategoryImage { get; set; }
+        if (imageFile == null || string.IsNullOrEmpty(baseUrl))
+            return;
+
+        imageFile.Url = string.IsNullOrEmpty(imageFile.FileName)
+            ? $"{baseUrl}/{imageFile.EntityType}"
+            : $"{baseUrl}/{imageFile.EntityType}/{imageFile.Path?.TrimStart('/')}/{imageFile.FileName}";
     }
-    public interface IHasBrandImage
-    {
-        BrandImageFileDto BrandImage { get; set; }
-    }
-    public interface IHasCarouselImageFiles
-    {
-        ICollection<CarouselImageFileDto> CarouselImageFiles { get; set; }
-    }
-    
+}
+
+public interface IHasShowcaseImage
+{
+    ProductImageFileDto ShowcaseImage { get; set; }
+}
+
+public interface IHasProductImageFiles
+{
+    ICollection<ProductImageFileDto> ProductImageFiles { get; set; }
+}
+
+public interface IHasRelatedProducts
+{
+    List<RelatedProductDto> RelatedProducts { get; set; }
+}
+
+public interface IHasCategoryImage
+{
+    CategoryImageFileDto CategoryImage { get; set; }
+}
+
+public interface IHasBrandImage
+{
+    BrandImageFileDto BrandImage { get; set; }
+}
+
+public interface IHasCarouselImageFiles
+{
+    ICollection<CarouselImageFileDto> CarouselImageFiles { get; set; }
 }

@@ -17,7 +17,7 @@ public static class ServiceRegistration
 {
     public static IServiceCollection AddPersistenceServices(this IServiceCollection services)
     {
-        services.AddDbContext<ErpaKabloDbContext>(opt => opt.UseMySQL(Configuration.ConnectionString));
+        services.AddDbContext<ErpaKabloDbContext>(opt => opt.UseNpgsql(Configuration.ConnectionString));
 
         services.AddIdentityCore<AppUser>(options =>
             {

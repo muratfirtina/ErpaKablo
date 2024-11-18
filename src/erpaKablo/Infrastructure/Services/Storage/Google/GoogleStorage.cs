@@ -1,13 +1,9 @@
-using Application.Repositories;
 using Application.Storage.Google;
-using Core.CrossCuttingConcerns.Exceptions;
 using Domain;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using Google.Apis.Storage.v1.Data;
 
 namespace Infrastructure.Services.Storage.Google;
 
@@ -15,44 +11,80 @@ public class GoogleStorage : IGoogleStorage
 {
     private readonly StorageClient _storageClient;
     private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
+    private readonly string _baseUrl;
     private readonly string _bucketName = "erpaotomasyonkablo";
-    
+
+
     public GoogleStorage(IConfiguration configuration, IOptionsSnapshot<StorageSettings> storageSettings)
     {
-        _storageSettings = storageSettings;
-
-        var credentialsPath = _storageSettings.Value.Providers.Google.CredentialsFilePath;
-        if (string.IsNullOrEmpty(credentialsPath))
+        _storageSettings = storageSettings ?? throw new ArgumentNullException(nameof(storageSettings));
+        
+        var googleSettings = configuration.GetSection("Storage:Providers:Google").Get<GoogleStorageSettings>();
+        if (googleSettings == null)
         {
-            throw new BusinessException("Google Cloud Storage service account key file path is not configured.");
+            throw new InvalidOperationException("Google Storage settings are not properly configured in appsettings.json");
         }
 
-        var credential = GoogleCredential.FromFile(credentialsPath);
-        _storageClient = StorageClient.Create(credential);
+        _baseUrl = googleSettings.Url ?? throw new InvalidOperationException("Google Storage URL is not configured");
+
+        // Credential dosyasının yolunu kontrol et
+        var credentialsPath = googleSettings.CredentialsFilePath;
+        if (string.IsNullOrEmpty(credentialsPath))
+        {
+            throw new InvalidOperationException("Google Storage credentials file path is not configured");
+        }
+
+        if (!File.Exists(credentialsPath))
+        {
+            throw new FileNotFoundException($"Google credentials file not found at: {credentialsPath}");
+        }
+
+        try
+        {
+            var credential = GoogleCredential.FromFile(credentialsPath);
+            _storageClient = StorageClient.Create(credential);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to initialize Google Storage client: {ex.Message}", ex);
+        }
     }
-    
-    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string entityType, string path, string fileName, MemoryStream fileStream)
+
+    // Implement your storage methods here
+    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(
+        string entityType, string path, string fileName, MemoryStream fileStream)
     {
-        List<(string fileName, string path, string containerName)> datas = new();
-        string objectName = $"{entityType}/{path}/{fileName}";
-        await _storageClient.UploadObjectAsync(_bucketName, objectName, null, fileStream);
-        datas.Add((fileName, objectName, _bucketName));
-        return datas;
+        var results = new List<(string fileName, string path, string containerName)>();
+        try
+        {
+            var objectName = $"{entityType}/{path}/{fileName}";
+
+            await _storageClient.UploadObjectAsync(_bucketName, objectName, null, fileStream);
+            
+            results.Add((fileName, $"{_baseUrl}{objectName}", entityType));
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to upload file to Google Storage: {ex.Message}", ex);
+        }
+
+        return results;
     }
-    
+
     public async Task DeleteAsync(string entityType, string path, string fileName)
     {
         try
         {
-            string fullPath = $"{entityType}/{path}/{fileName}";
-            await _storageClient.DeleteObjectAsync(_bucketName, fullPath);
+            var objectName = $"{entityType}/{path}/{fileName}";
+
+            await _storageClient.DeleteObjectAsync(_bucketName, objectName);
         }
-        catch 
+        catch (Exception ex)
         {
-            throw new BusinessException("File not found");
+            throw new InvalidOperationException($"Failed to delete file from Google Storage: {ex.Message}", ex);
         }
     }
-    
+
     public async Task<List<T>?> GetFiles<T>(string entityId, string entityType) where T : ImageFile, new()
     {
         var baseUrl = _storageSettings.Value.Providers.Google.Url;
@@ -82,23 +114,21 @@ public class GoogleStorage : IGoogleStorage
     {
         try
         {
-            var fullPath = $"{entityType}/{path}/{fileName}";
-            var obj = _storageClient.GetObject(_bucketName, fullPath);
+            var bucketName = "erpaotomasyonkablo";
+            var objectName = $"{entityType}/{path}/{fileName}";
+
+            var obj = _storageClient.GetObject(bucketName, objectName, new GetObjectOptions { Projection = Projection.NoAcl });
             return obj != null;
         }
-        catch 
+        catch
         {
             return false;
         }
     }
-    
-    public async Task FileMustBeInFileFormat(IFormFile formFile)
-    {
-        List<string> extensions = new() { ".jpg", ".png", ".jpeg", ".webp", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".heic" };
+}
 
-        string extension = Path.GetExtension(formFile.FileName).ToLower();
-        if (!extensions.Contains(extension))
-            throw new BusinessException("Unsupported format");
-        await Task.CompletedTask;
-    }
+public class GoogleStorageSettings
+{
+    public string Url { get; set; }
+    public string CredentialsFilePath { get; set; }
 }

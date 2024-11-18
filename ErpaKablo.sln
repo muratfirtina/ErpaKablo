@@ -3,6 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{59DC11A8-AD07-4D97-9581-8F3EF8BECAB9}"
 	ProjectSection(SolutionItems) = preProject
 		src\.gitignore = src\.gitignore
+		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "corePackages", "corePackages", "{61C4D6FC-8E1D-4EED-BB36-83F7129713FD}"

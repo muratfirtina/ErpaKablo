@@ -1,94 +1,116 @@
-using System.Security.Claims;
 using System.Text;
-using System.Text.Json.Serialization;
 using Application;
-using Application.Abstraction.Services;
-using Application.Storage;
-using Application.Storage.Google;
-using Application.Storage.Local;
+using Application.Extensions;
+using Azure.Identity;
 using Infrastructure;
-using Infrastructure.Filters;
-using Infrastructure.Services.Storage;
-using Infrastructure.Services.Storage.Google;
-using Infrastructure.Services.Storage.Local;
+using Infrastructure.Middleware.DDosProtection;
+using Infrastructure.Middleware.Monitoring;
+using Infrastructure.Middleware.RateLimiting;
+using Infrastructure.Middleware.Security;
+using Infrastructure.Services.Monitoring;
+using Infrastructure.Services.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Persistence;
-using Persistence.Services;
-using Serilog.Context;
-using WebAPI;
-using WebAPI.Extensions;
-using WebAPI.Filters;
+using Prometheus;
+using Serilog;
+using Serilog.Formatting.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.Configure<StorageSettings>(
-            builder.Configuration.GetSection("Storage"));
-
-/*builder.WebHost.ConfigureKestrel(serverOptions =>
+// Environment-based Configuration
+if (builder.Environment.IsProduction())
 {
-    serverOptions.ListenAnyIP(5199); // HTTPS için
-    serverOptions.ListenAnyIP(5198); // HTTP için
-});*/
+    builder.Configuration.AddAzureKeyVault(
+        new Uri($"https://{builder.Configuration["AzureKeyVault:VaultName"]}.vault.azure.net/"),
+        new ClientSecretCredential(
+            builder.Configuration["AzureKeyVault:TenantId"],
+            builder.Configuration["AzureKeyVault:ClientId"],
+            builder.Configuration["AzureKeyVault:ClientSecret"]));
+}
 
-builder.Services.AddHttpClient();
-builder.Services.AddHttpContextAccessor();
+// Serilog Configuration
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithEnvironmentName()
+    .WriteTo.Console(new JsonFormatter())
+    .WriteTo.Seq(
+        serverUrl: builder.Configuration["Serilog:WriteTo:1:Args:serverUrl"] ?? "http://localhost:5341",
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information
+    )
+    .CreateLogger();
 
-builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddPersistenceServices();
+builder.Host.UseSerilog();
 
-builder.Services.AddControllers(options =>
-    {
-        options.Filters.Add<ValidationFilter>();
-        options.Filters.Add<RolePermissionFilter>();
-        
-    })
-    /*.AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    })*/
-    //.AddFluentValidation(options => options.RegisterValidatorsFromAssemblyContaining<CreateProductValidator>())
-    .ConfigureApiBehaviorOptions(options => options.SuppressModelStateInvalidFilter = true);
-
-
-// Add services to the container.
-
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Core Services
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer("Admin",options =>
+// CORS Configuration
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
     {
-        options.TokenValidationParameters = new()
+        policy.WithOrigins(builder.Configuration.GetSection("WebAPIConfiguration:AllowedOrigins").Get<string[]>())
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+// Infrastructure Layer
+builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// Security Layer
+builder.Services.AddSecurityServices(builder.Configuration);
+
+// Application Layer
+builder.Services.AddApplicationServices();
+
+// Custom Behaviors
+builder.Services.AddCustomBehaviors();
+
+// Persistence Layer
+builder.Services.AddPersistenceServices();
+
+// Prometheus Metrics
+builder.Services.AddMetricServer(options => { options.Port = 9100; });
+
+// JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer("Admin", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
         {
+            ValidateIssuerSigningKey = true,
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Token:Issuer"],
-            ValidAudience = builder.Configuration["Token:Audience"],
-            IssuerSigningKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Token:SecurityKey"])),
-            LifetimeValidator =(
-                notBefore,
-                expires,
-                securityToken,
-                validationParameters) => expires != null ? expires > DateTime.UtcNow : false,
-            
-            NameClaimType = ClaimTypes.Name
+            ClockSkew = TimeSpan.FromMinutes(5),
+            ValidIssuer = builder.Configuration["Security:Token:Issuer"],
+            ValidAudience = builder.Configuration["Security:Token:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Security:Token:SecurityKey"]))
         };
-        
+
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var token = context.Request.Cookies["access_token"];
-                if (!string.IsNullOrEmpty(token))
+                context.Token = context.Request.Cookies["access_token"];
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                if (context.Exception is SecurityTokenExpiredException)
                 {
-                    context.Token = token;
+                    context.Response.Headers.Add("Token-Expired", "true");
                 }
                 return Task.CompletedTask;
             }
@@ -97,27 +119,80 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Development specific middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHsts();
+}
 
-app.UseStaticFiles();
-const string webApiConfigurationSection = "WebAPIConfiguration";
-WebApiConfiguration webApiConfiguration =
-    app.Configuration.GetSection(webApiConfigurationSection).Get<WebApiConfiguration>()
-    ?? throw new InvalidOperationException($"\"{webApiConfigurationSection}\" section cannot found in configuration.");
-app.UseCors(opt => opt.WithOrigins(webApiConfiguration.AllowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+// Metrics & Monitoring
+app.UseMetricServer();
 
+// CORS - Must be before other middleware that might generate responses
+app.UseCors();
 
+// Security Headers
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
+// Security Protection
+if (builder.Configuration.GetValue<bool>("Security:DDoSProtection:Enabled", true))
+{
+    app.UseMiddleware<DDoSProtectionMiddleware>();
+}
+
+if (builder.Configuration.GetValue<bool>("Security:RateLimiting:Enabled", true))
+{
+    app.UseMiddleware<RateLimitingMiddleware>();
+}
+
+// Monitoring
+app.UseMiddleware<RequestTimingMiddleware>();
+app.UseMiddleware<AdvancedMetricsMiddleware>();
+
+// Basic Middleware
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
+// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.AddUserNameLogging();
+// Request Logging
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = 
+        "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+        diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+        diagnosticContext.Set("RemoteIpAddress", httpContext.Connection.RemoteIpAddress);
+        
+        if (httpContext.User?.Identity?.IsAuthenticated == true)
+        {
+            diagnosticContext.Set("UserName", httpContext.User.Identity.Name);
+        }
+    };
+});
 
+// API Routes
 app.MapControllers();
-app.Run();
+
+try
+{
+    Log.Information("Starting web application");
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

@@ -26,11 +26,11 @@ public class StorageService : IStorageService
         IFileNameService fileNameService,
         IOptionsSnapshot<StorageSettings> storageSettings)
     {
-        _localStorage = localStorage;
-        _cloudinaryStorage = cloudinaryStorage;
-        _googleStorage = googleStorage;
-        _fileNameService = fileNameService;
-        _storageSettings = storageSettings;
+        _localStorage = localStorage ?? throw new ArgumentNullException(nameof(localStorage));
+        _cloudinaryStorage = cloudinaryStorage ?? throw new ArgumentNullException(nameof(cloudinaryStorage));
+        _googleStorage = googleStorage ?? throw new ArgumentNullException(nameof(googleStorage));
+        _fileNameService = fileNameService ?? throw new ArgumentNullException(nameof(fileNameService));
+        _storageSettings = storageSettings ?? throw new ArgumentNullException(nameof(storageSettings));
     }
 
 
@@ -88,13 +88,20 @@ public class StorageService : IStorageService
 
     public string GetStorageUrl(string storageType = null)
     {
-        var activeProvider = storageType ?? _storageSettings.Value.ActiveProvider;
-        return activeProvider.ToLower() switch
+        if (_storageSettings?.Value?.Providers == null)
+            throw new InvalidOperationException("Storage settings or providers are not configured");
+
+        var activeProvider = (storageType ?? _storageSettings.Value.ActiveProvider ?? "localstorage").ToLower();
+        
+        return activeProvider switch
         {
-            "localstorage" => _storageSettings.Value.Providers.LocalStorage.Url,
-            "cloudinary" => _storageSettings.Value.Providers.Cloudinary.Url,
-            //"google" => _storageSettings.Value.Providers.Google.Url,
-            _ => throw new ArgumentException("Invalid storage provider", nameof(storageType))
+            "localstorage" => _storageSettings.Value.Providers.LocalStorage?.Url 
+                              ?? throw new InvalidOperationException("LocalStorage URL is not configured"),
+            "cloudinary" => _storageSettings.Value.Providers.Cloudinary?.Url 
+                            ?? throw new InvalidOperationException("Cloudinary URL is not configured"),
+            /*"google" => _storageSettings.Value.Providers.Google?.Url 
+                        ?? throw new InvalidOperationException("Google Storage URL is not configured"),*/
+            _ => throw new ArgumentException($"Invalid storage provider: {activeProvider}", nameof(storageType))
         };
     }
 

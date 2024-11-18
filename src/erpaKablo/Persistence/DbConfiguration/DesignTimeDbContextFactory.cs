@@ -10,7 +10,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<ErpaKabloD
     public ErpaKabloDbContext CreateDbContext(string[] args)
     {
         var dbContextOptionsBuilder = new DbContextOptionsBuilder<ErpaKabloDbContext>();
-        dbContextOptionsBuilder.UseMySQL(Configuration.ConnectionString).EnableSensitiveDataLogging();
+        dbContextOptionsBuilder.UseNpgsql(Configuration.ConnectionString).EnableSensitiveDataLogging();
         
         
         return new ErpaKabloDbContext(dbContextOptionsBuilder.Options);

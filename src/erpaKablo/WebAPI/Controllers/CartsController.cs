@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Application.Abstraction.Services;
 using Application.Consts;
 using Application.CustomAttributes;
 using Application.Enums;
@@ -17,13 +19,33 @@ namespace WebAPI.Controllers
     [Authorize(AuthenticationSchemes = "Admin")]
     public class CartsController : BaseController
     {
+        private readonly IMetricsService _metricsService;
+
+        public CartsController(IMetricsService metricsService)
+        {
+            _metricsService = metricsService;
+        }
 
         [HttpPost]
         [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Add Item To Cart", Menu = AuthorizeDefinitionConstants.Carts)]
         public async Task<IActionResult> AddItemToCart([FromBody] CreateCartCommand createCartCommand)
         {
-            CreatedCartResponse response = await Mediator.Send(createCartCommand);
-            return Ok(response);
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                CreatedCartResponse response = await Mediator.Send(createCartCommand);
+                stopwatch.Stop();
+        
+                // Sepet metrikleri
+                _metricsService.UpdateCartAbandonment("active", 0);
+        
+                return Ok(response);
+            }
+            catch (Exception)
+            {
+                _metricsService.UpdateCartAbandonment("abandoned", 100);
+                throw;
+            }
         }
         
         [HttpGet]

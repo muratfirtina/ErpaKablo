@@ -11,7 +11,7 @@ static class Configuration
             ConfigurationManager configurationManager = new();
             configurationManager.SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../WebAPI"));
             configurationManager.AddJsonFile("appsettings.json");
-            return configurationManager.GetConnectionString("ErpaKabloDbMySQL");
+            return configurationManager.GetConnectionString("ErpaKabloDb");
             
         }
         

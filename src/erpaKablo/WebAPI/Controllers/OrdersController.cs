@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Application.Abstraction.Services;
 using Application.Consts;
 using Application.CustomAttributes;
 using Application.Enums;
@@ -28,13 +30,38 @@ namespace WebAPI.Controllers
     [Authorize(AuthenticationSchemes = "Admin")]
     public class OrdersController : BaseController
     {
-        
+        private readonly IMetricsService _metricsService;
+
+        public OrdersController(IMetricsService metricsService)
+        {
+            _metricsService = metricsService;
+        }
+
         [HttpPost("convert-cart-to-order")]
         [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Convert Cart To Order", Menu = AuthorizeDefinitionConstants.Orders)]
         public async Task<IActionResult> ConvertCartToOrder([FromBody] ConvertCartToOrderCommand command)
         {
-            ConvertCartToOrderCommandResponse response = await Mediator.Send(command);
-            return Ok(response);
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                ConvertCartToOrderCommandResponse response = await Mediator.Send(command);
+                stopwatch.Stop();
+        
+                // Sipariş tamamlama metrikleri
+                _metricsService.RecordCheckoutDuration(
+                    "registered", 
+                    "standard", 
+                    stopwatch.Elapsed.TotalSeconds);
+        
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _metricsService.IncrementFailedPayments(
+                    ex.GetType().Name,
+                    "order_creation");
+                throw;
+            }
         }
         
         [HttpGet]

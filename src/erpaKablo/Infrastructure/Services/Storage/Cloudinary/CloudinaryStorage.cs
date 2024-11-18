@@ -16,12 +16,21 @@ public class CloudinaryStorage : ICloudinaryStorage
     public CloudinaryStorage(IConfiguration configuration, IOptionsSnapshot<StorageSettings> storageSettings)
     {
         _storageSettings = storageSettings;
-        var cloudinaryAccountSettings = configuration.GetSection("CloudinaryAccount").Get<CloudinarySettings>();
+        
+        // Storage ayarlarından Cloudinary yapılandırmasını al
+        var cloudinarySettings = configuration
+            .GetSection("Storage:Providers:Cloudinary")
+            .Get<CloudinarySettings>();
+
+        if (cloudinarySettings == null)
+        {
+            throw new InvalidOperationException("Cloudinary settings are not properly configured in appsettings.json");
+        }
 
         var account = new Account(
-            cloudinaryAccountSettings?.CloudName,
-            cloudinaryAccountSettings?.ApiKeyName,
-            cloudinaryAccountSettings?.ApiSecretName
+            cloudinarySettings.CloudName,
+            cloudinarySettings.ApiKey,
+            cloudinarySettings.ApiSecret
         );
 
         _cloudinary = new CloudinaryDotNet.Cloudinary(account);

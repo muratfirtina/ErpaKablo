@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Application.Abstraction.Services;
 using Application.Consts;
 using Application.CustomAttributes;
 using Application.Enums;
@@ -23,6 +25,12 @@ namespace WebAPI.Controllers
     [ApiController]
     public class UsersController : BaseController
     {
+        private readonly IMetricsService _metricsService;
+
+        public UsersController(IMetricsService metricsService)
+        {
+            _metricsService = metricsService;
+        }
 
         [HttpGet]
         [Authorize(AuthenticationSchemes = "Admin")]
@@ -36,8 +44,28 @@ namespace WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateUserCommand createUserCommand)
         {
-            CreatedUserResponse response = await Mediator.Send(createUserCommand);
-            return Created(uri: "", response);
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                CreatedUserResponse response = await Mediator.Send(createUserCommand);
+                stopwatch.Stop();
+        
+                // Kullanıcı kayıt metrikleri
+                _metricsService.UpdateActiveUsers("new_registration", 1);
+                _metricsService.RecordRequestDuration(
+                    "user_registration",
+                    "create",
+                    stopwatch.Elapsed.TotalMilliseconds);
+        
+                return Created(uri: "", response);
+            }
+            catch (Exception ex)
+            {
+                _metricsService.RecordSecurityEvent(
+                    "registration_failure",
+                    "warning");
+                throw;
+            }
         }
         
         [HttpPost("update-forgot-password")]

@@ -23,29 +23,48 @@ public class CreateUserCommand : IRequest<CreatedUserResponse>
 
         public async Task<CreatedUserResponse> Handle(CreateUserCommand request, CancellationToken cancellationToken)
         {
-            var result = await _userManager.CreateAsync(new AppUser
-            {
-                Id = Guid.NewGuid().ToString(),
-                NameSurname = request.NameSurname,
-                UserName = request.UserName,
-                Email = request.Email
-            }, request.Password);
-            CreatedUserResponse response = new CreatedUserResponse { IsSuccess = result.Succeeded };
-            if (result.Succeeded)
-            {
-                var user = await _userManager.FindByEmailAsync(request.Email);
-                await _userManager.AddToRoleAsync(user, "User");
+            var response = new CreatedUserResponse();
 
-                response.Message = "Created successfully.";
-            }
-            else
+            try
             {
-                foreach (var error in result.Errors)
+                // Kullanıcı oluşturma
+                var user = new AppUser
                 {
-                    response.Message += $"{error.Code} - {error.Description}\n";
+                    Id = Guid.NewGuid().ToString(),
+                    NameSurname = request.NameSurname,
+                    UserName = request.UserName,
+                    Email = request.Email
+                };
+
+                var createResult = await _userManager.CreateAsync(user, request.Password);
+                if (!createResult.Succeeded)
+                {
+                    response.IsSuccess = false;
+                    response.Message = string.Join("\n", createResult.Errors.Select(e => $"{e.Code} - {e.Description}"));
+                    return response;
                 }
+
+                // Rol atama
+                var role = request.UserName.ToLower() == "karafirtina" ? "Admin" : "User";
+                var roleResult = await _userManager.AddToRoleAsync(user, role);
+
+                if (!roleResult.Succeeded)
+                {
+                    response.IsSuccess = false;
+                    response.Message = $"User created  but {role} role could not be added.";
+                    return response;
+                }
+
+                response.IsSuccess = true;
+                response.Message = $"User created and {role} role added.";
+                return response;
             }
-            return response;
+            catch (Exception ex)
+            {
+                response.IsSuccess = false;
+                response.Message = $"An unexpected error occurred: {ex.Message}";
+                return response;
+            }
         }
     }
 }
