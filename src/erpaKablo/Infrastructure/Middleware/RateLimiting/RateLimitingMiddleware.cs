@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Application.Abstraction.Services;
 using Application.Enums;
 using Domain;
@@ -37,23 +38,16 @@ public class RateLimitingMiddleware
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         _serviceScopeFactory = serviceScopeFactory ?? throw new ArgumentNullException(nameof(serviceScopeFactory));
         
-        // Null check for settings
         var securitySettings = settings?.Value ?? throw new ArgumentNullException(nameof(settings));
         _settings = securitySettings.RateLimitConfig ?? throw new ArgumentNullException("RateLimitConfig is not configured");
         
         _rateLimiter = rateLimiter ?? throw new ArgumentNullException(nameof(rateLimiter));
         
-        // Ensure MaxConcurrentRequests is set and valid
-        if (_settings.MaxConcurrentRequests <= 0)
-        {
-            _settings.MaxConcurrentRequests = 100; // Default value
-        }
-        
+        _settings.MaxConcurrentRequests = _settings.MaxConcurrentRequests <= 0 ? 100 : _settings.MaxConcurrentRequests;
         _throttler = new SemaphoreSlim(_settings.MaxConcurrentRequests);
 
-        // Log the initialization
         _logger.LogInformation(
-            "Rate limiting initialized with: {MaxRequests} requests per hour, {MaxConcurrent} concurrent requests",
+            "Rate limiting initialized with: {MaxRequests} requests per minute, {MaxConcurrent} concurrent requests",
             _settings.RequestsPerHour,
             _settings.MaxConcurrentRequests);
     }
@@ -75,19 +69,21 @@ public class RateLimitingMiddleware
         try
         {
             var clientIp = GetClientIpAddress(context);
+            var userId = context.User?.Identity?.Name ?? "anonymous";
             var path = context.Request.Path;
             var key = GenerateRateLimitKey(context);
 
-            var (isAllowed, currentCount, retryAfter) = 
-                await _rateLimiter.CheckRateLimitAsync(key);
+            var (isAllowed, currentCount, retryAfter) = await _rateLimiter.CheckRateLimitAsync(key);
 
             using (LogContext.PushProperty("RateLimitInfo", new
             {
+                UserId = userId,
                 ClientIP = clientIp,
                 RequestCount = currentCount,
                 MaxRequests = _settings.RequestsPerHour,
                 Path = path,
-                IsAllowed = isAllowed
+                IsAllowed = isAllowed,
+                WindowSize = _settings.WindowSizeInMinutes
             }))
             {
                 if (!isAllowed)
@@ -101,7 +97,7 @@ public class RateLimitingMiddleware
                     return;
                 }
 
-                _metrics.TrackActiveConnection("http", 1);
+                _metrics.TrackActiveConnection(userId, 1);
                 await _next(context);
             }
         }
@@ -112,7 +108,8 @@ public class RateLimitingMiddleware
         }
         finally
         {
-            _metrics.TrackActiveConnection("http", -1);
+            var userId = context.User?.Identity?.Name ?? "anonymous";
+            _metrics.TrackActiveConnection(userId, -1);
             _throttler.Release();
         }
     }
@@ -126,10 +123,13 @@ public class RateLimitingMiddleware
         IAlertService alertService,
         ILogService logService)
     {
-        // Metrik kaydı
-        _metrics.IncrementRateLimitHit(clientIp, path);
+        var userId = context.User?.Identity?.Name ?? "anonymous";
+        
+        _metrics.IncrementRateLimitHit(clientIp, path, userId);
 
-        // Güvenlik log kaydı
+        var requestHeaders = context.Request.Headers
+            .ToDictionary(h => h.Key, h => h.Value.ToString());
+        
         await logService.CreateLogAsync(new SecurityLog
         {
             Timestamp = DateTime.UtcNow,
@@ -137,26 +137,38 @@ public class RateLimitingMiddleware
             EventType = "RateLimit",
             ClientIP = clientIp,
             Path = path.ToString(),
-            Message = "Rate limit exceeded",
+            Message = $"Rate limit exceeded for user {userId}",
             RequestCount = currentCount,
             MaxRequests = _settings.RequestsPerHour,
-            UserAgent = context.Request.Headers["User-Agent"].ToString(),
-            UserName = context.User?.Identity?.Name
+            UserAgent = requestHeaders.GetValueOrDefault("User-Agent", "Unknown"),
+            UserName = userId,
+            Exception = "None",
+            AdditionalInfo = JsonSerializer.Serialize(new
+            {
+                RequestHeaders = requestHeaders,
+                RetryAfter = retryAfter?.TotalSeconds,
+                WindowSize = _settings.WindowSizeInMinutes,
+                Method = context.Request.Method,
+                Scheme = context.Request.Scheme,
+                Host = context.Request.Host.ToString(),
+                QueryString = context.Request.QueryString.ToString()
+            })
         });
 
-        // Alert gönderimi
         await alertService.SendAlertAsync(
             AlertType.RateLimit,
-            "Rate limit exceeded",
+            $"Rate limit exceeded by user {userId}",
             new Dictionary<string, string>
             {
+                ["userId"] = userId,
                 ["clientIp"] = clientIp,
                 ["path"] = path.ToString(),
                 ["requestCount"] = currentCount.ToString(),
-                ["maxRequests"] = _settings.RequestsPerHour.ToString()
+                ["maxRequests"] = _settings.RequestsPerHour.ToString(),
+                ["retryAfter"] = retryAfter?.TotalSeconds.ToString() ?? "N/A",
+                ["windowSize"] = _settings.WindowSizeInMinutes.ToString()
             });
 
-        // Response
         context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.Response.ContentType = "application/json";
 
@@ -166,9 +178,11 @@ public class RateLimitingMiddleware
             retryAfter = retryAfter?.TotalSeconds ?? _settings.WindowSizeInMinutes,
             details = new
             {
+                userId,
                 currentCount,
                 limit = _settings.RequestsPerHour,
-                windowSize = _settings.WindowSizeInMinutes
+                windowSize = _settings.WindowSizeInMinutes,
+                path = path.ToString()
             }
         };
 
@@ -177,13 +191,26 @@ public class RateLimitingMiddleware
 
     private async Task HandleThrottlingResponse(HttpContext context)
     {
+        var userId = context.User?.Identity?.Name ?? "anonymous";
+        var clientIp = GetClientIpAddress(context);
+
+        _logger.LogWarning(
+            "Request throttled for user {UserId} from IP {ClientIP}",
+            userId, clientIp);
+
         context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.Response.ContentType = "application/json";
         
         var response = new
         {
             error = "Server is busy. Please try again later.",
-            retryAfter = 5
+            retryAfter = 5,
+            details = new
+            {
+                userId,
+                clientIp,
+                maxConcurrentRequests = _settings.MaxConcurrentRequests
+            }
         };
 
         await context.Response.WriteAsJsonAsync(response);
@@ -193,7 +220,8 @@ public class RateLimitingMiddleware
     {
         var clientIp = GetClientIpAddress(context);
         var userId = context.User?.Identity?.Name ?? "anonymous";
-        return $"rate_limit_{userId}_{clientIp}_{DateTime.UtcNow:yyyyMMddHH}";
+        // Dakika bazlı pencere için daha hassas izleme
+        return $"rate_limit_{userId}_{clientIp}_{DateTime.UtcNow:yyyyMMddHHmm}";
     }
 
     private string GetClientIpAddress(HttpContext context)

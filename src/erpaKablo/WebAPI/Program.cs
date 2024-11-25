@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using Application;
 using Application.Extensions;
@@ -12,9 +13,11 @@ using Infrastructure.Services.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Persistence;
+using Persistence.Services;
 using Prometheus;
 using Serilog;
 using Serilog.Formatting.Json;
+using SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +82,9 @@ builder.Services.AddCustomBehaviors();
 // Persistence Layer
 builder.Services.AddPersistenceServices();
 
+// SignalR Services
+builder.Services.AddSignalRServices();
+
 // Prometheus Metrics
 builder.Services.AddMetricServer(options => { options.Port = 9100; });
 
@@ -96,14 +102,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Security:Token:Issuer"],
             ValidAudience = builder.Configuration["Security:Token:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Security:Token:SecurityKey"]))
+                Encoding.UTF8.GetBytes(builder.Configuration["Security:Token:SecurityKey"])),
+            LifetimeValidator = (notBefore, expires, securityToken, validationParameters) => expires != null ? expires > DateTime.UtcNow : false,
+            NameClaimType = ClaimTypes.Name
         };
 
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                context.Token = context.Request.Cookies["access_token"];
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/order-hub"))
+                {
+                    context.Token = accessToken;
+                }
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
@@ -118,6 +131,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 var app = builder.Build();
+
+Log.Information("Starting web application");
+
+using (var scope = app.Services.CreateScope())
+{
+    await RoleAndUserSeeder.SeedAsync(scope.ServiceProvider);
+}
 
 // Development specific middleware
 if (app.Environment.IsDevelopment())
@@ -182,6 +202,8 @@ app.UseSerilogRequestLogging(options =>
 
 // API Routes
 app.MapControllers();
+
+app.MapHubs();
 
 try
 {

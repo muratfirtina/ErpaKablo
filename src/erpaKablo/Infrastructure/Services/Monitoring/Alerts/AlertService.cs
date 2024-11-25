@@ -46,6 +46,7 @@ public class AlertService : IAlertService
     {
         try
         {
+            metadata = metadata ?? new Dictionary<string, string>();
             // Alert throttling check
             var throttleKey = $"alert_throttle_{type}_{DateTime.UtcNow:yyyyMMddHH}";
             if (await ShouldThrottleAlert(type, throttleKey))
@@ -216,14 +217,27 @@ public class AlertService : IAlertService
 
     private void RecordAlertMetrics(MetricAlert alert)
     {
-        _metricsService.IncrementAlertCounter(
-            alert.Type.ToString(),
-            new Dictionary<string, string>
+        try
+        {
+            if (alert == null)
+                return;
+
+            var labels = new Dictionary<string, string>
             {
-                ["severity"] = alert.Severity,
-                ["source"] = alert.Source
-            }
-        );
+                ["severity"] = alert.Severity ?? "unknown",
+                ["source"] = alert.Source ?? "system"
+            };
+
+            _metricsService.IncrementAlertCounter(
+                alert.Type.ToString(),
+                labels
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to record alert metrics for type: {AlertType}", alert?.Type);
+            // Metrik kaydı başarısız olsa bile alert işlemeye devam et
+        }
     }
 
     private string FormatAlertMessage(MetricAlert alert)

@@ -45,7 +45,7 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
                     cancellationToken: cancellationToken);
 
                 var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicQueryResponse>>(allBrands);
-                brandsDtos.Items.SetImageUrl(_storageService);
+                brandsDtos.Items.SetImageUrls(_storageService);
                 return brandsDtos;
             }
             else
@@ -58,7 +58,7 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
                     cancellationToken: cancellationToken);
                 
                 var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicQueryResponse>>(brands);
-                brandsDtos.Items.SetImageUrl(_storageService);
+                brandsDtos.Items.SetImageUrls(_storageService);
                 return brandsDtos;
 
             }

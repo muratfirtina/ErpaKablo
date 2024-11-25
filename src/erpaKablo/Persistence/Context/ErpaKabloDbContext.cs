@@ -11,7 +11,7 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
 {
     public ErpaKabloDbContext(DbContextOptions<ErpaKabloDbContext> options) : base(options)
     {
-        
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true); 
     }
 
     public DbSet<Endpoint> Endpoints { get; set; }

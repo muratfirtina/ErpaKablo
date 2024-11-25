@@ -115,6 +115,13 @@ public class PrometheusMetricsService : IMetricsService
             {
                 LabelNames = new[] { "event_type", "severity" }
             });
+        _alertCounter = Metrics.CreateCounter(
+            "application_alerts_total",
+            "Total number of alerts triggered",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "type", "severity" }
+            });
         
         #endregion
 
@@ -427,8 +434,20 @@ public class PrometheusMetricsService : IMetricsService
 
     public void IncrementAlertCounter(string alertType, Dictionary<string, string> labels)
     {
-        var severity = labels.GetValueOrDefault("severity", "info");
-        _alertCounter.WithLabels(alertType, severity).Inc();
+        try
+        {
+            if (string.IsNullOrEmpty(alertType))
+                alertType = "unknown";
+
+            var severity = labels?.GetValueOrDefault("severity", "info") ?? "info";
+            _alertCounter.WithLabels(alertType, severity).Inc();
+        }
+        catch (Exception ex)
+        {
+            // Log the error but don't throw
+            // Metrik kaydı başarısız olsa bile uygulamanın çalışmaya devam etmesi önemli
+            Console.WriteLine($"Error incrementing alert counter: {ex.Message}");
+        }
     }
 
     public void IncrementTotalRequests(string method, string endpoint, string statusCode)

@@ -1,3 +1,4 @@
+using Application.Features.Carts.Dtos;
 using Application.Features.Orders.Dtos;
 using Core.Application.Requests;
 using Core.Application.Responses;
@@ -11,7 +12,8 @@ namespace Application.Repositories;
 
 public interface IOrderRepository: IAsyncRepository<Order, string>, IRepository<Order, string>
 {
-    Task<(bool, OrderDto)> ConvertCartToOrderAsync(string? addressId, string? phoneNumberId,
+    Task<(bool success, OrderDto? orderDto, List<CartItemDto>? newCartItems)> ConvertCartToOrderAsync(string? addressId,
+        string? phoneNumberId,
         string? description);
     Task<bool> CompleteOrderAsync(string orderId);
     

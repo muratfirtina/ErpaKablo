@@ -106,6 +106,7 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
             .Include(p => p.ProductFeatureValues)
             .ThenInclude(p => p.FeatureValue)
             .ThenInclude(p => p.Feature)
+            .AsSplitQuery() 
             .OrderByDescending(p => p.CreatedDate);
 
         return await query.ToPaginateAsync(pageIndex, pageSize);
@@ -121,6 +122,7 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
         .Include(p => p.ProductFeatureValues)
         .ThenInclude(pfv => pfv.FeatureValue)
         .ThenInclude(fv => fv.Feature)
+        .AsSplitQuery() 
         .AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -205,6 +207,7 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
         .Include(p => p.ProductFeatureValues)
         .ThenInclude(pfv => pfv.FeatureValue)
         .ThenInclude(fv => fv.Feature)
+        .AsSplitQuery() 
         .AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(searchTerm))

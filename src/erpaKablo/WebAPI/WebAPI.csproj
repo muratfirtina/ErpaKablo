@@ -33,13 +33,12 @@
         <ProjectReference Include="..\Application\Application.csproj"/>
         <ProjectReference Include="..\Infrastructure\Infrastructure.csproj"/>
         <ProjectReference Include="..\Persistence\Persistence.csproj"/>
+        <ProjectReference Include="..\SignalR\SignalR.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <Folder Include="Controllers\"/>
         <Folder Include="wwwroot\" />
-        <Folder Include="wwwroot\brands\" />
-        <Folder Include="wwwroot\carousels\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -129,6 +128,7 @@
       <_ContentIncludedByDefault Remove="wwwroot\categories\hose-0dbfc681e1ab435b\hose-20240821101220.avif" />
       <_ContentIncludedByDefault Remove="wwwroot\categories\hydraulics-9a1175b1881d45d9\hydraulicsl1-20240821101251.avif" />
       <_ContentIncludedByDefault Remove="wwwroot\categories\janitorial-a95da623936344ca\janitorial-20240821101338.avif" />
+      <_ContentIncludedByDefault Remove="wwwroot\categories\abrasives-d7a071c8d72f4e49\abrasives-20241117215649.avif" />
     </ItemGroup>
 
     <ItemGroup>

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using Application.Tokens;
 using Domain.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -11,10 +12,16 @@ namespace Infrastructure.Services.Token;
 public class TokenHandler : ITokenHandler
 {
     private readonly IConfiguration _configuration;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly RoleManager<AppRole> _roleManager;
 
-    public TokenHandler(IConfiguration configuration)
+    public TokenHandler(IConfiguration configuration, 
+                       UserManager<AppUser> userManager,
+                       RoleManager<AppRole> roleManager)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+        _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
     }
 
     public Application.Dtos.Token.Token CreateAccessToken(int second, AppUser appUser)
@@ -29,8 +36,24 @@ public class TokenHandler : ITokenHandler
         Application.Dtos.Token.Token token = new();
         
         SymmetricSecurityKey symmetricSecurityKey = new(System.Text.Encoding.UTF8.GetBytes(securityKey));
-        
         SigningCredentials signingCredentials = new(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+
+        // Get user roles
+        var userRoles =  _userManager.GetRolesAsync(appUser);
+
+        // Create claims list
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, appUser.Id),
+            new(ClaimTypes.Name, appUser.UserName),
+            new("NameSurname", appUser.NameSurname)
+        };
+
+        // Add role claims
+        foreach (var userRole in userRoles.Result)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, userRole));
+        }
         
         token.Expiration = DateTime.UtcNow.AddSeconds(second);
         JwtSecurityToken securityToken = new(
@@ -39,10 +62,7 @@ public class TokenHandler : ITokenHandler
             expires: token.Expiration,
             notBefore: DateTime.UtcNow,
             signingCredentials: signingCredentials,
-            claims: new List<Claim>
-            {
-                new(ClaimTypes.Name, appUser.UserName)
-            }
+            claims: claims
         );
         
         JwtSecurityTokenHandler tokenHandler = new();
@@ -52,10 +72,10 @@ public class TokenHandler : ITokenHandler
         return token;
     }
 
-    public Application.Dtos.Token.Token CreateAccessToken(AppUser user)
+    public  Application.Dtos.Token.Token CreateAccessToken(AppUser user)
     {
         var accessTokenLifetime = _configuration.GetValue<int>("Security:JwtSettings:AccessTokenLifetimeMinutes", 120);
-        return CreateAccessToken(accessTokenLifetime * 60, user); // Convert minutes to seconds
+        return CreateAccessToken(accessTokenLifetime * 60, user);
     }
 
     public string CreateRefreshToken()
