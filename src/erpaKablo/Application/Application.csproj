@@ -25,6 +25,9 @@
     <ItemGroup>
         <Folder Include="Dtos\Elasticsearch\" />
         <Folder Include="Features\AuthorizationEndpoint\Commands\" />
+        <Folder Include="Features\Carts\Rules\" />
+        <Folder Include="Features\OrderItems\Const\" />
+        <Folder Include="Features\OrderItems\Rules\" />
         <Folder Include="Features\Orders\Consts\" />
         <Folder Include="Features\Orders\Rules\" />
         <Folder Include="Features\PhoneNumbers\Consts\" />
@@ -59,6 +62,8 @@
       <Compile Remove="Features\Search\SearchQuery.cs" />
       <Compile Remove="Dtos\Elasticsearch\SearchResultDto.cs" />
       <Compile Remove="Dtos\ProductSearchDto.cs" />
+      <Compile Remove="Features\OrderItems\Const\OrderItemBusinessMessages.cs" />
+      <Compile Remove="Features\Orders\Commands\Update\UpdatedOrderResponse.cs" />
     </ItemGroup>
 
 </Project>

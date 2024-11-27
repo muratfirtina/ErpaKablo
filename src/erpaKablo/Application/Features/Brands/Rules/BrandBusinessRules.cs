@@ -31,5 +31,11 @@ public class BrandBusinessRules : BaseBusinessRules
         );
         await BrandShouldExistWhenSelected(brand);
     }
+    public async Task BrandNameShouldNotExistWhenInsertingOrUpdating(string name, string? id = null)
+    {
+        Brand? brand = await _brandRepository.GetAsync(b => b.Name.ToLower() == name.ToLower() && (id == null || b.Id != id));
+        if (brand != null)
+            throw new BusinessException(BrandsBusinessMessages.BrandNameAlreadyExists);
+    }
     
 }

@@ -1,6 +1,8 @@
+using Application.Features.Brands.Consts;
 using Application.Features.Brands.Rules;
 using Application.Repositories;
 using AutoMapper;
+using Core.CrossCuttingConcerns.Exceptions;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +20,8 @@ public class UpdateBrandCommand : IRequest<UpdatedBrandResponse>
         private readonly BrandBusinessRules _brandBusinessRules;
         private readonly IMapper _mapper;
 
-        public UpdateBrandCommandHandler(IBrandRepository brandRepository, IMapper mapper, BrandBusinessRules brandBusinessRules)
+        public UpdateBrandCommandHandler(IBrandRepository brandRepository, IMapper mapper,
+            BrandBusinessRules brandBusinessRules)
         {
             _brandRepository = brandRepository;
             _mapper = mapper;
@@ -30,7 +33,10 @@ public class UpdateBrandCommand : IRequest<UpdatedBrandResponse>
         {
             Brand? brand = await _brandRepository.GetAsync(p => p.Id == request.Id,
                 cancellationToken: cancellationToken);
+
             await _brandBusinessRules.BrandShouldExistWhenSelected(brand);
+            await _brandBusinessRules.BrandNameShouldNotExistWhenInsertingOrUpdating(request.Name, request.Id);
+
             if (brand != null)
             {
                 brand = _mapper.Map(request, brand);
@@ -38,7 +44,8 @@ public class UpdateBrandCommand : IRequest<UpdatedBrandResponse>
                 UpdatedBrandResponse response = _mapper.Map<UpdatedBrandResponse>(brand);
                 return response;
             }
-            throw new Exception("Brand not found");
+
+            throw new BusinessException(BrandsBusinessMessages.BrandNotExists);
         }
     }
 }
