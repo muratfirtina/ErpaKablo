@@ -2,7 +2,10 @@ using System.Text;
 using Application.Abstraction.Services;
 using Application.Abstraction.Services.Configurations;
 using Application.Exceptions;
+using Application.Extensions;
 using Application.Features.Orders.Dtos;
+using Application.Features.UserAddresses.Dtos;
+using Application.Storage;
 using Domain;
 using Ganss.Xss;
 using Infrastructure.Enums;
@@ -19,26 +22,25 @@ using Microsoft.Graph;
 public class UnifiedMailService : IMailService
 {
     private readonly ILogger<UnifiedMailService> _logger;
-    private readonly IKeyVaultService _keyVaultService;
     private readonly IConfiguration _configuration;
     private readonly ICacheService _cacheService;
     private readonly IMetricsService _metricsService;
     private readonly SemaphoreSlim _throttler;
     private readonly EmailProvider _emailProvider;
+    private readonly IStorageService _storageService;
     private IConfidentialClientApplication? _confidentialClientApp;
 
     public UnifiedMailService(
         ILogger<UnifiedMailService> logger,
-        IKeyVaultService keyVaultService,
         IConfiguration configuration,
         ICacheService cacheService,
-        IMetricsService metricsService)
+        IMetricsService metricsService, IStorageService storageService)
     {
         _logger = logger;
-        _keyVaultService = keyVaultService;
         _configuration = configuration;
         _cacheService = cacheService;
         _metricsService = metricsService;
+        _storageService = storageService;
         _throttler = new SemaphoreSlim(5, 5);
         _emailProvider = configuration.GetValue<EmailProvider>("Email:Provider");
 
@@ -51,7 +53,7 @@ public class UnifiedMailService : IMailService
         {
             _confidentialClientApp = ConfidentialClientApplicationBuilder
                 .Create(_configuration["AzureAd:ClientId"])
-                .WithClientSecret(_keyVaultService.GetSecretAsync("AzureAdClientSecret").Result)
+                .WithClientSecret(_configuration["AzureAd:ClientSecret"])
                 .WithAuthority(new Uri($"https://login.microsoftonline.com/{_configuration["AzureAd:TenantId"]}"))
                 .Build();
         }
@@ -90,8 +92,8 @@ public class UnifiedMailService : IMailService
                         await SendViaSmtpAsync(tos, subject, sanitizedBody, isBodyHtml, "smtp.yandex.com", 465);
                         break;
                     case EmailProvider.Custom:
-                        var smtpServer = await _keyVaultService.GetSecretAsync("SmtpServer");
-                        var smtpPort = int.Parse(await _keyVaultService.GetSecretAsync("SmtpPort"));
+                        var smtpServer = _configuration["Smtp:Server"];
+                        var smtpPort = int.Parse(_configuration["Smtp:Port"]);
                         await SendViaSmtpAsync(tos, subject, sanitizedBody, isBodyHtml, smtpServer, smtpPort);
                         break;
                     default:
@@ -116,24 +118,42 @@ public class UnifiedMailService : IMailService
     private async Task SendViaSmtpAsync(string[] tos, string subject, string body, bool isBodyHtml, string server, int port)
     {
         var message = new MimeMessage();
-        var username = await _keyVaultService.GetSecretAsync($"{_emailProvider}Username");
-        var password = await _keyVaultService.GetSecretAsync($"{_emailProvider}Password");
         
+        string username = _configuration[$"Email:Providers:{_emailProvider}:Username"];
+        string password = _configuration[$"Email:Providers:{_emailProvider}:Password"];
+
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        {
+            throw new InvalidOperationException("Email credentials not configured");
+        }
+    
         message.From.Add(new MailboxAddress(_configuration["Email:FromName"], username));
         message.To.AddRange(tos.Select(x => new MailboxAddress("", x)));
         message.Subject = subject;
         message.Body = new TextPart(isBodyHtml ? "html" : "plain") { Text = body };
 
         using var client = new MailKit.Net.Smtp.SmtpClient();
-        await client.ConnectAsync(server, port, SecureSocketOptions.StartTls);
-        await client.AuthenticateAsync(username, password);
-        await client.SendAsync(message);
-        await client.DisconnectAsync(true);
+        try 
+        {
+            await client.ConnectAsync(server, port, SecureSocketOptions.SslOnConnect);
+            await client.AuthenticateAsync(username, password);
+            await client.SendAsync(message);
+        
+            _logger.LogInformation("Email sent successfully to {Recipients}", string.Join(", ", tos));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {Recipients}", string.Join(", ", tos));
+            throw;
+        }
+        finally
+        {
+            await client.DisconnectAsync(true);
+        }
     }
 
     private async Task SendViaGoogleAsync(string[] tos, string subject, string body, bool isBodyHtml)
     {
-        // Google SMTP implementation
         await SendViaSmtpAsync(tos, subject, body, isBodyHtml, "smtp.gmail.com", 587);
     }
 
@@ -164,8 +184,10 @@ public class UnifiedMailService : IMailService
             }).ToList()
         };
 
-        await graphClient.Users[await _keyVaultService.GetSecretAsync("GraphApiSenderAddress")]
-            .SendMail(message, true).Request().PostAsync();
+        await graphClient.Users[_configuration["Graph:SenderAddress"]]
+            .SendMail(message, true)
+            .Request()
+            .PostAsync();
     }
 
     private async Task<string> GetAccessTokenAsync()
@@ -204,7 +226,7 @@ public class UnifiedMailService : IMailService
         <body style='margin: 0; padding: 0; background-color: #f6f9fc; font-family: Arial, sans-serif;'>
             <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px;'>
                 <div style='text-align: center; padding: 20px; background-color: #004d99; margin-bottom: 20px;'>
-                    <img src='{await _keyVaultService.GetSecretAsync("CompanyLogo")}' alt='ErpaKablo Logo' style='max-width: 200px;'/>
+                    <img src='{_configuration["Company:LogoUrl"]}' alt='Company Logo' style='max-width: 200px;'/>
                 </div>
 
                 {(string.IsNullOrEmpty(title) ? "" : $"<h1 style='color: #004d99; text-align: center; margin-bottom: 30px;'>{title}</h1>")}
@@ -223,76 +245,99 @@ public class UnifiedMailService : IMailService
 
     private async Task<string> BuildFooterContent()
     {
+        var companyInfo = _configuration.GetSection("CompanyInfo");
+        var socialMedia = companyInfo.GetSection("SocialMedia");
+        var cloudinaryUrl = _configuration["Storage:Providers:Cloudinary:Url"]?.TrimEnd('/');
+
         var sb = new StringBuilder();
         sb.AppendLine(@"<p style='color: #666; font-size: 12px;'>
-            Bu bir otomatik bilgilendirme mesajıdır.<br>
-            Herhangi bir sorunuz varsa bizimle iletişime geçebilirsiniz.
-        </p>");
+        This is an automated notification message.<br>
+        If you have any questions, please contact us.
+    </p>");
 
-        // Social media links
+        // Social media links - Cloudinary'den ikon URL'lerini al
         var socialLinks = new[]
         {
-            ("Facebook", await _keyVaultService.GetSecretAsync("SocialMedia:Facebook")),
-            ("Twitter", await _keyVaultService.GetSecretAsync("SocialMedia:Twitter")),
-            ("LinkedIn", await _keyVaultService.GetSecretAsync("SocialMedia:LinkedIn"))
+            ("Facebook", socialMedia["Facebook"], $"{cloudinaryUrl}/social-media/icons/facebook.png"),
+            ("Twitter", socialMedia["Twitter"], $"{cloudinaryUrl}/social-media/icons/twitter.png"),
+            ("LinkedIn", socialMedia["LinkedIn"], $"{cloudinaryUrl}/social-media/icons/linkedin.png")
         };
 
         sb.AppendLine("<div style='margin-top: 20px;'>");
-        foreach (var (platform, url) in socialLinks)
+        foreach (var (platform, url, iconUrl) in socialLinks)
         {
-            sb.AppendLine($@"
+            if (!string.IsNullOrEmpty(url))
+            {
+                sb.AppendLine($@"
                 <a href='{url}' style='margin: 0 10px; text-decoration: none;'>
-                    <img src='{await _keyVaultService.GetSecretAsync($"SocialMedia:{platform}Icon")}' 
-                         alt='{platform}' style='width: 24px;'/>
+                    <img src='{iconUrl}' alt='{platform}' style='width: 24px;'/>
                 </a>");
+            }
         }
         sb.AppendLine("</div>");
 
         // Company info
-        var companyInfo = new StringBuilder();
-        companyInfo.AppendLine("<div style='margin-top: 20px; color: #666; font-size: 12px;'>");
-        companyInfo.AppendLine("<p>ErpaKablo A.Ş.</p>");
-        companyInfo.AppendLine($"<p>{await _keyVaultService.GetSecretAsync("CompanyAddress")}</p>");
-        companyInfo.AppendLine($"<p>Tel: {await _keyVaultService.GetSecretAsync("CompanyPhone")} | " +
-                              $"Email: {await _keyVaultService.GetSecretAsync("CompanyEmail")}</p>");
-        companyInfo.AppendLine($"<p>&copy; {DateTime.Now.Year} ErpaKablo. Tüm hakları saklıdır.</p>");
-        companyInfo.AppendLine("</div>");
+        var companyInfoBuilder = new StringBuilder();
+        companyInfoBuilder.AppendLine("<div style='margin-top: 20px; color: #666; font-size: 12px;'>");
+        companyInfoBuilder.AppendLine($"<p>{companyInfo["Name"]}</p>");
+        companyInfoBuilder.AppendLine($"<p>{companyInfo["Address"]}</p>");
+        companyInfoBuilder.AppendLine($"<p>Tel: {companyInfo["Phone"]} | Email: {companyInfo["Email"]}</p>");
+        companyInfoBuilder.AppendLine($"<p>&copy; {DateTime.Now.Year} {companyInfo["Name"]}. All rights reserved.</p>");
+        companyInfoBuilder.AppendLine("</div>");
 
-        sb.Append(companyInfo);
+        sb.Append(companyInfoBuilder);
         return sb.ToString();
     }
 
     public async Task SendPasswordResetEmailAsync(string to, string userId, string resetToken)
     {
-        var resetLink = $"{await _keyVaultService.GetSecretAsync("AngularClientUrl")}/password-update/{userId}/{resetToken}";
+        var clientUrl = _configuration["AngularClientUrl"] ?? "http://localhost:4200";
+        var resetLink = $"{clientUrl.TrimEnd('/')}/update-password/{userId}/{resetToken}";
+        
         var content = $@"
             <div style='text-align: center;'>
-                <img src='{await _keyVaultService.GetSecretAsync("Icons:PasswordReset")}' 
-                     alt='Password Reset' style='width: 100px; margin-bottom: 20px;'/>
-                <p style='font-size: 16px; color: #333;'>Merhaba,</p>
-                <p style='font-size: 16px; color: #333;'>Şifre sıfırlama talebiniz alınmıştır.</p>
+                <p style='font-size: 16px; color: #333;'>Dear User,</p>
+                <p style='font-size: 16px; color: #333;'>We have received your password reset request.</p>
                 <div style='margin: 30px 0;'>
-                    <a href='{resetLink}' style='background-color: #004d99; color: white; 
+                    <a href='{resetLink}' style='background-color: #e53935; color: white; 
                               padding: 12px 30px; text-decoration: none; border-radius: 5px;
                               font-weight: bold; display: inline-block;'>
-                        Şifremi Yenile
+                        Reset Password
                     </a>
                 </div>
                 <p style='color: #666; font-size: 14px;'>
-                    Bu işlemi siz başlatmadıysanız, lütfen bu e-postayı dikkate almayınız.
+                    If you didn't initiate this request, please ignore this email.
                 </p>
                 <p style='color: #666; font-size: 14px;'>
-                    Güvenliğiniz için şifre sıfırlama bağlantısı 1 saat süreyle geçerlidir.
+                    For your security, this password reset link is valid for 1 hour.
                 </p>
             </div>";
 
-        await SendEmailAsync(to, "Şifre Sıfırlama İsteği", 
-            await BuildEmailTemplate(content, "Şifre Sıfırlama"));
+        var emailSubject = "Password Reset Request";
+        
+        var emailBody = $@"
+            <!DOCTYPE html>
+            <html>
+            <body style='margin: 0; padding: 20px; background-color: #f6f9fc; font-family: Arial, sans-serif;'>
+                <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 5px;'>
+                    <div style='text-align: center; margin-bottom: 20px;'>
+                        <h1 style='color: #e53935;'>Password Reset</h1>
+                    </div>
+                    {content}
+                    <div style='margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;'>
+                        <p style='color: #666; font-size: 12px;'>
+                            © {DateTime.Now.Year} Company Name. All rights reserved.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>";
+
+        await SendEmailAsync(to, emailSubject, emailBody);
     }
 
-    public async Task SendCompletedOrderEmailAsync(
-        string to, string orderCode, string orderDescription,
-        UserAddress orderAddress, DateTime orderCreatedDate, string userName, 
+    public async Task SendCompletedOrderEmailAsync(string to, string orderCode, string orderDescription,
+        UserAddressDto? orderAddress, DateTime orderCreatedDate, string userName,
         List<OrderItemDto> orderCartItems, decimal? orderTotalPrice)
     {
         var content = new StringBuilder();
@@ -300,8 +345,8 @@ public class UnifiedMailService : IMailService
             userName, orderCode, orderDescription, orderAddress, 
             orderCreatedDate, orderCartItems, orderTotalPrice));
 
-        await SendEmailAsync(to, "Siparişiniz Tamamlandı ✓", 
-            await BuildEmailTemplate(content.ToString(), "Sipariş Onayı"));
+        await SendEmailAsync(to, "Order Completed ✓", 
+            await BuildEmailTemplate(content.ToString(), "Order Confirmation"));
     }
 
     public async Task SendOrderUpdateNotificationAsync(
@@ -312,39 +357,57 @@ public class UnifiedMailService : IMailService
         content.Append(await BuildOrderUpdateContent(
             orderCode, adminNote, updatedItems, totalPrice));
 
-        await SendEmailAsync(to, "Sipariş Güncelleme Bildirimi", 
-            await BuildEmailTemplate(content.ToString(), "Sipariş Güncelleme"));
+        await SendEmailAsync(to, "Order Update Notification", 
+            await BuildEmailTemplate(content.ToString(), "Order Update"));
     }
 
     private async Task<string> BuildOrderConfirmationContent(
         string userName, string orderCode, string orderDescription,
-        UserAddress orderAddress, DateTime orderCreatedDate,
+        UserAddressDto? orderAddress, DateTime orderCreatedDate,
         List<OrderItemDto> orderCartItems, decimal? orderTotalPrice)
     {
-        var storageUrl = await _keyVaultService.GetSecretAsync("Storage:Providers:LocalStorage:Url");
+        var storageUrl = _configuration["Storage:Providers:Cloudinary:Url"] ?? 
+                         _configuration["Storage:Providers:LocalStorage:Url"];
         var sb = new StringBuilder();
 
         // Header
         sb.Append($@"
-            <div style='background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;'>
-                <p style='font-size: 16px; color: #333;'>Merhaba {userName},</p>
-                <p style='color: #666;'>Siparişiniz başarıyla oluşturulmuştur.</p>
-            </div>");
+        <div style='background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;'>
+            <p style='font-size: 16px; color: #333;'>Hello {userName},</p>
+            <p style='color: #666;'>Your order has been successfully created.</p>
+        </div>");
 
         // Order details table
-        sb.Append(await BuildOrderItemsTable(orderCartItems, storageUrl));
+        sb.Append(BuildOrderItemsTable(orderCartItems, storageUrl));
 
         // Order information
         sb.Append($@"
-            <div style='margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 5px;'>
-                <h3 style='color: #004d99; margin-bottom: 15px;'>Sipariş Bilgileri</h3>
-                <p><strong>Sipariş Kodu:</strong> {orderCode}</p>
-                <p><strong>Sipariş Tarihi:</strong> {orderCreatedDate:dd.MM.yyyy HH:mm}</p>
-                <p><strong>Teslimat Adresi:</strong><br>{orderAddress}</p>
-                <p><strong>Sipariş Notu:</strong><br>{orderDescription}</p>
-            </div>");
+        <div style='margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 5px;'>
+            <h3 style='color: #004d99; margin-bottom: 15px;'>Order Details</h3>
+            <p><strong>Order Code:</strong> {orderCode}</p>
+            <p><strong>Order Date:</strong> {orderCreatedDate:dd.MM.yyyy HH:mm}</p>
+            <p><strong>Delivery Address:</strong><br>{FormatAddress(orderAddress)}</p>
+            <p><strong>Order Note:</strong><br>{orderDescription}</p>
+            <p><strong>Total Amount:</strong><br>₺{orderTotalPrice:N2}</p>
+        </div>");
 
         return sb.ToString();
+    }
+    private string FormatAddress(UserAddressDto? address)
+    {
+        if (address == null) return "No address provided";
+    
+        var formattedAddress = new StringBuilder();
+        formattedAddress.AppendLine(address.Name);
+        formattedAddress.AppendLine(address.AddressLine1);
+    
+        if (!string.IsNullOrEmpty(address.AddressLine2))
+            formattedAddress.AppendLine(address.AddressLine2);
+    
+        formattedAddress.AppendLine($"{address.City}{(!string.IsNullOrEmpty(address.State) ? $", {address.State}" : "")} {address.PostalCode}");
+        formattedAddress.Append(address.Country);
+    
+        return formattedAddress.ToString();
     }
 
     private async Task<string> BuildOrderUpdateContent(
@@ -356,9 +419,9 @@ public class UnifiedMailService : IMailService
         // Header
         sb.Append($@"
             <div style='background-color: #fff3cd; padding: 20px; border-radius: 5px; margin-bottom: 20px;'>
-                <p style='color: #856404;'>Siparişinizde güncelleme yapılmıştır.</p>
-                <p style='color: #856404;'><strong>Sipariş Kodu:</strong> {orderCode}</p>
-                <p style='color: #856404;'><strong>Admin Notu:</strong> {adminNote}</p>
+                <p style='color: #856404;'>Your order has been updated.</p>
+                <p style='color: #856404;'><strong>Order Code:</strong> {orderCode}</p>
+                <p style='color: #856404;'><strong>Admin Note:</strong> {adminNote}</p>
             </div>");
 
         // Updated items table
@@ -367,41 +430,63 @@ public class UnifiedMailService : IMailService
         return sb.ToString();
     }
 
-    private async Task<string> BuildOrderItemsTable(List<OrderItemDto> items, string storageUrl)
-    {
-        var sb = new StringBuilder();
-        sb.Append(@"
-            <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
-                <tr style='background-color: #004d99; color: white;'>
-                    <th style='padding: 12px; text-align: left;'>Ürün</th>
-                    <th style='padding: 12px; text-align: right;'>Fiyat</th>
-                    <th style='padding: 12px; text-align: center;'>Adet</th>
-                    <th style='padding: 12px; text-align: right;'>Toplam</th>
-                    <th style='padding: 12px; text-align: center;'>Görsel</th>
-                </tr>");
+    private string BuildOrderItemsTable(List<OrderItemDto> items, string? storageUrl)
+{
+    var sb = new StringBuilder();
+    decimal totalAmount = 0;
+    
+    sb.Append(@"
+        <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
+            <tr style='background-color: #004d99; color: white;'>
+                <th style='padding: 12px; text-align: left;'>Product</th>
+                <th style='padding: 12px; text-align: right;'>Price</th>
+                <th style='padding: 12px; text-align: center;'>Quantity</th>
+                <th style='padding: 12px; text-align: right;'>Total</th>
+                <th style='padding: 12px; text-align: center;'>Image</th>
+            </tr>");
 
-        foreach (var item in items)
+    var cloudinaryUrl = _configuration["Storage:Providers:Cloudinary:Url"]?.TrimEnd('/');
+
+    foreach (var item in items)
+    {
+        var itemTotal = (item.Price ?? 0) * (item.Quantity ?? 0);
+        totalAmount += itemTotal;
+
+        if (item.ShowcaseImage != null)
         {
-            sb.Append($@"
-                <tr style='border-bottom: 1px solid #e0e0e0;'>
-                    <td style='padding: 12px;'>
-                        <strong style='color: #333;'>{item.BrandName}</strong><br>
-                        <span style='color: #666;'>{item.ProductName}</span>
-                    </td>
-                    <td style='padding: 12px; text-align: right;'>{item.Price:C2}</td>
-                    <td style='padding: 12px; text-align: center;'>{item.Quantity}</td>
-                    <td style='padding: 12px; text-align: right;'>{(item.Price * item.Quantity):C2}</td>
-                    <td style='padding: 12px; text-align: center;'>
-                        <img src='{storageUrl}/{item.ShowcaseImage?.EntityType}/{item.ShowcaseImage?.Path}/{item.ShowcaseImage?.FileName}'
-                             style='max-width: 80px; max-height: 80px; border-radius: 4px;'
-                             alt='{item.ProductName}'/>
-                    </td>
-                </tr>");
+            item.ShowcaseImage.SetImageUrl(_storageService);
         }
 
-        sb.Append(@"</table>");
-        return sb.ToString();
+        string imageUrl = item.ShowcaseImage?.Url ?? 
+                          _configuration["CompanyInfo:DefaultProductImage"] ?? "";
+
+        sb.Append($@"
+            <tr style='border-bottom: 1px solid #e0e0e0;'>
+                <td style='padding: 12px;'>
+                    <strong style='color: #333;'>{item.BrandName}</strong><br>
+                    <span style='color: #666;'>{item.ProductName}</span>
+                </td>
+                <td style='padding: 12px; text-align: right;'>₺{item.Price:N2}</td>
+                <td style='padding: 12px; text-align: center;'>{item.Quantity}</td>
+                <td style='padding: 12px; text-align: right;'>₺{itemTotal:N2}</td>
+                <td style='padding: 12px; text-align: center;'>
+                    <img src='{imageUrl}'
+                         style='max-width: 80px; max-height: 80px; border-radius: 4px;'
+                         alt='{item.ProductName}'/>
+                </td>
+            </tr>");
     }
+
+    // Add total row
+    sb.Append($@"
+        <tr style='background-color: #f8f9fa; font-weight: bold;'>
+            <td colspan='3' style='padding: 12px; text-align: right;'>Total Amount:</td>
+            <td colspan='2' style='padding: 12px; text-align: right;'>₺{totalAmount:N2}</td>
+        </tr>");
+
+    sb.Append("</table>");
+    return sb.ToString();
+}
 
     private async Task<string> BuildUpdatedItemsTable(List<OrderItem> items, decimal? totalPrice)
     {
@@ -409,10 +494,10 @@ public class UnifiedMailService : IMailService
         sb.Append(@"
             <table style='width: 100%; border-collapse: collapse; margin-top: 20px;'>
                 <tr style='background-color: #004d99; color: white;'>
-                    <th style='padding: 12px; text-align: left;'>Ürün</th>
-                    <th style='padding: 12px; text-align: right;'>Eski Fiyat</th>
-                    <th style='padding: 12px; text-align: right;'>Yeni Fiyat</th>
-                    <th style='padding: 12px; text-align: center;'>Termin Süresi</th>
+                    <th style='padding: 12px; text-align: left;'>Product</th>
+                    <th style='padding: 12px; text-align: right;'>Old Price</th>
+                    <th style='padding: 12px; text-align: right;'>New Price</th>
+                    <th style='padding: 12px; text-align: center;'>Lead Time</th>
                 </tr>");
 
         foreach (var item in items)
@@ -423,7 +508,7 @@ public class UnifiedMailService : IMailService
                     <td style='padding: 12px;'>{item.ProductName}</td>
                     <td style='padding: 12px; text-align: right;'>{item.Price:C2}</td>
                     <td style='padding: 12px; text-align: right; {priceChange}'>{item.UpdatedPrice:C2}</td>
-                    <td style='padding: 12px; text-align: center;'>{item.LeadTime} gün</td>
+                    <td style='padding: 12px; text-align: center;'>{item.LeadTime} days</td>
                 </tr>");
         }
 
@@ -431,7 +516,7 @@ public class UnifiedMailService : IMailService
         {
             sb.Append($@"
                 <tr style='background-color: #f8f9fa;'>
-                    <td colspan='2' style='padding: 12px; text-align: right;'><strong>Güncel Toplam Tutar:</strong></td>
+                    <td colspan='2' style='padding: 12px; text-align: right;'><strong>Updated Total Amount:</strong></td>
                     <td colspan='2' style='padding: 12px; text-align: right;'><strong>{totalPrice:C2}</strong></td>
                 </tr>");
         }

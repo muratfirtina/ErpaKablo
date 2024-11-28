@@ -142,11 +142,19 @@ using (var scope = app.Services.CreateScope())
 // Development specific middleware
 if (app.Environment.IsDevelopment())
 {
+    builder.Configuration["UseAzureKeyVault"] = "false";
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 else
 {
+    builder.Configuration["UseAzureKeyVault"] = "true";
+    builder.Configuration.AddAzureKeyVault(
+        new Uri($"https://{builder.Configuration["AzureKeyVault:VaultName"]}.vault.azure.net/"),
+        new ClientSecretCredential(
+            builder.Configuration["AzureKeyVault:TenantId"],
+            builder.Configuration["AzureKeyVault:ClientId"],
+            builder.Configuration["AzureKeyVault:ClientSecret"]));
     app.UseHsts();
 }
 

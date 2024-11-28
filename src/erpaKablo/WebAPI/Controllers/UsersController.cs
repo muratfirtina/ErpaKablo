@@ -4,6 +4,7 @@ using Application.Consts;
 using Application.CustomAttributes;
 using Application.Enums;
 using Application.Features.Users.Commands.AssignRoleToUser;
+using Application.Features.Users.Commands.ChangePassword;
 using Application.Features.Users.Commands.CreateUser;
 using Application.Features.Users.Commands.LoginUser;
 using Application.Features.Users.Commands.UpdateForgetPassword;
@@ -119,6 +120,15 @@ namespace WebAPI.Controllers
             var userName = User.Identity.Name;
             var response = await Mediator.Send(new GetCurrentUserQuery { UserName = userName });
 
+            return Ok(response);
+        }
+        
+        [HttpPost("change-password")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Change Password", Menu = AuthorizeDefinitionConstants.Users)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+        {
+            var response = await Mediator.Send(command);
             return Ok(response);
         }
         

@@ -4,6 +4,7 @@ using Application.Features.Categories.Dtos;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Application.Storage;
+using Domain;
 
 namespace Application.Extensions;
 
@@ -31,7 +32,7 @@ public static class ProductImageExtensions
         }
     }
 
-    public static ProductImageFileDto SetImageUrl<T>(this T item, IStorageService storageService) where T : class
+    public static ProductImageFileDto? SetImageUrl<T>(this T item, IStorageService storageService) where T : class
     {
         if (item == null || storageService == null)
             return null;

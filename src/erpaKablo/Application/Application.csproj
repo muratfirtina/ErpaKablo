@@ -64,6 +64,7 @@
       <Compile Remove="Dtos\ProductSearchDto.cs" />
       <Compile Remove="Features\OrderItems\Const\OrderItemBusinessMessages.cs" />
       <Compile Remove="Features\Orders\Commands\Update\UpdatedOrderResponse.cs" />
+      <Compile Remove="Services\IOrderService.cs" />
     </ItemGroup>
 
 </Project>

@@ -143,6 +143,12 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
             .HasForeignKey(pfv => pfv.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
         
+        builder.Entity<ProductFeatureValue>()
+            .HasOne(pfv => pfv.FeatureValue)
+            .WithMany(fv => fv.ProductFeatureValues)
+            .HasForeignKey(pfv => pfv.FeatureValueId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
         builder.Entity<SecurityLog>(entity =>
         { 
             entity.HasIndex(e => e.Timestamp);

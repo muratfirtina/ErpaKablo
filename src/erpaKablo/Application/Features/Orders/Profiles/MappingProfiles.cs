@@ -6,6 +6,7 @@ using Application.Features.Orders.Queries.GetById;
 using Application.Features.Orders.Queries.GetOrdersByDynamic;
 using Application.Features.Orders.Queries.GetOrdersByUser;
 using Application.Features.Orders.Queries.GetUserOrderById;
+using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using AutoMapper;
 using Core.Application.Responses;
@@ -69,9 +70,9 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.ProductName))
             .ForMember(dest => dest.ProductTitle, opt => opt.MapFrom(src => src.ProductTitle))
-            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price)) // Sabitlenen fiyat
+            .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
             .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Quantity))
-            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Product.Brand.Name)) // Sabitlenen marka
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Product.Brand.Name))
             .ForMember(dest => dest.ProductFeatureValues, opt => opt.MapFrom(src => src.Product.ProductFeatureValues
                 .Where(pfv => pfv.FeatureValue != null && pfv.FeatureValue.Feature != null)
                 .Select(pfv => new ProductFeatureValueDto
@@ -81,8 +82,8 @@ public class MappingProfiles : Profile
                     FeatureValueId = pfv.FeatureValue.Id,
                     FeatureValueName = pfv.FeatureValue.Name
                 })))
-            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => src.Product.ProductImageFiles.FirstOrDefault(pif => pif.Showcase == true))) // Dinamik resim
-            .ReverseMap();
+            .ForMember(dest => dest.ShowcaseImage, opt => 
+                opt.MapFrom(src => src.Product.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)));
         
         CreateMap<Order, GetOrdersByUserQueryResponse>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))

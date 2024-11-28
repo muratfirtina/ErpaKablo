@@ -154,88 +154,88 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
            TotalPrice = selectedItems.Sum(item => item.Product.Price * item.Quantity)
        };
 
-       await AddAsync(order);
+               await AddAsync(order);
 
        // 5. Eski sepeti sil
-       await _cartService.RemoveCartAsync(activeCart.Id);
+               await _cartService.RemoveCartAsync(activeCart.Id);
 
        // 6. Stoğu güncelle
-       foreach (var cartItem in selectedItems)
-       {
-           var product = await _productRepository.GetAsync(p => p.Id == cartItem.ProductId);
-           if (product != null)
-           {
-               product.Stock -= cartItem.Quantity;
-               await _productRepository.UpdateAsync(product);
-           }
-       }
+               foreach (var cartItem in selectedItems)
+               {
+                   var product = await _productRepository.GetAsync(p => p.Id == cartItem.ProductId);
+                   if (product != null)
+                   {
+                       product.Stock -= cartItem.Quantity;
+                       await _productRepository.UpdateAsync(product);
+                   }
+               }
 
        await UpdateAsync(order);
 
-       // 7. OrderDto oluştur
-       var orderDto = new OrderDto
-       {
-           OrderId = order.Id,
-           OrderCode = order.OrderCode,
-           UserName = order.User.UserName,
-           Email = user.Email,
-           OrderDate = order.OrderDate,
-           TotalPrice = order.TotalPrice,
-           UserAddress = new UserAddressDto
-           {
-               Id = selectedAddress.Id,
-               Name = selectedAddress.Name,
-               AddressLine1 = selectedAddress.AddressLine1,
-               AddressLine2 = selectedAddress.AddressLine2,
-               State = selectedAddress.State,
-               City = selectedAddress.City,
-               Country = selectedAddress.Country,
-               PostalCode = selectedAddress.PostalCode,
-               IsDefault = selectedAddress.IsDefault
-           },
-           PhoneNumber = new PhoneNumberDto
-           {
-               Name = selectedPhone.Name,
-               Number = selectedPhone.Number,
-           },
-           Description = order.Description,
-           OrderItems = order.OrderItems.Select(oi => new OrderItemDto
-           {
-               ProductName = oi.ProductName,
-               Quantity = oi.Quantity,
-               Price = oi.Price,
-               ProductTitle = oi.ProductTitle,
-               BrandName = oi.BrandName,
-               ProductFeatureValues = oi.ProductFeatureValues.Select(fv => new ProductFeatureValueDto
+               // 7. OrderDto oluştur
+               var orderDto = new OrderDto
                {
-                   FeatureName = fv.FeatureValue.Feature.Name,
-                   FeatureValueName = fv.FeatureValue.Name
-               }).ToList(),
+                   OrderId = order.Id,
+                   OrderCode = order.OrderCode,
+                   UserName = order.User.UserName,
+                   Email = user.Email,
+                   OrderDate = order.OrderDate,
+                   TotalPrice = order.TotalPrice,
+                   UserAddress = new UserAddressDto
+                   {
+                       Id = selectedAddress.Id,
+                       Name = selectedAddress.Name,
+                       AddressLine1 = selectedAddress.AddressLine1,
+                       AddressLine2 = selectedAddress.AddressLine2,
+                       State = selectedAddress.State,
+                       City = selectedAddress.City,
+                       Country = selectedAddress.Country,
+                       PostalCode = selectedAddress.PostalCode,
+                       IsDefault = selectedAddress.IsDefault
+                   },
+                   PhoneNumber = new PhoneNumberDto
+                   {
+                       Name = selectedPhone.Name,
+                       Number = selectedPhone.Number,
+                   },
+                   Description = order.Description,
+                   OrderItems = order.OrderItems.Select(oi => new OrderItemDto
+                   {
+                       ProductName = oi.ProductName,
+                       Quantity = oi.Quantity,
+                       Price = oi.Price,
+                       ProductTitle = oi.ProductTitle,
+                       BrandName = oi.BrandName,
+                       ProductFeatureValues = oi.ProductFeatureValues.Select(fv => new ProductFeatureValueDto
+                       {
+                           FeatureName = fv.FeatureValue.Feature.Name,
+                           FeatureValueName = fv.FeatureValue.Name
+                       }).ToList(),
                ShowcaseImage = oi.Product.ProductImageFiles.FirstOrDefault(img => img.Showcase)?.SetImageUrl(_storageService)
-           }).ToList()
-       };
+                   }).ToList()
+               };
 
-       // 8. İşaretlenmemiş ürünlerin CartItemDto listesini oluştur
-       var newCartItems = uncheckedItems.Select(item => new CartItemDto
-       {
-           CartItemId = item.Id,
-           CartId = newCart.Id,
-           ProductId = item.ProductId,
-           ProductName = item.Product.Name,
-           ProductTitle = item.Product.Title,
-           BrandName = item.Product.Brand?.Name,
-           Quantity = item.Quantity,
-           UnitPrice = item.Product.Price,
-           IsChecked = item.IsChecked,
-           ProductFeatureValues = item.Product.ProductFeatureValues.Select(fv => new ProductFeatureValueDto
-           {
-               FeatureName = fv.FeatureValue.Feature.Name,
-               FeatureValueName = fv.FeatureValue.Name
-           }).ToList(),
+               // 8. İşaretlenmemiş ürünlerin CartItemDto listesini oluştur
+               var newCartItems = uncheckedItems.Select(item => new CartItemDto
+               {
+                   CartItemId = item.Id,
+                   CartId = newCart.Id,
+                   ProductId = item.ProductId,
+                   ProductName = item.Product.Name,
+                   ProductTitle = item.Product.Title,
+                   BrandName = item.Product.Brand?.Name,
+                   Quantity = item.Quantity,
+                   UnitPrice = item.Product.Price,
+                   IsChecked = item.IsChecked,
+                   ProductFeatureValues = item.Product.ProductFeatureValues.Select(fv => new ProductFeatureValueDto
+                   {
+                       FeatureName = fv.FeatureValue.Feature.Name,
+                       FeatureValueName = fv.FeatureValue.Name
+                   }).ToList(),
            ShowcaseImage = item.Product.ProductImageFiles.FirstOrDefault(img => img.Showcase)?.SetImageUrl(_storageService)
-       }).ToList();
+               }).ToList();
 
-       return (true, orderDto, uncheckedItems.Any() ? newCartItems : null);
+               return (true, orderDto, uncheckedItems.Any() ? newCartItems : null);
    }
    catch (Exception ex)
    {
@@ -392,6 +392,8 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
                     EF.Functions.Like(o.OrderItems.Select(oi => oi.ProductName).FirstOrDefault().ToLower(),
                         $"%{termParam}%") ||
                     EF.Functions.Like(o.OrderItems.Select(oi => oi.ProductTitle).FirstOrDefault().ToLower(),
+                        $"%{termParam}%") ||
+                    EF.Functions.Like(o.OrderItems.Select(oi => oi.BrandName).FirstOrDefault().ToLower(),
                         $"%{termParam}%"));
             }
         }
@@ -408,6 +410,7 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
             .ThenInclude(oi => oi.Product)
             .ThenInclude(p => p.ProductFeatureValues)
             .ThenInclude(pfv => pfv.FeatureValue)
+            .ThenInclude(fv => fv.Feature)
             .AsSplitQuery() 
             .Include(o => o.User);
 
