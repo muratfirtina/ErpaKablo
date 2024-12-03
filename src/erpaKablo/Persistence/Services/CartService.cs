@@ -179,11 +179,16 @@ public class CartService : ICartService
     {
         AppUser? user = await GetCurrentUserAsync();
         Cart? cart = await GetOrCreateCartAsync(user);
-    
+
         return await _cartRepository.GetAsync(
             predicate: c => c.Id == cart.Id,
             include: c => c
                 .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Product)
+                .ThenInclude(p => p.Brand) // Brand bilgisini include ediyoruz
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Product)
+                .ThenInclude(p => p.ProductImageFiles) // ProductImageFiles'ı include ediyoruz
                 .Include(c => c.User)
         );
     }

@@ -17,6 +17,20 @@ public class MappingProfiles : Profile
 {
     public MappingProfiles()
     {
+        CreateMap<Brand, BrandDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.BrandImage, opt => opt.Ignore()) // Storage service ile doldurulacak
+            .ReverseMap();
+        
+        CreateMap<IPaginate<Brand>, GetListResponse<BrandDto>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
+            .ForMember(dest => dest.Pages, opt => opt.MapFrom(src => src.Pages))
+            .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.Size))
+            .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.Count))
+            .ForMember(dest => dest.HasNext, opt => opt.MapFrom(src => src.HasNext))
+            .ForMember(dest => dest.HasPrevious, opt => opt.MapFrom(src => src.HasPrevious))
+            .ForMember(dest => dest.Index, opt => opt.MapFrom(src => src.Index));
         CreateMap<Brand, GetAllBrandQueryResponse>()
             .ForMember(dest
                 => dest.BrandImage, opt

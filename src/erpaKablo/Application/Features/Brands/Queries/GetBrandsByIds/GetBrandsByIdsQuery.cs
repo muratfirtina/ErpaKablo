@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.Brands.Dtos;
 using Application.Repositories;
 using Application.Storage;
@@ -13,7 +14,7 @@ namespace Application.Features.Brands.Queries.GetBrandsByIds;
 public class GetBrandsByIdsQuery : IRequest<GetListResponse<GetBrandsByIdsQueryResponse>>
 {
     public List<string> Ids { get; set; }
-    
+   
     public class GetBrandsByIdsQueryHandler : IRequestHandler<GetBrandsByIdsQuery, GetListResponse<GetBrandsByIdsQueryResponse>>
     {
         private readonly IBrandRepository _brandRepository;
@@ -39,10 +40,23 @@ public class GetBrandsByIdsQuery : IRequest<GetListResponse<GetBrandsByIdsQueryR
                 cancellationToken: cancellationToken
             );
 
-            GetListResponse<GetBrandsByIdsQueryResponse> response = _mapper.Map<GetListResponse<GetBrandsByIdsQueryResponse>>(brands);
-            response.Items.SetImageUrls(_storageService);
+            var response = _mapper.Map<GetListResponse<GetBrandsByIdsQueryResponse>>(brands);
+
+            // Her marka için görsel dönüşümünü yap
+            foreach (var brandDto in response.Items)
+            {
+                var brand = brands.FirstOrDefault(b => b.Id == brandDto.Id);
+                if (brand?.BrandImageFiles != null)
+                {
+                    var brandImage = brand.BrandImageFiles.FirstOrDefault();
+                    if (brandImage != null)
+                    {
+                        brandDto.BrandImage = brandImage.ToDto(_storageService);
+                    }
+                }
+            }
+
             return response;
         }
-        
     }
 }

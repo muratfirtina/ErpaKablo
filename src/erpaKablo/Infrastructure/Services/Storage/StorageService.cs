@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Application.Services;
 using Application.Storage;
 using Application.Storage.Cloudinary;
@@ -13,133 +14,124 @@ namespace Infrastructure.Services.Storage;
 
 public class StorageService : IStorageService
 {
-    private readonly ILocalStorage _localStorage;
-    private readonly ICloudinaryStorage _cloudinaryStorage;
-    private readonly IGoogleStorage _googleStorage;
-    private readonly IFileNameService _fileNameService;
+    private readonly IStorageProviderFactory _providerFactory;
     private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
+    private readonly IFileNameService _fileNameService;
+    private readonly IConfiguration _configuration;
+
 
     public StorageService(
-        ILocalStorage localStorage,
-        ICloudinaryStorage cloudinaryStorage,
-        IGoogleStorage googleStorage,
-        IFileNameService fileNameService,
-        IOptionsSnapshot<StorageSettings> storageSettings)
+        IStorageProviderFactory providerFactory,
+        IOptionsSnapshot<StorageSettings> storageSettings,
+        IFileNameService fileNameService, IConfiguration configuration)
     {
-        _localStorage = localStorage ?? throw new ArgumentNullException(nameof(localStorage));
-        _cloudinaryStorage = cloudinaryStorage ?? throw new ArgumentNullException(nameof(cloudinaryStorage));
-        _googleStorage = googleStorage ?? throw new ArgumentNullException(nameof(googleStorage));
-        _fileNameService = fileNameService ?? throw new ArgumentNullException(nameof(fileNameService));
-        _storageSettings = storageSettings ?? throw new ArgumentNullException(nameof(storageSettings));
+        _providerFactory = providerFactory;
+        _storageSettings = storageSettings;
+        _fileNameService = fileNameService;
+        _configuration = configuration;
     }
 
-
-    public async Task<List<(string fileName, string path, string entityType, string storageType)>> UploadAsync(string entityType, string path, List<IFormFile> files)
+    public async Task<List<(string fileName, string path, string entityType, string storageType)>> UploadAsync(
+        string entityType,
+        string path,
+        List<IFormFile> files)
     {
-        List<(string fileName, string path, string entityType, string storageType)> datas = new List<(string fileName, string path, string entityType, string storageType)>();
+        var results = new List<(string fileName, string path, string entityType, string storageType)>();
+
         foreach (var file in files)
         {
             await _fileNameService.FileMustBeInFileFormat(file);
-            string storageType = StorageType.Local.ToString();
             string newPath = await _fileNameService.PathRenameAsync(path);
-            var fileNewName = await _fileNameService.FileRenameAsync(newPath, file.FileName, (p, f) => HasFile(entityType, p, f));
-            
-            var memoryStream = new MemoryStream();
+
+            // HasFile delegate'ini uygun şekilde oluşturuyoruz
+            IFileNameService.HasFile hasFileDelegate = (pathOrContainerName, fileName) => 
+                HasFile(entityType, pathOrContainerName, fileName);
+
+            var fileNewName = await _fileNameService.FileRenameAsync(
+                newPath, 
+                file.FileName, 
+                hasFileDelegate);
+
+            using var memoryStream = new MemoryStream();
             await file.CopyToAsync(memoryStream);
 
-            memoryStream.Position = 0;
-            await UploadToStorage(entityType, newPath, fileNewName, memoryStream);
-            datas.Add((fileNewName, newPath, entityType, storageType));
+            foreach (var provider in GetConfiguredProviders())
+            {
+                memoryStream.Position = 0;
+                var uploadResults = await provider.UploadFileToStorage(
+                    entityType, 
+                    newPath, 
+                    fileNewName, 
+                    new MemoryStream(memoryStream.ToArray())
+                );
 
-            memoryStream.Close();
+                foreach (var result in uploadResults)
+                {
+                    results.Add((result.fileName, result.path, entityType, provider.GetType().Name));
+                }
+            }
         }
 
-        return datas;
+        return results;
     }
 
-    private async Task UploadToStorage(string entityType, string path, string fileName, MemoryStream fileStream)
+    public async Task<List<T>?> GetFiles<T>(
+        string entityId, 
+        string entityType, 
+        string? preferredStorage = null) where T : ImageFile, new()
     {
-        fileStream.Position = 0;
-        await _localStorage.UploadFileToStorage(entityType, path, fileName, new MemoryStream(fileStream.ToArray()));
-
-        fileStream.Position = 0;
-        await _cloudinaryStorage.UploadFileToStorage(entityType, path, fileName, new MemoryStream(fileStream.ToArray()));
-        
-        /*fileStream.Position = 0;
-        await _googleStorage.UploadFileToStorage(entityType, path, fileName, new MemoryStream(fileStream.ToArray()));*/
-    }
-    
-    public async Task<List<T>?> GetFiles<T>(string entityId, string entityType, string preferredStorage = null) where T : ImageFile, new()
-    {
-        var activeProvider = preferredStorage ?? _storageSettings.Value.ActiveProvider;
-
-        switch (activeProvider.ToLower())
-        {
-            case "localstorage":
-                return await _localStorage.GetFiles<T>(entityId, entityType);
-            case "cloudinary":
-                return await _cloudinaryStorage.GetFiles<T>(entityId, entityType);
-            /*case "google":
-                return await _googleStorage.GetFiles<T>(entityId, entityType);*/
-            default:
-                throw new ArgumentException("Invalid storage provider", nameof(preferredStorage));
-        }
-    }
-
-    public string GetStorageUrl(string storageType = null)
-    {
-        if (_storageSettings?.Value?.Providers == null)
-            throw new InvalidOperationException("Storage settings or providers are not configured");
-
-        var activeProvider = (storageType ?? _storageSettings.Value.ActiveProvider ?? "localstorage").ToLower();
-        
-        return activeProvider switch
-        {
-            "localstorage" => _storageSettings.Value.Providers.LocalStorage?.Url 
-                              ?? throw new InvalidOperationException("LocalStorage URL is not configured"),
-            "cloudinary" => _storageSettings.Value.Providers.Cloudinary?.Url 
-                            ?? throw new InvalidOperationException("Cloudinary URL is not configured"),
-            /*"google" => _storageSettings.Value.Providers.Google?.Url 
-                        ?? throw new InvalidOperationException("Google Storage URL is not configured"),*/
-            _ => throw new ArgumentException($"Invalid storage provider: {activeProvider}", nameof(storageType))
-        };
+        var provider = _providerFactory.GetProvider(preferredStorage);
+        return await provider.GetFiles<T>(entityId, entityType);
     }
 
     public bool HasFile(string entityType, string path, string fileName)
     {
-        return _localStorage.HasFile(entityType, path, fileName);
+        var provider = _providerFactory.GetProvider(null);
+        return provider.HasFile(entityType, path, fileName);
     }
 
-    public string StorageName { get; } 
+    public string GetStorageUrl(string? storageType = null)
+    {
+        var provider = _providerFactory.GetProvider(storageType);
+        return provider.GetStorageUrl();
+    }
 
-    
     public async Task DeleteFromAllStoragesAsync(string entityType, string path, string fileName)
     {
-        try
+        foreach (var provider in GetConfiguredProviders())
         {
-            await _localStorage.DeleteAsync(entityType, path, fileName);
+            try
+            {
+                await provider.DeleteAsync(entityType, path, fileName);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error deleting from {provider.GetType().Name}: {ex.Message}");
+            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting from local storage: {ex.Message}");
-        }
+    }
+    public string GetCompanyLogoUrl()
+    {
+        var storageUrl = GetStorageUrl()?.TrimEnd('/');
+        //logopath i appsettings.json dan alalım.
+        var logoPath = _configuration["Storage:CompanyAssets:LogoPath"];
+        if (string.IsNullOrEmpty(logoPath))
+            throw new Exception("Logo path not found in configuration.");
 
-        try
-        {
-            await _cloudinaryStorage.DeleteAsync(entityType, path, fileName);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting from Cloudinary: {ex.Message}");
-        }
+        return $"{storageUrl}/{logoPath.TrimStart('/')}";
+    }
 
-        /*try
-        {
-            await _googleStorage.DeleteAsync(entityType, path, fileName);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting from Google Storage: {ex.Message}");
-        }*/
+    private IEnumerable<IStorageProvider> GetConfiguredProviders()
+    {
+        var providers = _storageSettings.Value.Providers;
+        
+        if (providers.LocalStorage?.Url != null)
+            yield return _providerFactory.GetProvider("localstorage");
+            
+        if (providers.Cloudinary?.Url != null)
+            yield return _providerFactory.GetProvider("cloudinary");
+            
+        if (providers.Google?.Url != null)
+            yield return _providerFactory.GetProvider("google");
     }
 }

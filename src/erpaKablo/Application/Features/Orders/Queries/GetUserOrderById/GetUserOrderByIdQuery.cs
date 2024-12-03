@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
@@ -26,14 +27,28 @@ public class GetUserOrderByIdQuery : IRequest<GetUserOrderByIdQueryResponse>
             _storageService = storageService;
         }
 
-        public async Task<GetUserOrderByIdQueryResponse> Handle(GetUserOrderByIdQuery request, CancellationToken cancellationToken)
+        public async Task<GetUserOrderByIdQueryResponse> Handle(
+            GetUserOrderByIdQuery request, 
+            CancellationToken cancellationToken)
         {
             var order = await _orderRepository.GetUserOrderByIdAsync(request.Id);
             if (order == null)
                 throw new Exception("Order not found");
 
             var response = _mapper.Map<GetUserOrderByIdQueryResponse>(order);
-            response.OrderItems.SetImageUrls(_storageService);
+
+            // Her order item için showcase image'ı dönüştür
+            foreach (var orderItemDto in response.OrderItems)
+            {
+                var orderItem = order.OrderItems.FirstOrDefault(oi => oi.Id == orderItemDto.Id);
+                if (orderItem?.Product?.ProductImageFiles == null) continue;
+
+                var showcaseImage = orderItem.Product.ProductImageFiles.FirstOrDefault();
+                if (showcaseImage != null)
+                {
+                    orderItemDto.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                }
+            }
 
             return response;
         }

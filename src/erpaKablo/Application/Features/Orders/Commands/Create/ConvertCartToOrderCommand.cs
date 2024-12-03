@@ -35,7 +35,7 @@ public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandRespo
 
         public async Task<ConvertCartToOrderCommandResponse> Handle(ConvertCartToOrderCommand request, CancellationToken cancellationToken)
         {
-            (bool succeeded, OrderDto? orderDto, List<CartItemDto>? newCartItems) = await _orderRepository.ConvertCartToOrderAsync(
+            (bool succeeded, OrderDto? orderDto) = await _orderRepository.ConvertCartToOrderAsync(
                 request.AddressId,
                 request.PhoneNumberId,
                 request.Description
@@ -51,7 +51,7 @@ public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandRespo
             try
             {
         
-                await _mailService.SendCompletedOrderEmailAsync(
+                await _mailService.SendCreatedOrderEmailAsync(
                     to: orderDto.Email,
                     orderCode: orderDto.OrderCode,
                     orderDescription: orderDto.Description,

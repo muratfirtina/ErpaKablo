@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.Products.Queries.GetList;
 using Application.Repositories;
 using Application.Storage;
@@ -50,7 +51,15 @@ public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandom
         var mappedProducts = _mapper.Map<GetListResponse<GetAllProductQueryResponse>>(randomProducts);
 
         // URL'leri oluştur
-        mappedProducts.Items.SetImageUrls(_storageService);
+        foreach (var product in mappedProducts.Items)
+        {
+            var productEntity = randomProducts.First(p => p.Id == product.Id);
+            var showcaseImage = productEntity.ProductImageFiles?.FirstOrDefault();
+            if (showcaseImage != null)
+            {
+                product.ShowcaseImage = showcaseImage.ToDto(_storageService);
+            }
+        }
 
         return mappedProducts;
     }

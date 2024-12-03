@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
@@ -45,8 +46,19 @@ public class GetRandomProductsByProductIdQuery : IRequest<GetListResponse<GetRan
                 .ToList();
 
             GetListResponse<GetRandomProductsByProductIdQueryResponse> response = _mapper.Map<GetListResponse<GetRandomProductsByProductIdQueryResponse>>(randomProducts);
-            response.Items.SetImageUrls(_storageService);
+            
+            foreach (var productDto in response.Items)
+            {
+                var productEntity = randomProducts.First(p => p.Id == productDto.Id);
+                var showcaseImage = productEntity.ProductImageFiles?.FirstOrDefault();
+                if (showcaseImage != null)
+                {
+                    productDto.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                }
+            }
+           
             return response;
+        
         }
     }
    

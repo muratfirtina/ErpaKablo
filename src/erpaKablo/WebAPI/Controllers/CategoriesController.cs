@@ -11,6 +11,7 @@ using Application.Features.Categories.Queries.GetList;
 using Application.Features.Categories.Queries.GetMainCategories;
 using Application.Features.Categories.Queries.GetSubCategoriesByBrandId;
 using Application.Features.Categories.Queries.GetSubCategoriesByCategoryId;
+using Application.Features.Categories.Queries.Search;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -94,6 +95,13 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetSubCategoriesByBrandId([FromRoute] string brandId)
         {
             GetListResponse<GetSubCategoriesByBrandIdQueryReponse> response = await Mediator.Send(new GetSubCategoriesByBrandIdQuery { BrandId = brandId});
+            return Ok(response);
+        }
+        
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string searchTerm)
+        {
+            var response = await Mediator.Send(new SearchCategoryQuery { SearchTerm = searchTerm });
             return Ok(response);
         }
 

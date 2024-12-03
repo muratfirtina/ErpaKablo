@@ -8,6 +8,7 @@ using Application.Features.Brands.Queries.GetBrandsByIds;
 using Application.Features.Brands.Queries.GetByDynamic;
 using Application.Features.Brands.Queries.GetById;
 using Application.Features.Brands.Queries.GetList;
+using Application.Features.Brands.Queries.Search;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -74,6 +75,13 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetByIds([FromBody] List<string> ids)
         {
             GetListResponse<GetBrandsByIdsQueryResponse> response = await Mediator.Send(new GetBrandsByIdsQuery { Ids = ids });
+            return Ok(response);
+        }
+        
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string searchTerm)
+        {
+            var response = await Mediator.Send(new SearchBrandQuery { SearchTerm = searchTerm });
             return Ok(response);
         }
     }

@@ -109,6 +109,12 @@ public class CloudinaryStorage : ICloudinaryStorage
         }
     }
 
+    public string GetStorageUrl()
+    {
+        return _storageSettings.Value.Providers.Cloudinary.Url ?? 
+               throw new InvalidOperationException("Cloudinary URL is not configured");
+    }
+
     private string GetPublicId(string fullPath)
     {
         var pathParts = fullPath.Split('/');

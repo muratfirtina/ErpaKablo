@@ -89,7 +89,13 @@ public class LocalStorage : ILocalStorage
 
     public bool HasFile(string entityType, string path, string fileName) 
         => File.Exists(Path.Combine(_baseFolderPath, entityType, path, fileName));
-    
+
+    public string GetStorageUrl()
+    {
+        return _storageSettings.Value.Providers.LocalStorage.Url ?? 
+               throw new InvalidOperationException("Local Storage URL is not configured");
+    }
+
     async Task<bool> CopyFileAsync(string path, IFormFile file)
     {
         try
@@ -111,7 +117,7 @@ public class LocalStorage : ILocalStorage
     
     public async Task FileMustBeInImageFormat(IFormFile formFile)
     {
-        List<string> extensions = new() { ".jpg", ".png", ".jpeg", ".webp", ".heic" };
+        List<string> extensions = new() { ".jpg", ".png", ".jpeg", ".webp", ".heic",".avif" };
 
         string extension = Path.GetExtension(formFile.FileName).ToLower();
         if (!extensions.Contains(extension))
@@ -121,7 +127,7 @@ public class LocalStorage : ILocalStorage
     
     public async Task FileMustBeInFileFormat(IFormFile formFile)
     {
-        List<string> extensions = new() { ".jpg", ".png", ".jpeg", ".webp", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".heic" };
+        List<string> extensions = new() { ".jpg", ".png", ".jpeg", ".webp", ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".heic",".avif" };
 
         string extension = Path.GetExtension(formFile.FileName).ToLower();
         if (!extensions.Contains(extension))

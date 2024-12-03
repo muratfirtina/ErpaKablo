@@ -11,6 +11,7 @@ using Infrastructure.Middleware.Security;
 using Infrastructure.Services.Monitoring;
 using Infrastructure.Services.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.IdentityModel.Tokens;
 using Persistence;
 using Persistence.Services;
@@ -31,6 +32,9 @@ if (builder.Environment.IsProduction())
             builder.Configuration["AzureKeyVault:ClientId"],
             builder.Configuration["AzureKeyVault:ClientSecret"]));
 }
+
+var provider = new FileExtensionContentTypeProvider();
+provider.Mappings[".avif"] = "image/avif";
 
 // Serilog Configuration
 Log.Logger = new LoggerConfiguration()
@@ -184,7 +188,10 @@ app.UseMiddleware<AdvancedMetricsMiddleware>();
 
 // Basic Middleware
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = provider
+});
 
 // Authentication & Authorization
 app.UseAuthentication();

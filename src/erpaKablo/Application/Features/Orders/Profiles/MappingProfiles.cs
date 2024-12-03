@@ -37,10 +37,10 @@ public class MappingProfiles : Profile
             .ReverseMap();
 
         CreateMap<Order, GetOrdersByDynamicQueryResponse>()
-            //.ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.OrderCode, opt => opt.MapFrom(src => src.OrderCode))
-            //.ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.UserName))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email)) // Add this line
             .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => src.OrderDate))
             .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
@@ -93,7 +93,6 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.UserName))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
-            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.User.PhoneNumber))
             .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems)) // OrderItems için de mapping yapılmalı
             .ReverseMap();
         

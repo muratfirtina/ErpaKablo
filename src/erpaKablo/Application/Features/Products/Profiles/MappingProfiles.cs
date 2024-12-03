@@ -142,6 +142,7 @@ public class MappingProfiles : Profile
             .ReverseMap();
         
         CreateMap<IPaginate<Product>, GetListResponse<SearchProductQueryResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
             .ReverseMap();
         
         CreateMap<Product, FilterProductQueryResponse>()

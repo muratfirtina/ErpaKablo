@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.Brands.Dtos;
 using Application.Features.Brands.Queries.GetById;
 using Application.Repositories;
@@ -39,7 +40,16 @@ public class GetByIdBrandQuery : IRequest<GetByIdBrandResponse>
             }
 
             GetByIdBrandResponse response = _mapper.Map<GetByIdBrandResponse>(brand);
-            response.SetImageUrl(_storageService);
+            
+            if (brand.BrandImageFiles != null)
+            {
+                var brandImage = brand.BrandImageFiles.FirstOrDefault();
+                if (brandImage != null)
+                {
+                    response.BrandImage = brandImage.ToDto(_storageService);
+                }
+            }
+            
 
             return response;
         }

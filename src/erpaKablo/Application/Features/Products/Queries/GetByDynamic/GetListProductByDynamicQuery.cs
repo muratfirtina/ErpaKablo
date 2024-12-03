@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Rules;
 using Application.Repositories;
@@ -47,10 +48,14 @@ public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProd
                     cancellationToken: cancellationToken);
 
                 var productsDtos = _mapper.Map<GetListResponse<GetListProductByDynamicDto>>(allProducts);
-                
-                if (productsDtos?.Items != null)
+                foreach (var productsDto in productsDtos.Items)
                 {
-                    productsDtos.Items.SetImageUrls(_storageService);
+                    var product = allProducts.First(p => p.Id == productsDto.Id);
+                    var showcaseImage = product.ProductImageFiles?.FirstOrDefault(pif => pif.Showcase);
+                    if (showcaseImage != null)
+                    {
+                        productsDto.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                    }
                 }
 
                 return productsDtos;

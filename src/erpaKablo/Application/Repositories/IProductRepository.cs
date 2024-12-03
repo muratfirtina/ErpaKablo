@@ -10,14 +10,15 @@ namespace Application.Repositories;
 
 public interface IProductRepository : IAsyncRepository<Product, string>, IRepository<Product, string>
 {
-    Task<List<ProductImageFileDto>> GetFilesByProductId(string productId);
+    Task<List<ProductImageFileDto>> GetFilesByProductId(string productId,string? preferredStorage = null);
     Task ChangeShowcase(string productId, string imageFileId,bool showcase);
     Task<ProductImageFile?> GetProductImage(string productId);
 
     //bir sözcük veya kelimeyi içeren ürünleri pagination ile getirir
-    Task<IPaginate<Product>> SearchProductsAsync(string searchTerm, int pageIndex, int pageSize);
+    Task<(IPaginate<Product>, List<Category>, List<Brand>)> SearchProductsAsync(string searchTerm, int pageIndex, int pageSize);
     
     Task<IPaginate<Product>> FilterProductsAsync(string searchTerm,Dictionary<string, List<string>> filters, PageRequest pageRequest,string sortOrder);
     Task<List<FilterGroup>> GetAvailableFilters(string searchTerm = null);
+    
 
 }

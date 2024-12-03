@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Repositories;
 using Application.Storage;
@@ -51,7 +52,15 @@ public class GetAllProductQuery : IRequest<GetListResponse<GetAllProductQueryRes
                 GetListResponse<GetAllProductQueryResponse> response =
                     _mapper.Map<GetListResponse<GetAllProductQueryResponse>>(products);
 
-                response.Items.SetImageUrls(_storageService);
+                foreach (var productDto in response.Items)
+                {
+                    var product = products.First(p => p.Id == productDto.Id);
+                    var showcaseImage = product.ProductImageFiles?.FirstOrDefault(pif => pif.Showcase);
+                    if (showcaseImage != null)
+                    {
+                        productDto.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                    }
+                }
 
                 return response;
             }
@@ -71,7 +80,15 @@ public class GetAllProductQuery : IRequest<GetListResponse<GetAllProductQueryRes
                 GetListResponse<GetAllProductQueryResponse> response =
                     _mapper.Map<GetListResponse<GetAllProductQueryResponse>>(products);
 
-                response.Items.SetImageUrls(_storageService);
+                foreach (var productDto in response.Items)
+                {
+                    var product = products.Items.First(p => p.Id == productDto.Id);
+                    var showcaseImage = product.ProductImageFiles?.FirstOrDefault(pif => pif.Showcase);
+                    if (showcaseImage != null)
+                    {
+                        productDto.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                    }
+                }
                 return response;
             }
         }

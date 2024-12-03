@@ -1,4 +1,7 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
+using Application.Features.Brands.Dtos;
+using Application.Features.Categories.Dtos;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Repositories;
 using Application.Storage;
@@ -11,12 +14,12 @@ using MediatR;
 
 namespace Application.Features.Products.Queries.SearchAndFilter.Search;
 
-public class SearchProductQuery: IRequest<GetListResponse<SearchProductQueryResponse>>
+public class SearchProductQuery : IRequest<SearchResponse>
 {
     public string SearchTerm { get; set; }
     public PageRequest PageRequest { get; set; }
-    
-    public class SearchProductQueryHandler : IRequestHandler<SearchProductQuery, GetListResponse<SearchProductQueryResponse>>
+
+    public class SearchProductQueryHandler : IRequestHandler<SearchProductQuery, SearchResponse>
     {
         private readonly IProductRepository _productRepository;
         private readonly IProductLikeRepository _productLikeRepository;
@@ -31,15 +34,35 @@ public class SearchProductQuery: IRequest<GetListResponse<SearchProductQueryResp
             _productLikeRepository = productLikeRepository;
         }
 
-        public async Task<GetListResponse<SearchProductQueryResponse>> Handle(SearchProductQuery request, CancellationToken cancellationToken)
+        public async Task<SearchResponse> Handle(SearchProductQuery request, CancellationToken cancellationToken)
         {
-            IPaginate<Product> products = await _productRepository.SearchProductsAsync(request.SearchTerm, request.PageRequest.PageIndex, request.PageRequest.PageSize);
-            var productDtos = _mapper.Map<GetListResponse<SearchProductQueryResponse>>(products);
-            productDtos.Items.SetImageUrls(_storageService);
-            return productDtos;
+            var (productsPage, categories, brands) = await _productRepository.SearchProductsAsync(
+                request.SearchTerm,
+                request.PageRequest.PageIndex,
+                request.PageRequest.PageSize);
+
+            var productDtos = _mapper.Map<GetListResponse<SearchProductQueryResponse>>(productsPage);
+
+            foreach (var productDto in productDtos.Items)
+            {
+                var product = productsPage.Items.First(p => p.Id == productDto.Id);
+                var showcaseImage = product.ProductImageFiles?.FirstOrDefault(pif => pif.Showcase);
+                if (showcaseImage != null)
+                {
+                    productDto.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                }
+            }
+
+            var categoryDtos = _mapper.Map<List<CategoryDto>>(categories);
+            var brandDtos = _mapper.Map<List<BrandDto>>(brands);
+
+            return new SearchResponse
+            {
+                Products = productDtos,
+                Categories = categoryDtos,
+                Brands = brandDtos
+            };
         }
-        
     }
-    
 }
     

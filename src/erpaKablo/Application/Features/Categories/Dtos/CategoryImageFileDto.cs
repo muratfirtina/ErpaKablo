@@ -7,5 +7,6 @@ public class CategoryImageFileDto
     public string Path { get; set; }
     public string EntityType { get; set; }
     public string Storage { get; set; }
+    public string Alt { get; set; }
     public string Url { get; set; }
 }

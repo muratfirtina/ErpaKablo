@@ -1,4 +1,6 @@
 using Application.Extensions;
+using Application.Features.Brands.Dtos;
+using Application.Features.Categories.Dtos;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Core.Application.Responses;
@@ -21,4 +23,11 @@ public class SearchProductQueryResponse: IResponse , IHasShowcaseImage
     public decimal Price { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }
     public ProductImageFileDto? ShowcaseImage { get; set; }
+}
+
+public class SearchResponse
+{
+    public GetListResponse<SearchProductQueryResponse> Products { get; set; }
+    public List<CategoryDto> Categories { get; set; }
+    public List<BrandDto> Brands { get; set; }
 }

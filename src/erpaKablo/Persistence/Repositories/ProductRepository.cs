@@ -1,5 +1,5 @@
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.ProductImageFiles.Dtos;
-using Application.Features.Products.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using Core.Application.Requests;
@@ -9,40 +9,53 @@ using Domain;
 using Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Context;
+using Persistence.Extensions;
 
 namespace Persistence.Repositories;
 
 public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbContext>, IProductRepository
 {
-    public ProductRepository(ErpaKabloDbContext context) : base(context)
+    private readonly IStorageService _storageService;
+
+    public ProductRepository(
+        ErpaKabloDbContext context,
+        IStorageService storageService) : base(context)
     {
+        _storageService = storageService;
     }
 
-    public async Task<List<ProductImageFileDto>> GetFilesByProductId(string productId)
+    public async Task<List<ProductImageFileDto>> GetFilesByProductId(
+        string productId,
+        string? preferredStorage = null)
     {
-        var query = Context.Products
+        var imageFiles = await Context.Products
             .Where(p => p.Id == productId)
             .SelectMany(p => p.ProductImageFiles)
             .OrderByDescending(e => e.CreatedDate)
-            .Select(pif => new ProductImageFileDto
-            {
-                Id = pif.Id,
-                Path = pif.Path,
-                FileName = pif.Name,
-                Showcase = pif.Showcase,
-                Storage = pif.Storage,
-                EntityType = pif.EntityType,
-                Alt = pif.Alt,
-            }).ToListAsync();
+            .ToListAsync();
 
-        return await query;
+        var imageDtos = imageFiles.Select(pif => new ProductImageFileDto
+        {
+            Id = pif.Id,
+            Path = pif.Path,
+            FileName = pif.Name,
+            Showcase = pif.Showcase,
+            Storage = pif.Storage,
+            EntityType = pif.EntityType,
+            Alt = pif.Alt,
+            Url = pif.SetImageUrl(_storageService, preferredStorage)
+        }).ToList();
+
+        return imageDtos;
+    }
+
+    public Task<List<ProductImageFileDto>> GetFilesByProductId(string productId)
+    {
+        throw new NotImplementedException();
     }
 
     public async Task ChangeShowcase(string productId, string imageFileId, bool showcase)
     {
-        var product = await Context.Products.FindAsync(productId);
-        if (product == null) return;
-
         var productImageFiles = await Context.ProductImageFiles
             .Where(pif => pif.Id == productId)
             .ToListAsync();
@@ -57,409 +70,188 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
 
     public async Task<ProductImageFile?> GetProductImage(string productId)
     {
-        var query = Context.Products
+        return await Context.Products
             .Where(p => p.Id == productId)
             .SelectMany(p => p.ProductImageFiles)
             .FirstOrDefaultAsync();
-
-        return await query;
     }
 
-    public async Task<IPaginate<Product>> SearchProductsAsync(string searchTerm, int pageIndex, int pageSize)
+    public async Task<(IPaginate<Product>, List<Category>, List<Brand>)> SearchProductsAsync(
+        string searchTerm,
+        int pageIndex,
+        int pageSize)
     {
-        var query = Context.Products.AsQueryable();
+        // Önce tüm sonuçları al
+        var (products, categories, brands) = await Context.Products
+            .AsQueryable()
+            .SearchAllAsync(
+                Context.Categories.AsQueryable(),
+                Context.Brands.AsQueryable(),
+                searchTerm);
 
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            var terms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(t => t.ToLower())
-                .ToList();
+        // Ürünleri paginate et
+        var paginatedProducts = products
+            .AsQueryable()
+            .WithFullDetails()
+            .WithShowcaseImage()
+            .ToPaginate(pageIndex, pageSize);
 
-            // Önce tam eşleşmeleri ara
-            var exactMatchQuery = query.Where(p =>
-                terms.All(term =>
-                    EF.Functions.Like(p.Name.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Brand.Name.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Category.Name.ToLower(), $"%{term}%")
-                ));
-
-            // Tam eşleşme yoksa diğer alanlarda da ara
-            var fallbackQuery = query.Where(p =>
-                terms.All(term =>
-                    EF.Functions.Like(p.Name.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Description.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Title.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Brand.Name.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Category.Name.ToLower(), $"%{term}%") ||
-                    p.ProductFeatureValues.Any(pfv =>
-                        EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{term}%"))
-                ));
-
-            // İki sorguyu birleştir
-            query = exactMatchQuery.Union(fallbackQuery);
-        }
-
-        query = query
-            .Include(p => p.Brand)
-            .Include(p => p.Category)
-            .Include(p => p.ProductImageFiles)
-            .Include(p => p.ProductFeatureValues)
-            .ThenInclude(p => p.FeatureValue)
-            .ThenInclude(p => p.Feature)
-            .AsSplitQuery() 
-            .OrderByDescending(p => p.CreatedDate);
-
-        return await query.ToPaginateAsync(pageIndex, pageSize);
+        return (paginatedProducts, categories, brands);
     }
 
-    public async Task<IPaginate<Product>> FilterProductsAsync(string searchTerm,
-    Dictionary<string, List<string>> filters, PageRequest pageRequest, string sortOrder)
-{
-    var query = Context.Products
-        .Include(p => p.Brand)
-        .Include(p => p.Category)
-        .Include(p => p.ProductImageFiles)
-        .Include(p => p.ProductFeatureValues)
-        .ThenInclude(pfv => pfv.FeatureValue)
-        .ThenInclude(fv => fv.Feature)
-        .AsSplitQuery() 
-        .AsQueryable();
-
-    if (!string.IsNullOrWhiteSpace(searchTerm))
+    public async Task<IPaginate<Product>> FilterProductsAsync(
+        string searchTerm,
+        Dictionary<string, List<string>> filters,
+        PageRequest pageRequest,
+        string sortOrder)
     {
-        var terms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(t => t.ToLower().Trim())
-            .ToList();
+        var query = Context.Products
+            .AsQueryable()
+            .WithFullDetails()
+            .WithShowcaseImage()
+            .SearchByTerm(searchTerm)
+            .ApplyFilters(filters)
+            .ApplySort(sortOrder);
 
-        // Her terimin en az bir alanda bulunması gerekiyor
-        foreach (var term in terms)
-        {
-            query = query.Where(p =>
-                EF.Functions.Like(p.Name.ToLower(), $"%{term}%") ||
-                EF.Functions.Like(p.Description.ToLower(), $"%{term}%") ||
-                EF.Functions.Like(p.Title.ToLower(), $"%{term}%") ||
-                EF.Functions.Like(p.Brand.Name.ToLower(), $"%{term}%") ||
-                EF.Functions.Like(p.Category.Name.ToLower(), $"%{term}%") ||
-                p.ProductFeatureValues.Any(pfv =>
-                    EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{term}%"))
-            );
-        }
+        return await query.ToPaginateAsync(pageRequest.PageIndex, pageRequest.PageSize);
     }
 
-    // Filtreleri uygula
-    foreach (var filter in filters)
-    {
-        if (filter.Value.Count > 0)
-        {
-            switch (filter.Key)
-            {
-                case "Brand":
-                    query = query.Where(p => filter.Value.Contains(p.Brand.Id));
-                    break;
-                case "Category":
-                    var allCategoryIds = await GetAllSubcategoryIds(filter.Value);
-                    query = query.Where(p => allCategoryIds.Contains(p.CategoryId));
-                    break;
-                case "Price":
-                    if (!string.IsNullOrWhiteSpace(filter.Value[0]))
-                    {
-                        var priceRange = filter.Value[0].Split('-');
-                        if (priceRange.Length == 2)
-                        {
-                            if (decimal.TryParse(priceRange[0], out decimal minPrice))
-                                query = query.Where(p => p.Price >= minPrice);
-                            
-                            if (decimal.TryParse(priceRange[1], out decimal maxPrice))
-                                query = query.Where(p => p.Price <= maxPrice);
-                        }
-                    }
-                    break;
-                default:
-                    // Özellik filtreleri
-                    query = query.Where(p => p.ProductFeatureValues.Any(pfv =>
-                        pfv.FeatureValue.Feature.Name == filter.Key &&
-                        filter.Value.Contains(pfv.FeatureValue.Id)));
-                    break;
-            }
-        }
-    }
-
-    // Sıralama
-    query = sortOrder switch
-    {
-        "price_asc" => query.OrderBy(p => p.Price),
-        "price_desc" => query.OrderByDescending(p => p.Price),
-        _ => query.OrderByDescending(p => p.CreatedDate)
-    };
-
-    // Sayfalama
-    return await query.ToPaginateAsync(pageRequest.PageIndex, pageRequest.PageSize);
-}
-
-    public async Task<List<FilterGroup>> GetAvailableFilters(string searchTerm)
+    public async Task<List<FilterGroup>> GetAvailableFilters(string searchTerm = null)
 {
     var filterDefinitions = new List<FilterGroup>();
 
-    // Önce arama terimini kullanarak ürünleri filtreleyen bir sorgu oluştur
-    IQueryable<Product> productsQuery = Context.Products
-        .Include(p => p.Brand)
-        .Include(p => p.Category)
-        .Include(p => p.ProductFeatureValues)
-        .ThenInclude(pfv => pfv.FeatureValue)
-        .ThenInclude(fv => fv.Feature)
-        .AsSplitQuery() 
-        .AsQueryable();
+    var query = Context.Products.AsQueryable();
 
+    // Searchterm varsa uygula
     if (!string.IsNullOrWhiteSpace(searchTerm))
     {
-        var category = await Context.Categories.FirstOrDefaultAsync(c => c.Id == searchTerm);
-        var brand = await Context.Brands.FirstOrDefaultAsync(b => b.Id == searchTerm);
-        
-        var terms = searchTerm.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(t => t.ToLower().Trim())
-            .ToList();
-        if (category != null)
+        // Kategori ID kontrolü
+        if (await Context.Categories.AnyAsync(c => c.Id == searchTerm))
         {
-            var allSubcategoryIds = await GetAllSubcategoryIds(new List<string> { category.Id });
-            productsQuery = productsQuery.Where(p => allSubcategoryIds.Contains(p.CategoryId));
+            query = query.Where(p => p.CategoryId == searchTerm);
         }
-        else if (brand != null)
+        // Brand ID kontrolü
+        else if (await Context.Brands.AnyAsync(b => b.Id == searchTerm))
         {
-            productsQuery = productsQuery.Where(p => p.BrandId == brand.Id);
+            query = query.Where(p => p.BrandId == searchTerm);
         }
         else
         {
-            
-            foreach (var term in terms)
-            {
-                productsQuery = productsQuery.Where(p =>
-                    EF.Functions.Like(p.Name.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Description.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Title.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Brand.Name.ToLower(), $"%{term}%") ||
-                    EF.Functions.Like(p.Category.Name.ToLower(), $"%{term}%") ||
-                    p.ProductFeatureValues.Any(pfv =>
-                        EF.Functions.Like(pfv.FeatureValue.Name.ToLower(), $"%{term}%"))
-                );
-            }
+            query = query.SearchByTerm(searchTerm);
         }
     }
 
-    var products = await productsQuery.ToListAsync();
+    // 1. Kategori Filtresi
+    var categories = await Context.Categories
+        .Where(c => query.Any(p => p.CategoryId == c.Id))
+        .Select(c => new FilterOption
+        {
+            Value = c.Id,
+            DisplayValue = c.Name,
+            ParentId = c.ParentCategoryId
+        })
+        .ToListAsync();
 
-    // Category filter
-    var categoryIds = products.Select(p => p.CategoryId).Distinct().ToList();
-    var allRelevantCategories = await GetAllRelevantCategories(categoryIds);
-    var categoryTree = BuildCategoryTree(allRelevantCategories);
-
-    if (categoryTree.Any())
+    if (categories.Any())
     {
         filterDefinitions.Add(new FilterGroup
         {
             Name = "Category",
-            DisplayName = "Kategori",
+            DisplayName = "Category",
             Type = FilterType.Checkbox,
-            Options = GetCategoryOptions(categoryTree)
+            Options = categories
         });
     }
 
-    // Brand filter
-    var brands = products.Select(p => p.Brand)
-        .Where(b => b != null)
-        .DistinctBy(b => b.Id)
-        .ToList();
+    // 2. Marka Filtresi
+    var brands = await Context.Brands
+        .Where(b => query.Any(p => p.BrandId == b.Id))
+        .Select(b => new FilterOption
+        {
+            Value = b.Id,
+            DisplayValue = b.Name
+        })
+        .ToListAsync();
 
     if (brands.Any())
     {
         filterDefinitions.Add(new FilterGroup
         {
             Name = "Brand",
-            DisplayName = "Marka",
+            DisplayName = "Brand",
             Type = FilterType.Checkbox,
-            Options = brands.Select(b => new FilterOption
-            {
-                Value = b.Id,
-                DisplayValue = b.Name
-            }).ToList()
+            Options = brands
         });
     }
 
-    // Features filter
-    var features = products
-        .SelectMany(p => p.ProductFeatureValues)
-        .Where(pfv => pfv.FeatureValue != null && pfv.FeatureValue.Feature != null)
-        .GroupBy(pfv => pfv.FeatureValue.Feature.Name)
-        .ToDictionary(
-            g => g.Key,
-            g => g.Select(pfv => pfv.FeatureValue).DistinctBy(fv => fv.Id).ToList()
-        );
+    // 3. Özellik Filtreleri
+    var features = await Context.Features
+        .Where(f => query.Any(p => p.ProductFeatureValues
+            .Any(pfv => pfv.FeatureValue.FeatureId == f.Id)))
+        .Select(f => new
+        {
+            FeatureName = f.Name,
+            Values = f.FeatureValues
+                .Where(fv => query.Any(p => p.ProductFeatureValues
+                    .Any(pfv => pfv.FeatureValueId == fv.Id)))
+                .Select(fv => new FilterOption
+                {
+                    Value = fv.Id,
+                    DisplayValue = fv.Name
+                })
+                .ToList()
+        })
+        .ToListAsync();
 
-    foreach (var feature in features)
+    foreach (var feature in features.Where(f => f.Values.Any()))
     {
         filterDefinitions.Add(new FilterGroup
         {
-            Name = feature.Key,
-            DisplayName = feature.Key,
+            Name = feature.FeatureName,
+            DisplayName = feature.FeatureName,
             Type = FilterType.Checkbox,
-            Options = feature.Value.Select(fv => new FilterOption
-            {
-                Value = fv.Id,
-                DisplayValue = fv.Name
-            }).ToList()
+            Options = feature.Values
         });
     }
 
-    // Price filter
-    var prices = products.Select(p => p.Price).Where(price => price.HasValue).ToList();
+    // 4. Fiyat Filtresi
+    var prices = await query
+        .Where(p => p.Price.HasValue)
+        .Select(p => p.Price!.Value)
+        .ToListAsync();
+
     if (prices.Any())
     {
         var minPrice = prices.Min();
         var maxPrice = prices.Max();
 
-        if (minPrice.HasValue && maxPrice.HasValue)
+        filterDefinitions.Add(new FilterGroup
         {
-            filterDefinitions.Add(new FilterGroup
-            {
-                Name = "Price",
-                DisplayName = "Fiyat",
-                Type = FilterType.Range,
-                Options = GeneratePriceRanges(minPrice.Value, maxPrice.Value, 7)
-                    .Select(r => new FilterOption
-                    {
-                        Value = $"{r.start}-{r.end}",
-                        DisplayValue = $"{r.start:C0} - {r.end:C0}"
-                    }).ToList()
-            });
-        }
+            Name = "Price",
+            DisplayName = "Price",
+            Type = FilterType.Range,
+            Options = GeneratePriceRanges(minPrice, maxPrice)
+        });
     }
 
     return filterDefinitions;
 }
 
-    private List<(decimal start, decimal end)> GeneratePriceRanges(decimal minPrice, decimal maxPrice, int steps)
-    {
-        var ranges = new List<(decimal start, decimal end)>();
-        if (minPrice >= maxPrice)
-        {
-            ranges.Add((minPrice, maxPrice));
-            return ranges;
-        }
-
-        var step = (maxPrice - minPrice) / steps;
-        for (int i = 0; i < steps; i++)
-        {
-            var start = minPrice + (step * i);
-            var end = (i == steps - 1) ? maxPrice : minPrice + (step * (i + 1));
-            ranges.Add((Math.Floor(start), Math.Ceiling(end)));
-        }
-
-        return ranges;
-    }
-    
-    private async Task<List<string>> GetAllSubcategoryIds(List<string> categoryIds)
-    {
-        var allSubcategories = new HashSet<string>(categoryIds);
-        var queue = new Queue<string>(categoryIds);
-
-        while (queue.Count > 0)
-        {
-            var currentId = queue.Dequeue();
-            var subcategories = await Context.Categories
-                .Where(c => c.ParentCategoryId == currentId)
-                .Select(c => c.Id)
-                .ToListAsync();
-
-            foreach (var subcategoryId in subcategories)
-            {
-                if (allSubcategories.Add(subcategoryId))
-                {
-                    queue.Enqueue(subcategoryId);
-                }
-            }
-        }
-
-        return allSubcategories.ToList();
-    }
-
-    private async Task<List<Category>> GetAllRelevantCategories(List<string> categoryIds)
-    {
-        var relevantCategoryIds = new HashSet<string>(categoryIds);
-        var categoriesToProcess = new Queue<string>(categoryIds);
-
-        while (categoriesToProcess.Count > 0)
-        {
-            var currentId = categoriesToProcess.Dequeue();
-            var category = await Context.Categories
-                .FirstOrDefaultAsync(c => c.Id == currentId);
-
-            if (category != null)
-            {
-                if (category.ParentCategoryId != null && relevantCategoryIds.Add(category.ParentCategoryId))
-                {
-                    categoriesToProcess.Enqueue(category.ParentCategoryId);
-                }
-
-                var childCategories = await Context.Categories
-                    .Where(c => c.ParentCategoryId == currentId)
-                    .Select(c => c.Id)
-                    .ToListAsync();
-
-                foreach (var childId in childCategories)
-                {
-                    if (relevantCategoryIds.Add(childId))
-                    {
-                        categoriesToProcess.Enqueue(childId);
-                    }
-                }
-            }
-        }
-
-        return await Context.Categories
-            .Where(c => relevantCategoryIds.Contains(c.Id))
-            .ToListAsync();
-    }
-
-    private List<Category> BuildCategoryTree(List<Category> allCategories)
-    {
-        var lookup = allCategories.ToLookup(c => c.ParentCategoryId);
-    
-        void AddSubCategories(Category category)
-        {
-            category.SubCategories = lookup[category.Id].ToList();
-            foreach (var subCategory in category.SubCategories)
-            {
-                AddSubCategories(subCategory);
-            }
-        }
-
-        var rootCategories = lookup[null].ToList();
-        foreach (var rootCategory in rootCategories)
-        {
-            AddSubCategories(rootCategory);
-        }
-
-        return rootCategories;
-    }
-
-    private List<FilterOption> GetCategoryOptions(ICollection<Category> categories, string parentPath = "")
+    private List<FilterOption> GeneratePriceRanges(decimal minPrice, decimal maxPrice)
     {
         var options = new List<FilterOption>();
+        var step = (maxPrice - minPrice) / 5;
 
-        foreach (var category in categories)
+        for (int i = 0; i < 5; i++)
         {
-            var currentPath = string.IsNullOrEmpty(parentPath) ? category.Name : $"{parentPath} > {category.Name}";
-        
+            var start = minPrice + (step * i);
+            var end = i == 4 ? maxPrice : minPrice + (step * (i + 1));
+
             options.Add(new FilterOption
             {
-                Value = category.Id,
-                DisplayValue = currentPath,
-                ParentId = category.ParentCategoryId
+                Value = $"{start}-{end}",
+                DisplayValue = $"{start:N0} TL - {end:N0} TL"
             });
-
-            if (category.SubCategories != null && category.SubCategories.Any())
-            {
-                options.AddRange(GetCategoryOptions(category.SubCategories, currentPath));
-            }
         }
 
         return options;

@@ -1,6 +1,6 @@
 namespace Application.Storage.Local;
 
-public interface ILocalStorage : IBlobService
+public interface ILocalStorage : IStorageProvider
 {
     
 }

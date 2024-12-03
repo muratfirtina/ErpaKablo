@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.Brands.Dtos;
 using Application.Features.Brands.Rules;
 using Application.Repositories;
@@ -58,7 +59,18 @@ public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandB
                     cancellationToken: cancellationToken);
                 
                 var brandsDtos = _mapper.Map<GetListResponse<GetListBrandByDynamicQueryResponse>>(brands);
-                brandsDtos.Items.SetImageUrls(_storageService);
+                foreach (var brandDto in brandsDtos.Items)
+                {
+                    var brand = brands.Items.FirstOrDefault(b => b.Id == brandDto.Id);
+                    if (brand?.BrandImageFiles != null)
+                    {
+                        var brandImage = brand.BrandImageFiles.FirstOrDefault();
+                        if (brandImage != null)
+                        {
+                            brandDto.BrandImage = brandImage.ToDto(_storageService);
+                        }
+                    }
+                }
                 return brandsDtos;
 
             }

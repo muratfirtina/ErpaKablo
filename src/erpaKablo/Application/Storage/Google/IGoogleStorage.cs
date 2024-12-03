@@ -1,6 +1,6 @@
 namespace Application.Storage.Google;
 
-public interface IGoogleStorage : IBlobService
+public interface IGoogleStorage : IStorageProvider
 {
     
 }

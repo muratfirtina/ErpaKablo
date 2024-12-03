@@ -29,6 +29,7 @@ public class UnifiedMailService : IMailService
     private readonly EmailProvider _emailProvider;
     private readonly IStorageService _storageService;
     private IConfidentialClientApplication? _confidentialClientApp;
+    private static string? _cachedLogoUrl;
 
     public UnifiedMailService(
         ILogger<UnifiedMailService> logger,
@@ -216,6 +217,8 @@ public class UnifiedMailService : IMailService
 
     private async Task<string> BuildEmailTemplate(string content, string title = "")
     {
+        var logoUrl = _storageService.GetCompanyLogoUrl();
+        
         return $@"
         <!DOCTYPE html>
         <html>
@@ -225,11 +228,11 @@ public class UnifiedMailService : IMailService
         </head>
         <body style='margin: 0; padding: 0; background-color: #f6f9fc; font-family: Arial, sans-serif;'>
             <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px;'>
-                <div style='text-align: center; padding: 20px; background-color: #004d99; margin-bottom: 20px;'>
-                    <img src='{_configuration["Company:LogoUrl"]}' alt='Company Logo' style='max-width: 200px;'/>
+                <div style='text-align: center; padding: 20px; background-color: #e0e0e0; margin-bottom: 20px;'>
+                    <img src='{logoUrl}' alt='Company Logo' style='max-width: 200px;'/>
                 </div>
-
-                {(string.IsNullOrEmpty(title) ? "" : $"<h1 style='color: #004d99; text-align: center; margin-bottom: 30px;'>{title}</h1>")}
+                
+                {(string.IsNullOrEmpty(title) ? "" : $"<h1 style='color: #059669; text-align: center; margin-bottom: 30px;'>{title}</h1>")}
 
                 <div style='padding: 20px; line-height: 1.6;'>
                     {content}
@@ -336,17 +339,40 @@ public class UnifiedMailService : IMailService
         await SendEmailAsync(to, emailSubject, emailBody);
     }
 
-    public async Task SendCompletedOrderEmailAsync(string to, string orderCode, string orderDescription,
-        UserAddressDto? orderAddress, DateTime orderCreatedDate, string userName,
-        List<OrderItemDto> orderCartItems, decimal? orderTotalPrice)
+    public async Task SendCreatedOrderEmailAsync(
+        string to, 
+        string orderCode, 
+        string orderDescription,
+        UserAddressDto? orderAddress, 
+        DateTime orderCreatedDate, 
+        string userName,
+        List<OrderItemDto> orderCartItems, 
+        decimal? orderTotalPrice)
     {
-        var content = new StringBuilder();
-        content.Append(await BuildOrderConfirmationContent(
-            userName, orderCode, orderDescription, orderAddress, 
-            orderCreatedDate, orderCartItems, orderTotalPrice));
+        try 
+        {
+            var content = new StringBuilder();
+            
+            // NOT: Artık burada herhangi bir image URL dönüşümü yapmıyoruz
+            // Çünkü ConvertCartToOrder'da ToDto() ile dönüşüm yapılmış olmalı
 
-        await SendEmailAsync(to, "Order Completed ✓", 
-            await BuildEmailTemplate(content.ToString(), "Order Confirmation"));
+            content.Append(await BuildOrderConfirmationContent(
+                userName, 
+                orderCode, 
+                orderDescription, 
+                orderAddress,
+                orderCreatedDate, 
+                orderCartItems, 
+                orderTotalPrice));
+
+            var emailBody = await BuildEmailTemplate(content.ToString(), "Order Confirmation");
+            await SendEmailAsync(to, "Order Created ✓", emailBody);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send order confirmation email");
+            throw;
+        }
     }
 
     public async Task SendOrderUpdateNotificationAsync(
@@ -383,12 +409,12 @@ public class UnifiedMailService : IMailService
         // Order information
         sb.Append($@"
         <div style='margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 5px;'>
-            <h3 style='color: #004d99; margin-bottom: 15px;'>Order Details</h3>
-            <p><strong>Order Code:</strong> {orderCode}</p>
+            <h3 style='color: #333333; margin-bottom: 15px;'>Order Details</h3>
+            <p style='color: #e53935;'><strong>Order Code:{orderCode}</strong></p>
             <p><strong>Order Date:</strong> {orderCreatedDate:dd.MM.yyyy HH:mm}</p>
             <p><strong>Delivery Address:</strong><br>{FormatAddress(orderAddress)}</p>
             <p><strong>Order Note:</strong><br>{orderDescription}</p>
-            <p><strong>Total Amount:</strong><br>₺{orderTotalPrice:N2}</p>
+            <p style='color: #059669;'><strong>Total Amount:</strong><br>₺{orderTotalPrice:N2}</p>
         </div>");
 
         return sb.ToString();
@@ -420,7 +446,7 @@ public class UnifiedMailService : IMailService
         sb.Append($@"
             <div style='background-color: #fff3cd; padding: 20px; border-radius: 5px; margin-bottom: 20px;'>
                 <p style='color: #856404;'>Your order has been updated.</p>
-                <p style='color: #856404;'><strong>Order Code:</strong> {orderCode}</p>
+                <p style='color: #e53935;'><strong>Order Code:{orderCode}</strong></p>
                 <p style='color: #856404;'><strong>Admin Note:</strong> {adminNote}</p>
             </div>");
 
@@ -431,69 +457,63 @@ public class UnifiedMailService : IMailService
     }
 
     private string BuildOrderItemsTable(List<OrderItemDto> items, string? storageUrl)
-{
-    var sb = new StringBuilder();
-    decimal totalAmount = 0;
-    
-    sb.Append(@"
-        <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
-            <tr style='background-color: #004d99; color: white;'>
-                <th style='padding: 12px; text-align: left;'>Product</th>
-                <th style='padding: 12px; text-align: right;'>Price</th>
-                <th style='padding: 12px; text-align: center;'>Quantity</th>
-                <th style='padding: 12px; text-align: right;'>Total</th>
-                <th style='padding: 12px; text-align: center;'>Image</th>
-            </tr>");
-
-    var cloudinaryUrl = _configuration["Storage:Providers:Cloudinary:Url"]?.TrimEnd('/');
-
-    foreach (var item in items)
     {
-        var itemTotal = (item.Price ?? 0) * (item.Quantity ?? 0);
-        totalAmount += itemTotal;
+        var sb = new StringBuilder();
+        decimal totalAmount = 0;
+        
+        sb.Append(@"
+            <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
+                <tr style='background-color: #333333; color: white;'>
+                    <th style='padding: 12px; text-align: left;'>Product</th>
+                    <th style='padding: 12px; text-align: right;'>Price</th>
+                    <th style='padding: 12px; text-align: center;'>Quantity</th>
+                    <th style='padding: 12px; text-align: right;'>Total</th>
+                    <th style='padding: 12px; text-align: center;'>Image</th>
+                </tr>");
 
-        if (item.ShowcaseImage != null)
+        foreach (var item in items)
         {
-            item.ShowcaseImage.SetImageUrl(_storageService);
+            var itemTotal = (item.Price ?? 0) * (item.Quantity ?? 0);
+            totalAmount += itemTotal;
+
+            // ShowcaseImage zaten DTO formatında ve URL'i ConvertCartToOrder sırasında oluşturulmuş durumda
+            string imageUrl = item.ShowcaseImage?.Url ?? 
+                            _configuration["CompanyInfo:DefaultProductImage"] ?? "";
+
+            sb.Append($@"
+                <tr style='border-bottom: 1px solid #e0e0e0;'>
+                    <td style='padding: 12px;'>
+                        <strong style='color: #333;'>{item.BrandName}</strong><br>
+                        <span style='color: #666;'>{item.ProductName}</span>
+                    </td>
+                    <td style='padding: 12px; text-align: right;'>₺{item.Price:N2}</td>
+                    <td style='padding: 12px; text-align: center;'>{item.Quantity}</td>
+                    <td style='padding: 12px; text-align: right;'>₺{itemTotal:N2}</td>
+                    <td style='padding: 12px; text-align: center;'>
+                        <img src='{imageUrl}'
+                             style='max-width: 80px; max-height: 80px; border-radius: 4px;'
+                             alt='{item.ProductName}'/>
+                    </td>
+                </tr>");
         }
 
-        string imageUrl = item.ShowcaseImage?.Url ?? 
-                          _configuration["CompanyInfo:DefaultProductImage"] ?? "";
-
         sb.Append($@"
-            <tr style='border-bottom: 1px solid #e0e0e0;'>
-                <td style='padding: 12px;'>
-                    <strong style='color: #333;'>{item.BrandName}</strong><br>
-                    <span style='color: #666;'>{item.ProductName}</span>
-                </td>
-                <td style='padding: 12px; text-align: right;'>₺{item.Price:N2}</td>
-                <td style='padding: 12px; text-align: center;'>{item.Quantity}</td>
-                <td style='padding: 12px; text-align: right;'>₺{itemTotal:N2}</td>
-                <td style='padding: 12px; text-align: center;'>
-                    <img src='{imageUrl}'
-                         style='max-width: 80px; max-height: 80px; border-radius: 4px;'
-                         alt='{item.ProductName}'/>
-                </td>
+            <tr style='background-color: #f8f9fa; color: #059669; font-weight: bold;'>
+                <td colspan='3' style='padding: 12px; text-align: right;'>Total Amount:</td>
+                <td colspan='2' style='padding: 12px; text-align: right;'>₺{totalAmount:N2}</td>
             </tr>");
+
+        sb.Append("</table>");
+        return sb.ToString();
     }
 
-    // Add total row
-    sb.Append($@"
-        <tr style='background-color: #f8f9fa; font-weight: bold;'>
-            <td colspan='3' style='padding: 12px; text-align: right;'>Total Amount:</td>
-            <td colspan='2' style='padding: 12px; text-align: right;'>₺{totalAmount:N2}</td>
-        </tr>");
-
-    sb.Append("</table>");
-    return sb.ToString();
-}
 
     private async Task<string> BuildUpdatedItemsTable(List<OrderItem> items, decimal? totalPrice)
     {
         var sb = new StringBuilder();
         sb.Append(@"
             <table style='width: 100%; border-collapse: collapse; margin-top: 20px;'>
-                <tr style='background-color: #004d99; color: white;'>
+                <tr style='background-color: #333333; color: white;'>
                     <th style='padding: 12px; text-align: left;'>Product</th>
                     <th style='padding: 12px; text-align: right;'>Old Price</th>
                     <th style='padding: 12px; text-align: right;'>New Price</th>
@@ -515,7 +535,7 @@ public class UnifiedMailService : IMailService
         if (totalPrice.HasValue)
         {
             sb.Append($@"
-                <tr style='background-color: #f8f9fa;'>
+                <tr style='background-color: #f8f9fa; color: #059669; font-weight: bold;'>
                     <td colspan='2' style='padding: 12px; text-align: right;'><strong>Updated Total Amount:</strong></td>
                     <td colspan='2' style='padding: 12px; text-align: right;'><strong>{totalPrice:C2}</strong></td>
                 </tr>");
@@ -524,4 +544,5 @@ public class UnifiedMailService : IMailService
         sb.Append("</table>");
         return sb.ToString();
     }
+    
 }

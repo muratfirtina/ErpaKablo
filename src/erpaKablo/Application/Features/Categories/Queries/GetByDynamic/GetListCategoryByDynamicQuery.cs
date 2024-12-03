@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.Categories.Dtos;
 using Application.Features.Categories.Rules;
 using Application.Features.Products.Dtos;
@@ -46,27 +47,16 @@ public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCat
                     request.DynamicQuery,
                     include: q => q
                         .Include(c => c.Products)
-                        .ThenInclude(p => p.ProductImageFiles.Where(pif => pif.Showcase))
-                        .Include(c => c.SubCategories).ThenInclude(sc => sc.Products)
+                            .ThenInclude(p => p.ProductImageFiles.Where(pif => pif.Showcase))
+                        .Include(c => c.SubCategories)
+                            .ThenInclude(sc => sc.Products)
                         .Include(c => c.CategoryImageFiles),
                     cancellationToken: cancellationToken);
 
                 var categoriesDtos = _mapper.Map<GetListResponse<GetListCategoryByDynamicDto>>(allCategories);
-                
-                categoriesDtos.Items.SetImageUrl(_storageService);
 
-                foreach (var category in categoriesDtos.Items)
-                {
-                    category.SubCategories = await GetSubCategoriesRecursively(category.Id, cancellationToken);
-                    category.Products = _mapper.Map<List<ProductDto>>(allCategories.FirstOrDefault(c => c.Id == category.Id)?.Products);
-                    
-                    var categoryImageFile = allCategories.FirstOrDefault(c => c.Id == category.Id)?.CategoryImageFiles?.FirstOrDefault();
-                    if (categoryImageFile != null)
-                    {
-                        category.CategoryImage = _mapper.Map<CategoryImageFileDto>(categoryImageFile);
-                    }
-                }
-                
+                await EnrichCategoryDtos(categoriesDtos.Items, allCategories);
+
                 return new GetListResponse<GetListCategoryByDynamicDto>
                 {
                     Items = categoriesDtos.Items,
@@ -84,29 +74,17 @@ public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCat
                     request.DynamicQuery,
                     include: q => q
                         .Include(c => c.Products)
-                        .ThenInclude(p => p.ProductImageFiles.Where(pif => pif.Showcase))
-                        .Include(c => c.SubCategories).ThenInclude(sc => sc.Products)
+                            .ThenInclude(p => p.ProductImageFiles.Where(pif => pif.Showcase))
+                        .Include(c => c.SubCategories)
+                            .ThenInclude(sc => sc.Products)
                         .Include(c => c.CategoryImageFiles),
                     index: request.PageRequest.PageIndex,
                     size: request.PageRequest.PageSize,
                     cancellationToken: cancellationToken);
 
                 var categoriesDtos = _mapper.Map<GetListResponse<GetListCategoryByDynamicDto>>(categories);
-                
-                categoriesDtos.Items.SetImageUrl(_storageService);
 
-                foreach (var category in categoriesDtos.Items)
-                {
-                    category.SubCategories = await GetSubCategoriesRecursively(category.Id, cancellationToken);
-                    category.Products = _mapper.Map<List<ProductDto>>(categories.Items.FirstOrDefault(c => c.Id == category.Id)?.Products);
-                    
-                    var categoryImageFile = categories.Items.FirstOrDefault(c => c.Id == category.Id)?.CategoryImageFiles?.FirstOrDefault();
-                    if (categoryImageFile != null)
-                    {
-                        category.CategoryImage = _mapper.Map<CategoryImageFileDto>(categoryImageFile);
-                    }
-                }
-                
+                await EnrichCategoryDtos(categoriesDtos.Items, categories.Items);
 
                 return new GetListResponse<GetListCategoryByDynamicDto>
                 {
@@ -121,34 +99,62 @@ public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCat
             }
         }
 
-        private async Task<List<GetListCategoryByDynamicDto>> GetSubCategoriesRecursively(string parentId, CancellationToken cancellationToken)
+        private async Task<List<GetListCategoryByDynamicDto>> GetSubCategoriesRecursively(
+            string parentId, 
+            CancellationToken cancellationToken)
         {
             var subCategories = await _categoryRepository.GetListAsync(
                 predicate: c => c.ParentCategoryId == parentId,
                 include: q => q
                     .Include(c => c.Products)
-                    .ThenInclude(p => p.ProductImageFiles.Where(pif => pif.Showcase))
-                    .Include(c => c.SubCategories).ThenInclude(sc => sc.Products)
+                        .ThenInclude(p => p.ProductImageFiles.Where(pif => pif.Showcase))
+                    .Include(c => c.SubCategories)
+                        .ThenInclude(sc => sc.Products)
                     .Include(c => c.CategoryImageFiles),
                 cancellationToken: cancellationToken
             );
 
             var subCategoryDtos = _mapper.Map<List<GetListCategoryByDynamicDto>>(subCategories.Items);
-
-            foreach (var subCategory in subCategoryDtos)
-            {
-                subCategory.SubCategories = await GetSubCategoriesRecursively(subCategory.Id, cancellationToken);
-                subCategory.Products = _mapper.Map<List<ProductDto>>(subCategories.Items.FirstOrDefault(c => c.Id == subCategory.Id)?.Products);
-                
-                var categoryImageFile = subCategories.Items.FirstOrDefault(c => c.Id == subCategory.Id)?.CategoryImageFiles?.FirstOrDefault();
-                if (categoryImageFile != null)
-                {
-                    subCategory.CategoryImage = _mapper.Map<CategoryImageFileDto>(categoryImageFile);
-                }
-            }
-
+            await EnrichCategoryDtos(subCategoryDtos, subCategories.Items);
             return subCategoryDtos;
         }
-        
+
+        private async Task EnrichCategoryDtos(
+            IEnumerable<GetListCategoryByDynamicDto> categoryDtos, 
+            IEnumerable<Category> categories)
+        {
+            foreach (var categoryDto in categoryDtos)
+            {
+                var category = categories.FirstOrDefault(c => c.Id == categoryDto.Id);
+                if (category == null) continue;
+
+                // Alt kategorileri getir
+                categoryDto.SubCategories = await GetSubCategoriesRecursively(categoryDto.Id, default);
+
+                // Ürün görsellerini dönüştür
+                if (category.Products != null)
+                {
+                    foreach (var product in categoryDto.Products)
+                    {
+                        var originalProduct = category.Products.FirstOrDefault(p => p.Id == product.Id);
+                        if (originalProduct?.ProductImageFiles != null)
+                        {
+                            var showcaseImage = originalProduct.ProductImageFiles.FirstOrDefault(pif => pif.Showcase);
+                            if (showcaseImage != null)
+                            {
+                                product.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                            }
+                        }
+                    }
+                }
+
+                // Kategori görselini dönüştür
+                var categoryImage = category.CategoryImageFiles?.FirstOrDefault();
+                if (categoryImage != null)
+                {
+                    categoryDto.CategoryImage = categoryImage.ToDto(_storageService);
+                }
+            }
+        }
     }
 }

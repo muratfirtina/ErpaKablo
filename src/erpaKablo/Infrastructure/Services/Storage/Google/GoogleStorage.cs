@@ -125,6 +125,12 @@ public class GoogleStorage : IGoogleStorage
             return false;
         }
     }
+
+    public string GetStorageUrl()
+    {
+        return _storageSettings.Value.Providers.Google.Url ?? 
+               throw new InvalidOperationException("Google Storage URL is not configured");
+    }
 }
 
 public class GoogleStorageSettings

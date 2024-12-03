@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Application.Abstraction.Services;
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Application.Repositories;
@@ -59,11 +60,24 @@ public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
             
             GetByIdProductResponse response = _mapper.Map<GetByIdProductResponse>(product);
             
-            response.RelatedProducts = _mapper.Map<List<RelatedProductDto>>(relatedProducts.Items);
+            response.RelatedProducts = relatedProducts.Items.Select(rp => {
+                var relatedDto = _mapper.Map<RelatedProductDto>(rp);
+                var showcaseImage = rp.ProductImageFiles.FirstOrDefault();
+                if (showcaseImage != null)
+                {
+                    relatedDto.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                }
+                return relatedDto;
+            }).ToList();
 
-            // URL'leri güncelle
-            response.SetImageUrl(_storageService);
-            response.RelatedProducts.SetImageUrls(_storageService);
+            // Ana ürünün görsellerini ayarla
+            if (product.ProductImageFiles != null)
+            {
+                response.ProductImageFiles = product.ProductImageFiles
+                    .Select(pif => pif.ToDto(_storageService))
+                    .ToList();
+            }
+            
             // Mevcut özellikleri hesapla
             response.AvailableFeatures = new Dictionary<string, List<string>>();
             foreach (var relatedProduct in response.RelatedProducts)

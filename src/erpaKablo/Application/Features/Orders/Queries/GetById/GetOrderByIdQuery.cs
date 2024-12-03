@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
@@ -46,7 +47,15 @@ public class GetOrderByIdQuery : IRequest<GetOrderByIdQueryResponse>
             var response = _mapper.Map<GetOrderByIdQueryResponse>(order);
 
             // Sipariş öğelerinin resim URL'lerini ayarlıyoruz (resim dosyalarını dinamik olarak alıyoruz)
-            response.OrderItems.SetImageUrls(_storageService);
+            foreach (var orderItemDto in response.OrderItems)
+            {
+                var orderItem = order.OrderItems.First(oi => oi.Id == orderItemDto.Id);
+                var showcaseImage = orderItem.Product.ProductImageFiles?.FirstOrDefault();
+                if (showcaseImage != null)
+                {
+                    orderItemDto.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                }
+            }
 
             return response;
         }

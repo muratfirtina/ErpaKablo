@@ -103,7 +103,7 @@ public static class IQueryableDynamicFilterExtensions
         {
             // Kelimeleri ayır ve boş olanları filtrele
             var keywords = filter.Value.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                .Distinct(); // Aynı kelimeleri tekrarlamamak için Distinct kullanıyoruz
+                .Distinct(); 
 
             if (keywords.Any())
             {
@@ -114,9 +114,9 @@ public static class IQueryableDynamicFilterExtensions
                         keywordSearch.Append(" or ");
 
                     if (filter.Operator == "doesnotcontain")
-                        keywordSearch.Append($"(!np({filter.Field}).Contains(\"{keyword}\"))");
+                        keywordSearch.Append($"(!np({filter.Field}).ToLower().Contains(\"{keyword.ToLower()}\"))");
                     else if (comparison is "StartsWith" or "EndsWith" or "Contains")
-                        keywordSearch.Append($"(np({filter.Field}).{comparison}(\"{keyword}\"))");
+                        keywordSearch.Append($"(np({filter.Field}).ToLower().{comparison}(\"{keyword.ToLower()}\"))");
                     else
                         keywordSearch.Append($"np({filter.Field}) {comparison} \"{keyword}\"");
                 }

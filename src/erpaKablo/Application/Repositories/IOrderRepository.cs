@@ -12,9 +12,8 @@ namespace Application.Repositories;
 
 public interface IOrderRepository: IAsyncRepository<Order, string>, IRepository<Order, string>
 {
-    Task<(bool success, OrderDto? orderDto, List<CartItemDto>? newCartItems)> ConvertCartToOrderAsync(string? addressId,
-        string? phoneNumberId,
-        string? description);
+    Task<(bool, OrderDto)> ConvertCartToOrderAsync(string addressId, string phoneNumberId,
+        string description);
     Task<bool> CompleteOrderAsync(string orderId);
     
     //GetUserOrderByIdAsync

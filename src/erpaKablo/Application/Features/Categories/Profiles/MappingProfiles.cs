@@ -72,7 +72,22 @@ public class MappingProfiles : Profile
             .ReverseMap();
 
         CreateMap<Category, CategoryDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+            .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Title))
+            .ForMember(dest => dest.ParentCategoryId, opt => opt.MapFrom(src => src.ParentCategoryId))
+            .ForMember(dest => dest.SubCategories, opt => opt.MapFrom(src => src.SubCategories))
+            .ForMember(dest => dest.CategoryImage, opt => opt.Ignore()) // Storage service ile doldurulacak
             .ReverseMap();
+        
+        CreateMap<IPaginate<Category>, GetListResponse<CategoryDto>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
+            .ForMember(dest => dest.Pages, opt => opt.MapFrom(src => src.Pages))
+            .ForMember(dest => dest.Size, opt => opt.MapFrom(src => src.Size))
+            .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.Count))
+            .ForMember(dest => dest.HasNext, opt => opt.MapFrom(src => src.HasNext))
+            .ForMember(dest => dest.HasPrevious, opt => opt.MapFrom(src => src.HasPrevious))
+            .ForMember(dest => dest.Index, opt => opt.MapFrom(src => src.Index));
 
         CreateMap<List<Category>, GetListResponse<GetListCategoryByDynamicDto>>()
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));

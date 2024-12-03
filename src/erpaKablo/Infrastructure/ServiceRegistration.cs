@@ -28,48 +28,30 @@ namespace Infrastructure;
 
 public static class InfrastructureServiceRegistration
 {
-    
-    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructureServices(
+        this IServiceCollection services, 
+        IConfiguration configuration)
     {
         services.Configure<StorageSettings>(configuration.GetSection("Storage"));
         
+        // Storage providers
         services.AddScoped<ILocalStorage, LocalStorage>();
         services.AddScoped<ICloudinaryStorage, CloudinaryStorage>();
         services.AddScoped<IGoogleStorage, GoogleStorage>();
+        
+        // Storage factory ve service
+        services.AddScoped<IStorageProviderFactory, StorageProviderFactory>();
         services.AddScoped<IStorageService, StorageService>();
+        
+        // Diğer servisler
         services.AddScoped<IFileNameService, FileNameService>();
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<ITokenHandler, TokenHandler>();
         services.AddScoped<ILogService, LogService>();
-        
+        services.AddScoped<ICompanyAssetService, CompanyAssetService>();
         
         return services;
     }
-    
-    
-    public static void AddStorage<T>(this IServiceCollection serviceCollection) where T : class,IBlobService
-    {
-        serviceCollection.AddScoped<IBlobService, T>();
-        serviceCollection.AddScoped<IStorageService,StorageService>();
-    }
-    public static void AddStorage(this IServiceCollection serviceCollection, StorageType storageType)
-    {
-        switch (storageType)
-        {
-            case StorageType.Local:
-                serviceCollection.AddScoped<IBlobService, LocalStorage>();
-                break;
-            
-            case StorageType.Cloudinary:
-                serviceCollection.AddScoped<IBlobService, CloudinaryStorage>();
-                break;
 
-            case StorageType.Google:
-                serviceCollection.AddScoped<IBlobService, GoogleStorage>();
-                break;
-            default:
-                serviceCollection.AddScoped<IBlobService, LocalStorage>();
-                break;
-        }
-    }
+    
 }

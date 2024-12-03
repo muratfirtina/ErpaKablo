@@ -1,4 +1,5 @@
 using Application.Extensions;
+using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
@@ -28,27 +29,42 @@ public class GetMostLikedProductQuery : IRequest<GetListResponse<GetMostLikedPro
             _mapper = mapper;
         }
 
-        public async Task<GetListResponse<GetMostLikedProductQueryResponse>> Handle(GetMostLikedProductQuery request, CancellationToken cancellationToken)
+        public async Task<GetListResponse<GetMostLikedProductQueryResponse>> Handle(
+            GetMostLikedProductQuery request, 
+            CancellationToken cancellationToken)
         {
-            //ençok beğenilen 10 ürünü getir.
-            IPaginate<Product> product = await _productRepository.GetListAsync(
+            IPaginate<Product> products = await _productRepository.GetListAsync(
                 predicate: x => x.ProductLikes.Count > 0,
                 include: x => x
                     .Include(x => x.Category)
                     .Include(x => x.Brand)
-                    .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase == true))
-                    .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature));
-            
-            var mostLikedProducts = product.Items               
+                    .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase))
+                    .Include(x => x.ProductFeatureValues)
+                    .ThenInclude(x => x.FeatureValue)
+                    .ThenInclude(x => x.Feature),
+                cancellationToken: cancellationToken);
+    
+            var mostLikedProducts = products.Items               
                 .OrderByDescending(x => x.ProductLikes.Count)
                 .Take(request.Count)
                 .ToList();
-            
-            GetListResponse<GetMostLikedProductQueryResponse> response = _mapper.Map<GetListResponse<GetMostLikedProductQueryResponse>>(mostLikedProducts);
-            response.Items.SetImageUrls(_storageService);
-            return response;
+    
+            // Base mapping
+            var response = _mapper.Map<GetListResponse<GetMostLikedProductQueryResponse>>(mostLikedProducts);
 
-        }
-    }
+            // Her bir ürün için showcase image'ı dönüştür ve URL'ini set et
+            foreach (var productResponse in response.Items)
+            {
+                var product = mostLikedProducts.First(p => p.Id == productResponse.Id);
+                var showcaseImage = product.ProductImageFiles.FirstOrDefault(pif => pif.Showcase);
+        
+                if (showcaseImage != null)
+                {
+                    productResponse.ShowcaseImage = showcaseImage.ToDto(_storageService);
+                }
+            }
+
+            return response;
+        }    }
     
 }

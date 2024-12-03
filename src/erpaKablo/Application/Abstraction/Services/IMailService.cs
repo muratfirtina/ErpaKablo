@@ -9,7 +9,7 @@ public interface IMailService
     Task SendEmailAsync(string to, string subject, string body, bool isBodyHtml = true);
     Task SendEmailAsync(string[] tos, string subject, string body, bool isBodyHtml = true);
     Task SendPasswordResetEmailAsync(string to,string userId, string resetToken);
-    Task SendCompletedOrderEmailAsync(string to, string orderCode, string orderDescription,
+    Task SendCreatedOrderEmailAsync(string to, string orderCode, string orderDescription,
         UserAddressDto? orderAddress,
         DateTime orderCreatedDate, string userName, List<OrderItemDto> orderCartItems, decimal? orderTotalPrice);
     Task SendOrderUpdateNotificationAsync(
