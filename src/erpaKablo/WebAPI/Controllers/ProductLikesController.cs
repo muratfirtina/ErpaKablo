@@ -3,6 +3,7 @@ using Application.CustomAttributes;
 using Application.Enums;
 using Application.Features.ProductLikes.Commands.AddProductLike;
 using Application.Features.ProductLikes.Queries;
+using Application.Features.ProductLikes.Queries.GetProductLikeCount;
 using Application.Features.ProductLikes.Queries.GetProductsUserLiked;
 using Application.Features.ProductLikes.Queries.GetUserLikedProductIds;
 using Application.Features.ProductLikes.Queries.IsProductLiked;
@@ -51,6 +52,14 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> IsLiked([FromRoute] string productId)
         {
             var query = new IsProductLikedQuery { ProductId = productId };
+            var response = await Mediator.Send(query);
+            return Ok(response);
+        }
+        
+        [HttpGet("count/{productId}")]
+        public async Task<IActionResult> GetLikeCount([FromRoute] string productId)
+        {
+            var query = new GetProductLikeCountQuery { ProductId = productId };
             var response = await Mediator.Send(query);
             return Ok(response);
         }

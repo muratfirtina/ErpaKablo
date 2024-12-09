@@ -26,10 +26,40 @@ public class StorageProviderFactory : IStorageProviderFactory
         
         return activeProvider.ToLower() switch
         {
-            "localstorage" => (IStorageProvider)_serviceProvider.GetRequiredService<ILocalStorage>(),
-            "cloudinary" => (IStorageProvider)_serviceProvider.GetRequiredService<ICloudinaryStorage>(),
-            "google" => (IStorageProvider)_serviceProvider.GetRequiredService<IGoogleStorage>(),
-            _ => throw new ArgumentException($"Unsupported storage provider: {providerName}")
+            "localstorage" when HasValidUrl("LocalStorage") => 
+                (IStorageProvider)_serviceProvider.GetRequiredService<ILocalStorage>(),
+            "cloudinary" when HasValidUrl("Cloudinary") => 
+                (IStorageProvider)_serviceProvider.GetRequiredService<ICloudinaryStorage>(),
+            "google" when HasValidUrl("Google") => 
+                (IStorageProvider)_serviceProvider.GetRequiredService<IGoogleStorage>(),
+            _ => (IStorageProvider)_serviceProvider.GetRequiredService<ILocalStorage>() // Fallback to local
+        };
+    }
+
+    public IEnumerable<IStorageProvider> GetConfiguredProviders()
+    {
+        var providers = new List<(string name, Func<IStorageProvider?> provider)>
+        {
+            ("localstorage", () => HasValidUrl("LocalStorage") ? GetProvider("localstorage") : null),
+            ("cloudinary", () => HasValidUrl("Cloudinary") ? GetProvider("cloudinary") : null),
+            ("google", () => HasValidUrl("Google") ? GetProvider("google") : null)
+        };
+
+        return providers
+            .Select(p => p.provider())
+            .Where(provider => provider != null)
+            .Cast<IStorageProvider>();
+    }
+
+    private bool HasValidUrl(string providerName)
+    {
+        var providers = _storageSettings.Value.Providers;
+        return providerName switch
+        {
+            "LocalStorage" => providers.LocalStorage?.Url != null,
+            "Cloudinary" => providers.Cloudinary?.Url != null,
+            "Google" => providers.Google?.Url != null,
+            _ => false
         };
     }
 }

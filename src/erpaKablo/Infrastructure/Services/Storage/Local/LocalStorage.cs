@@ -79,7 +79,7 @@ public class LocalStorage : ILocalStorage
                 Name = fileInfo.Name,
                 Path = relativePath,
                 EntityType = entityType,
-                Storage = "LocalStorage",
+                Storage = "localstorage",
                 Url = $"{baseUrl.TrimEnd('/')}/{relativePath.Replace('\\', '/')}"
             });
         }

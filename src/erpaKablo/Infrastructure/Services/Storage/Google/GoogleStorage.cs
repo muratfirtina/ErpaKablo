@@ -12,7 +12,7 @@ public class GoogleStorage : IGoogleStorage
     private readonly StorageClient _storageClient;
     private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
     private readonly string _baseUrl;
-    private readonly string _bucketName = "erpaotomasyonkablo";
+    private readonly string _bucketName = "tumdeximages";
 
 
     public GoogleStorage(IConfiguration configuration, IOptionsSnapshot<StorageSettings> storageSettings)
@@ -114,7 +114,7 @@ public class GoogleStorage : IGoogleStorage
     {
         try
         {
-            var bucketName = "erpaotomasyonkablo";
+            var bucketName = _bucketName;
             var objectName = $"{entityType}/{path}/{fileName}";
 
             var obj = _storageClient.GetObject(bucketName, objectName, new GetObjectOptions { Projection = Projection.NoAcl });

@@ -4,5 +4,6 @@ namespace Infrastructure.Services.Storage;
 
 public interface IStorageProviderFactory
 {
-    IStorageProvider GetProvider(string providerName);
+    IStorageProvider GetProvider(string? providerName = null);
+    IEnumerable<IStorageProvider> GetConfiguredProviders();
 }

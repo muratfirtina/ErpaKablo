@@ -1433,9 +1433,9 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.ProductFeatureValue", b =>
                 {
                     b.HasOne("Domain.FeatureValue", "FeatureValue")
-                        .WithMany()
+                        .WithMany("ProductFeatureValues")
                         .HasForeignKey("FeatureValueId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.OrderItem", null)
@@ -1619,6 +1619,11 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.Feature", b =>
                 {
                     b.Navigation("FeatureValues");
+                });
+
+            modelBuilder.Entity("Domain.FeatureValue", b =>
+                {
+                    b.Navigation("ProductFeatureValues");
                 });
 
             modelBuilder.Entity("Domain.FilterGroup", b =>

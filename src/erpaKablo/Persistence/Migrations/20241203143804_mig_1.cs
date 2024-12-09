@@ -743,7 +743,7 @@ namespace Persistence.Migrations
                         column: x => x.FeatureValueId,
                         principalTable: "FeatureValues",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ProductFeatureValues_OrderItems_OrderItemId",
                         column: x => x.OrderItemId,

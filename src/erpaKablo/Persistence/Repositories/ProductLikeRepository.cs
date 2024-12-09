@@ -142,5 +142,12 @@ public class ProductLikeRepository : EfRepositoryBase<ProductLike, string, ErpaK
 
         return likedProductIds;
     }
+    
+    public async Task<int> GetProductLikeCountAsync(string productId)
+    {
+        return await Context.ProductLikes
+            .Where(pl => pl.ProductId == productId)
+            .CountAsync();
+    }
 
 }

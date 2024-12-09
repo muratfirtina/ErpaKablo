@@ -1,32 +1,25 @@
 using System.Diagnostics;
 using Application.Services;
 using Application.Storage;
-using Application.Storage.Cloudinary;
-using Application.Storage.Google;
 using Application.Storage.Local;
 using Domain;
-using Infrastructure.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Services.Storage;
 
 public class StorageService : IStorageService
 {
     private readonly IStorageProviderFactory _providerFactory;
-    private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
     private readonly IFileNameService _fileNameService;
     private readonly IConfiguration _configuration;
 
-
     public StorageService(
         IStorageProviderFactory providerFactory,
-        IOptionsSnapshot<StorageSettings> storageSettings,
-        IFileNameService fileNameService, IConfiguration configuration)
+        IFileNameService fileNameService,
+        IConfiguration configuration)
     {
         _providerFactory = providerFactory;
-        _storageSettings = storageSettings;
         _fileNameService = fileNameService;
         _configuration = configuration;
     }
@@ -40,35 +33,34 @@ public class StorageService : IStorageService
 
         foreach (var file in files)
         {
-            await _fileNameService.FileMustBeInFileFormat(file);
-            string newPath = await _fileNameService.PathRenameAsync(path);
-
-            // HasFile delegate'ini uygun şekilde oluşturuyoruz
-            IFileNameService.HasFile hasFileDelegate = (pathOrContainerName, fileName) => 
-                HasFile(entityType, pathOrContainerName, fileName);
-
-            var fileNewName = await _fileNameService.FileRenameAsync(
-                newPath, 
-                file.FileName, 
-                hasFileDelegate);
-
+            var (newPath, fileNewName) = await PrepareFileDetails(file, entityType, path);
             using var memoryStream = new MemoryStream();
             await file.CopyToAsync(memoryStream);
 
-            foreach (var provider in GetConfiguredProviders())
-            {
-                memoryStream.Position = 0;
-                var uploadResults = await provider.UploadFileToStorage(
-                    entityType, 
-                    newPath, 
-                    fileNewName, 
-                    new MemoryStream(memoryStream.ToArray())
-                );
+            var uploadTasks = _providerFactory.GetConfiguredProviders()
+                .Select(provider => UploadToProvider(provider, entityType, newPath, fileNewName, memoryStream))
+                .ToList();
 
-                foreach (var result in uploadResults)
+            try
+            {
+                await Task.WhenAll(uploadTasks);
+
+                // Sadece LocalStorage sonuçlarını topla
+                var localStorageTask = uploadTasks
+                    .Select(t => t.Result)
+                    .FirstOrDefault(t => t?.Provider is ILocalStorage);
+
+                if (localStorageTask?.Result != null)
                 {
-                    results.Add((result.fileName, result.path, entityType, provider.GetType().Name));
+                    foreach (var result in localStorageTask.Result)
+                    {
+                        results.Add((result.fileName, result.path, entityType, "localstorage"));
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during file upload: {ex.Message}");
             }
         }
 
@@ -76,8 +68,8 @@ public class StorageService : IStorageService
     }
 
     public async Task<List<T>?> GetFiles<T>(
-        string entityId, 
-        string entityType, 
+        string entityId,
+        string entityType,
         string? preferredStorage = null) where T : ImageFile, new()
     {
         var provider = _providerFactory.GetProvider(preferredStorage);
@@ -98,7 +90,8 @@ public class StorageService : IStorageService
 
     public async Task DeleteFromAllStoragesAsync(string entityType, string path, string fileName)
     {
-        foreach (var provider in GetConfiguredProviders())
+        var providers = _providerFactory.GetConfiguredProviders();
+        foreach (var provider in providers)
         {
             try
             {
@@ -110,10 +103,10 @@ public class StorageService : IStorageService
             }
         }
     }
+
     public string GetCompanyLogoUrl()
     {
         var storageUrl = GetStorageUrl()?.TrimEnd('/');
-        //logopath i appsettings.json dan alalım.
         var logoPath = _configuration["Storage:CompanyAssets:LogoPath"];
         if (string.IsNullOrEmpty(logoPath))
             throw new Exception("Logo path not found in configuration.");
@@ -121,17 +114,56 @@ public class StorageService : IStorageService
         return $"{storageUrl}/{logoPath.TrimStart('/')}";
     }
 
-    private IEnumerable<IStorageProvider> GetConfiguredProviders()
+    private async Task<(string newPath, string fileName)> PrepareFileDetails(
+        IFormFile file,
+        string entityType,
+        string path)
     {
-        var providers = _storageSettings.Value.Providers;
-        
-        if (providers.LocalStorage?.Url != null)
-            yield return _providerFactory.GetProvider("localstorage");
-            
-        if (providers.Cloudinary?.Url != null)
-            yield return _providerFactory.GetProvider("cloudinary");
-            
-        if (providers.Google?.Url != null)
-            yield return _providerFactory.GetProvider("google");
+        await _fileNameService.FileMustBeInFileFormat(file);
+        string newPath = await _fileNameService.PathRenameAsync(path);
+
+        IFileNameService.HasFile hasFileDelegate = (pathOrContainerName, fileName) =>
+            HasFile(entityType, pathOrContainerName, fileName);
+
+        var fileNewName = await _fileNameService.FileRenameAsync(
+            newPath,
+            file.FileName,
+            hasFileDelegate);
+
+        return (newPath, fileNewName);
+    }
+
+    private class UploadTask
+    {
+        public IStorageProvider? Provider { get; init; }
+        public List<(string fileName, string path, string containerName)>? Result { get; set; }
+    }
+
+    private async Task<UploadTask> UploadToProvider(
+        IStorageProvider provider,
+        string entityType,
+        string path,
+        string fileName,
+        MemoryStream memoryStream)
+    {
+        var uploadTask = new UploadTask { Provider = provider };
+
+        try
+        {
+            memoryStream.Position = 0;
+            var result = await provider.UploadFileToStorage(
+                entityType,
+                path,
+                fileName,
+                new MemoryStream(memoryStream.ToArray())
+            );
+            uploadTask.Result = result;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error uploading to {provider.GetType().Name}: {ex.Message}");
+        }
+
+        return uploadTask;
     }
 }
