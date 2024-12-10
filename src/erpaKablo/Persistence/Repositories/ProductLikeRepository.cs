@@ -149,5 +149,16 @@ public class ProductLikeRepository : EfRepositoryBase<ProductLike, string, ErpaK
             .Where(pl => pl.ProductId == productId)
             .CountAsync();
     }
+    public async Task<List<string>> GetMostLikedProductsAsync(int count)
+    {
+        return await Context.ProductLikes
+            .GroupBy(pl => pl.ProductId)
+            .Select(g => new { ProductId = g.Key, LikeCount = g.Count() })
+            .OrderByDescending(x => x.LikeCount)
+            .Where(x => x.LikeCount > 0)
+            .Take(count)
+            .Select(x => x.ProductId)
+            .ToListAsync();
+    }
 
 }

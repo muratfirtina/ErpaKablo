@@ -19,4 +19,5 @@ public static class AuthorizeDefinitionConstants
     public const string UserAddresses = "User Addresses";
     public const string PhoneNumbers = "Phone Numbers";
     public const string Assets = "Assets";
+    public const string Newsletters = "Newsletters";
 }

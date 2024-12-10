@@ -178,6 +178,26 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "NewsletterLogs",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    NewsletterType = table.Column<string>(type: "text", nullable: false),
+                    SentDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    EmailContent = table.Column<string>(type: "text", nullable: false),
+                    TotalRecipients = table.Column<int>(type: "integer", nullable: false),
+                    SuccessfulDeliveries = table.Column<int>(type: "integer", nullable: false),
+                    FailedDeliveries = table.Column<int>(type: "integer", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NewsletterLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SecurityLogs",
                 columns: table => new
                 {
@@ -332,6 +352,31 @@ namespace Persistence.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Newsletters",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Email = table.Column<string>(type: "text", nullable: false),
+                    IsSubscribed = table.Column<bool>(type: "boolean", nullable: false),
+                    SubscriptionDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    UnsubscriptionDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    Source = table.Column<string>(type: "text", nullable: true),
+                    UserId = table.Column<string>(type: "text", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Newsletters", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Newsletters_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -989,6 +1034,11 @@ namespace Persistence.Migrations
                 column: "OrderItemId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Newsletters_UserId",
+                table: "Newsletters",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_OrderId",
                 table: "OrderItems",
                 column: "OrderId");
@@ -1123,6 +1173,12 @@ namespace Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "FilterOptions");
+
+            migrationBuilder.DropTable(
+                name: "NewsletterLogs");
+
+            migrationBuilder.DropTable(
+                name: "Newsletters");
 
             migrationBuilder.DropTable(
                 name: "ProductFeatureValues");

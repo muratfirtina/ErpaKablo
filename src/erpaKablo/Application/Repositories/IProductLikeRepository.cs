@@ -14,6 +14,7 @@ public interface IProductLikeRepository : IAsyncRepository<ProductLike, string>,
 
     Task<bool> IsProductLikedAsync(string productId);
     Task<int> GetProductLikeCountAsync(string productId);
+    Task<List<string>> GetMostLikedProductsAsync(int count);
 
 
 }

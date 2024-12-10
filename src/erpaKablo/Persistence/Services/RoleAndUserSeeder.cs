@@ -27,7 +27,7 @@ public static class RoleAndUserSeeder
         }
     }
 
-    /*public static async Task SeedAdminUserAsync(IServiceProvider serviceProvider)
+    public static async Task SeedAdminUserAsync(IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
@@ -57,11 +57,11 @@ public static class RoleAndUserSeeder
                 throw new Exception($"Admin kullanıcısı oluşturulurken hata oluştu: {errors}");
             }
         }
-    }*/
+    }
 
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
         await SeedRolesAsync(serviceProvider);
-        //await SeedAdminUserAsync(serviceProvider);
+        await SeedAdminUserAsync(serviceProvider);
     }
 }

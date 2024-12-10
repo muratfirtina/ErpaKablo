@@ -6,6 +6,7 @@ using Application.Storage.Cloudinary;
 using Application.Storage.Google;
 using Application.Storage.Local;
 using Application.Tokens;
+using Infrastructure.BackgroundJobs;
 using Infrastructure.Enums;
 using Infrastructure.Logging.Enrichers;
 using Infrastructure.Services;
@@ -18,10 +19,13 @@ using Infrastructure.Services.Storage.Cloudinary;
 using Infrastructure.Services.Storage.Google;
 using Infrastructure.Services.Storage.Local;
 using Infrastructure.Services.Token;
+using Infrastructure.Settings.Models.Newsletter;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Persistence.Services;
 using Prometheus;
+using Quartz;
 using StackExchange.Redis;
 
 namespace Infrastructure;
@@ -49,6 +53,30 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ITokenHandler, TokenHandler>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<ICompanyAssetService, CompanyAssetService>();
+        
+        services.Configure<NewsletterSettings>(configuration.GetSection("Newsletter"));
+        services.AddScoped<INewsletterService, NewsletterService>();
+        // Quartz yapılandırması
+        services.AddQuartz(q =>
+        {
+            var jobKey = new JobKey("MonthlyNewsletterJob");
+            q.AddJob<MonthlyNewsletterJob>(opts => opts.WithIdentity(jobKey));
+            
+            var newsletterConfig = configuration.GetSection("Newsletter:SendTime")
+                .Get<NewsletterSendTimeConfig>();
+            
+            if (newsletterConfig == null)
+            {
+                newsletterConfig = new NewsletterSendTimeConfig(); // Varsayılan değerler kullanılır
+            }
+            
+            q.AddTrigger(opts => opts
+                .ForJob(jobKey)
+                .WithIdentity("MonthlyNewsletterJob-trigger")
+                .WithCronSchedule($"0 {newsletterConfig.Minute} {newsletterConfig.Hour} {newsletterConfig.DayOfMonth} * ?"));
+        });
+
+        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
         
         return services;
     }

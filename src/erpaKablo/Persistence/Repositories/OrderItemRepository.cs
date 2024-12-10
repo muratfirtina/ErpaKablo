@@ -122,5 +122,17 @@ namespace Persistence.Repositories
                 throw;
             }
         }
+        
+        public async Task<List<(string ProductId, int OrderCount)>> GetMostOrderedProductsAsync(int count)
+        {
+            var result = await Context.OrderItems
+                .GroupBy(ci => ci.ProductId)
+                .Select(g => new { ProductId = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(count)
+                .ToListAsync();
+
+            return result.Select(x => (x.ProductId, x.Count)).ToList();
+        }
     }
 }

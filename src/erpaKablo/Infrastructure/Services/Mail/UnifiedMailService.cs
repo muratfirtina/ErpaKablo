@@ -215,7 +215,7 @@ public class UnifiedMailService : IMailService
         }
     }
 
-    private async Task<string> BuildEmailTemplate(string content, string title = "")
+    public async Task<string> BuildEmailTemplate(string content, string title = "")
     {
         var logoUrl = _storageService.GetCompanyLogoUrl();
         

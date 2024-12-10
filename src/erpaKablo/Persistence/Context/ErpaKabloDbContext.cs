@@ -41,6 +41,8 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<PhoneNumber> PhoneNumbers { get; set; }
     public DbSet<SecurityLog> SecurityLogs { get; set; }
     public DbSet<AlertLog> AlertLogs { get; set; }
+    public DbSet<Newsletter> Newsletters { get; set; }
+    public DbSet<NewsletterLog> NewsletterLogs { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)
@@ -67,6 +69,8 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
             .HasQueryFilter(pl => !pl.Product.DeletedDate.HasValue);
         builder.Entity<SecurityLog>().HasQueryFilter(sl => !sl.DeletedDate.HasValue);
         builder.Entity<AlertLog>().HasQueryFilter(al => !al.DeletedDate.HasValue);
+        builder.Entity<Newsletter>().HasQueryFilter(n => !n.DeletedDate.HasValue);
+        builder.Entity<NewsletterLog>().HasQueryFilter(nl => !nl.DeletedDate.HasValue);
         
         builder.Entity<ProductLike>()
             .HasOne(pl => pl.Product)

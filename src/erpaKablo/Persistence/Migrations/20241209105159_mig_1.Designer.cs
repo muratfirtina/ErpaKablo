@@ -12,7 +12,7 @@ using Persistence.Context;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ErpaKabloDbContext))]
-    [Migration("20241203143804_mig_1")]
+    [Migration("20241209105159_mig_1")]
     partial class mig_1
     {
         /// <inheritdoc />
@@ -623,6 +623,85 @@ namespace Persistence.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("ImageFile");
 
                     b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("Domain.Newsletter", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsSubscribed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SubscriptionDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("UnsubscriptionDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Newsletters");
+                });
+
+            modelBuilder.Entity("Domain.NewsletterLog", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("EmailContent")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("FailedDeliveries")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NewsletterType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SentDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("SuccessfulDeliveries")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalRecipients")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NewsletterLogs");
                 });
 
             modelBuilder.Entity("Domain.Order", b =>
@@ -1361,6 +1440,15 @@ namespace Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("FilterGroup");
+                });
+
+            modelBuilder.Entity("Domain.Newsletter", b =>
+                {
+                    b.HasOne("Domain.Identity.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Order", b =>
