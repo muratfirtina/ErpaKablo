@@ -3,6 +3,7 @@ using Application.Consts;
 using Application.CustomAttributes;
 using Application.Enums;
 using Application.Features.Products.Commands.Create;
+using Application.Features.Products.Commands.DecriptionImageUpload;
 using Application.Features.Products.Commands.Delete;
 using Application.Features.Products.Commands.Update;
 using Application.Features.Products.Dtos.FilterDto;
@@ -17,6 +18,7 @@ using Application.Features.Products.Queries.SearchAndFilter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter.GetAvailableFilter;
 using Application.Features.Products.Queries.SearchAndFilter.Search;
+using Application.Storage;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -29,6 +31,13 @@ namespace WebAPI.Controllers
     [ApiController]
     public class ProductsController : BaseController
     {
+        private readonly IStorageService _storageService;
+
+        public ProductsController(IStorageService storageService)
+        {
+            _storageService = storageService;
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetList([FromQuery] PageRequest pageRequest)
         {
@@ -138,6 +147,16 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetRandomsForBrand([FromRoute]string productId)
         {
             GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse> response = await Mediator.Send(new GetRandomProductsForBrandByProductIdQuery { ProductId = productId });
+            return Ok(response);
+        }
+        [HttpPost("upload-description-image")]
+        [Consumes("multipart/form-data")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update Product", Menu = AuthorizeDefinitionConstants.Products)]
+        public async Task<IActionResult> UploadDescriptionImage(IFormFile image)
+        {
+            var command = new UploadDescriptionImageCommand(image);
+            var response = await Mediator.Send(command);
             return Ok(response);
         }
     }

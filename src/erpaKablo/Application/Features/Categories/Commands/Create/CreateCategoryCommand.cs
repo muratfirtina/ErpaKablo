@@ -73,7 +73,7 @@ public class CreateCategoryCommand : IRequest<CreatedCategoryResponse>
                 var uploadResult = await _storageService.UploadAsync("categories", category.Id, request.CategoryImage);
                 if (uploadResult.Any())
                 {
-                    var (fileName, path, _, storageType) = uploadResult.First();
+                    var (fileName, path, _, storageType,url) = uploadResult.First();
                     var categoryImageFile = new CategoryImageFile(fileName, "categories", path, storageType);
                     category.CategoryImageFiles = new List<CategoryImageFile> { categoryImageFile };
                     await _categoryRepository.UpdateAsync(category);

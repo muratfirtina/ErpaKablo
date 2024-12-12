@@ -24,12 +24,12 @@ public class StorageService : IStorageService
         _configuration = configuration;
     }
 
-    public async Task<List<(string fileName, string path, string entityType, string storageType)>> UploadAsync(
+    public async Task<List<(string fileName, string path, string entityType, string storageType, string url)>> UploadAsync(
         string entityType,
         string path,
         List<IFormFile> files)
     {
-        var results = new List<(string fileName, string path, string entityType, string storageType)>();
+        var results = new List<(string fileName, string path, string entityType, string storageType, string url)>();
 
         foreach (var file in files)
         {
@@ -45,7 +45,6 @@ public class StorageService : IStorageService
             {
                 await Task.WhenAll(uploadTasks);
 
-                // Sadece LocalStorage sonuçlarını topla
                 var localStorageTask = uploadTasks
                     .Select(t => t.Result)
                     .FirstOrDefault(t => t?.Provider is ILocalStorage);
@@ -54,7 +53,9 @@ public class StorageService : IStorageService
                 {
                     foreach (var result in localStorageTask.Result)
                     {
-                        results.Add((result.fileName, result.path, entityType, "localstorage"));
+                        var baseUrl = GetStorageUrl()?.TrimEnd('/');
+                        var url = $"{baseUrl}/{entityType}/{result.path}/{result.fileName}";
+                        results.Add((result.fileName, result.path, entityType, "localstorage", url));
                     }
                 }
             }

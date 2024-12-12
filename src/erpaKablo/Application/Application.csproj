@@ -26,6 +26,9 @@
         <Folder Include="Dtos\Elasticsearch\" />
         <Folder Include="Features\AuthorizationEndpoint\Commands\" />
         <Folder Include="Features\Carts\Rules\" />
+        <Folder Include="Features\Descriptions\Dtos\" />
+        <Folder Include="Features\Descriptions\Profiles\" />
+        <Folder Include="Features\Descriptions\Rules\" />
         <Folder Include="Features\OrderItems\Const\" />
         <Folder Include="Features\OrderItems\Rules\" />
         <Folder Include="Features\Orders\Consts\" />
@@ -65,6 +68,11 @@
       <Compile Remove="Features\OrderItems\Const\OrderItemBusinessMessages.cs" />
       <Compile Remove="Features\Orders\Commands\Update\UpdatedOrderResponse.cs" />
       <Compile Remove="Services\IOrderService.cs" />
+      <Compile Remove="Repositories\IDescriptionRepository.cs" />
+      <Compile Remove="Features\Descriptions\Dtos\UpdateDescriptionDto.cs" />
+      <Compile Remove="Features\Descriptions\Dtos\DescriptionImageFileDto.cs" />
+      <Compile Remove="Features\Descriptions\Dtos\DescriptionDto.cs" />
+      <Compile Remove="Extensions\ImageFileExtensions\DescriptionImageExtensions.cs" />
     </ItemGroup>
 
 </Project>
