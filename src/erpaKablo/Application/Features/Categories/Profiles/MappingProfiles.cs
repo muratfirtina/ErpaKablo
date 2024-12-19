@@ -26,6 +26,8 @@ public class MappingProfiles : Profile
     {
         CreateMap<Category, GetAllCategoryQueryResponse>()
             .ForMember(dest => dest.SubCategories, opt => opt.MapFrom(src => src.SubCategories))
+            .ForMember(dest => dest.ProductCount, opt
+                => opt.MapFrom(src => src.Products != null ? src.Products.Count : 0))
             .ForMember(dest
                 => dest.CategoryImage, opt
                 => opt.MapFrom(src
@@ -110,8 +112,11 @@ public class MappingProfiles : Profile
         CreateMap<Category, GetListCategoryByDynamicDto>();
 
         CreateMap<Category, GetMainCategoriesResponse>()
+            .ForMember(dest => dest.ProductCount, opt => opt.MapFrom(src => 
+                (src.Products != null ? src.Products.Count : 0) + 
+                (src.SubCategories != null ? src.SubCategories.Sum(sc => sc.Products != null ? sc.Products.Count : 0) : 0)))
             .ForMember(dest => dest.CategoryImage, opt => opt.MapFrom(src => src.CategoryImageFiles.FirstOrDefault()));
-
+        
         CreateMap<List<Category>, GetListResponse<GetMainCategoriesResponse>>()
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
 

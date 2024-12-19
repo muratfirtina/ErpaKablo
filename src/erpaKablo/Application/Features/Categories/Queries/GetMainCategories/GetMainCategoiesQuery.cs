@@ -39,7 +39,11 @@ public class GetMainCategoiesQuery : IRequest<GetListResponse<GetMainCategoriesR
             {
                 List<Category> categories = await _categoryRepository.GetAllAsync(
                     predicate: x => x.ParentCategoryId == null,
-                    include: x => x.Include(x => x.CategoryImageFiles),
+                    include: x => x
+                        .Include(x => x.CategoryImageFiles)
+                        .Include(x => x.Products)
+                        .Include(x => x.SubCategories)
+                        .ThenInclude(sc => sc.Products), // Alt kategorilerin ürünlerini include ediyoruz
                     cancellationToken: cancellationToken);
 
                 GetListResponse<GetMainCategoriesResponse> response =
@@ -53,7 +57,11 @@ public class GetMainCategoiesQuery : IRequest<GetListResponse<GetMainCategoriesR
                     index: request.PageRequest.PageIndex,
                     size: request.PageRequest.PageSize,
                     predicate: x => x.ParentCategoryId == null,
-                    include: x => x.Include(x => x.CategoryImageFiles),
+                    include: x => x
+                        .Include(x => x.CategoryImageFiles)
+                        .Include(x => x.Products)
+                        .Include(x => x.SubCategories)
+                        .ThenInclude(sc => sc.Products),
                     cancellationToken: cancellationToken);
 
                 GetListResponse<GetMainCategoriesResponse> response =

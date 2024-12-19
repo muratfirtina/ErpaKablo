@@ -72,6 +72,8 @@ public static class ServiceRegistration
         services.AddScoped<INewsletterRepository, NewsletterRepository>();
         services.AddScoped<INewsletterLogRepository, NewsletterLogRepository>();
         services.AddScoped<IImageVersionRepository, ImageVersionRepository>();
+        services.AddScoped<IContactRepository, ContactRepository>();
+        services.AddScoped<IContactService, ContactService>();
         
 
         
