@@ -37,33 +37,69 @@ public class SitemapService : ISitemapService
     }
 
     public async Task<string> GenerateSitemapIndex()
+{
+    _logger.LogInformation("Starting sitemap index generation");
+    var sitemaps = new List<SitemapUrl>();
+    try
     {
-        var sitemaps = new List<SitemapUrl>
+        // Ürünler için kontrol ve log
+        var products = await _productRepository.GetAllAsync();
+        _logger.LogInformation($"Found {products.Count()} products");
+        if (products.Any())
         {
-            new() { 
+            sitemaps.Add(new SitemapUrl
+            {
                 Loc = $"{_baseUrl}/sitemaps/products.xml",
                 LastMod = DateTime.UtcNow
-            },
-            new() { 
+            });
+        }
+
+        // Kategoriler için kontrol ve log
+        var categories = await _categoryRepository.GetAllAsync();
+        _logger.LogInformation($"Found {categories.Count()} categories");
+        if (categories.Any())
+        {
+            sitemaps.Add(new SitemapUrl
+            {
                 Loc = $"{_baseUrl}/sitemaps/categories.xml",
                 LastMod = DateTime.UtcNow
-            },
-            new() { 
+            });
+        }
+
+        // Markalar için kontrol ve log
+        var brands = await _brandRepository.GetAllAsync();
+        _logger.LogInformation($"Found {brands.Count()} brands");
+        if (brands.Any())
+        {
+            sitemaps.Add(new SitemapUrl
+            {
                 Loc = $"{_baseUrl}/sitemaps/brands.xml",
                 LastMod = DateTime.UtcNow
-            },
-            new() { 
-                Loc = $"{_baseUrl}/sitemaps/images.xml",
-                LastMod = DateTime.UtcNow
-            },
-            new() { 
-                Loc = $"{_baseUrl}/sitemaps/static-pages.xml",
-                LastMod = DateTime.UtcNow
-            }
-        };
+            });
+        }
 
-        return GenerateSitemapXml(sitemaps, true);
+        // XML oluşturulmadan önce kontrol
+        _logger.LogInformation($"Base URL: {_baseUrl}");
+        _logger.LogInformation($"Total sitemaps to be included: {sitemaps.Count}");
+        foreach (var sitemap in sitemaps)
+        {
+            _logger.LogInformation($"Sitemap URL: {sitemap.Loc}");
+        }
+
+        var xmlResult = GenerateSitemapXml(sitemaps, true);
+        _logger.LogInformation($"Generated XML length: {xmlResult?.Length ?? 0}");
+        _logger.LogInformation($"Generated XML content: {xmlResult}");
+
+        return xmlResult;
     }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error generating sitemap index");
+        throw;
+    }
+}
+
+
 
     public async Task<string> GenerateProductSitemap()
     {
@@ -172,7 +208,11 @@ public class SitemapService : ISitemapService
         var searchEngines = new Dictionary<string, string>
         {
             { "Google", $"http://www.google.com/ping?sitemap={sitemapUrl}" },
-            { "Bing", $"http://www.bing.com/ping?sitemap={sitemapUrl}" }
+            { "Bing", $"http://www.bing.com/ping?sitemap={sitemapUrl}" },
+            { "Yandex", $"http://www.yandex.com/ping?sitemap={sitemapUrl}" },
+            { "Baidu", $"http://www.baidu.com/ping?sitemap={sitemapUrl}" },
+            { "Sogou", $"http://www.sogou.com/ping?sitemap={sitemapUrl}" },
+            
         };
 
         var response = new SitemapOperationResponse
@@ -367,7 +407,7 @@ public class SitemapService : ISitemapService
 
         return issues;
     }
-
+    
     private string GenerateSitemapXml(List<SitemapUrl> urls, bool isIndex = false)
     {
         var ns = XNamespace.Get("http://www.sitemaps.org/schemas/sitemap/0.9");

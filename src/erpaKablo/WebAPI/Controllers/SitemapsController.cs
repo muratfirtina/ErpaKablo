@@ -24,6 +24,10 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> GetSitemapIndex()
         {
             var sitemap = await _sitemapService.GenerateSitemapIndex();
+            if (string.IsNullOrEmpty(sitemap))
+            {
+                return NotFound("No sitemaps available - site might be empty");
+            }
             return Content(sitemap, "application/xml");
         }
 

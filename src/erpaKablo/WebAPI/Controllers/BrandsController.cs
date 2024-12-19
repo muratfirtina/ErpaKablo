@@ -57,7 +57,7 @@ namespace WebAPI.Controllers
         [HttpPut]
         [Authorize(AuthenticationSchemes = "Admin")]
         [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update Brand", Menu = AuthorizeDefinitionConstants.Brands)]
-        public async Task<IActionResult> Update([FromBody] UpdateBrandCommand updateBrandCommand)
+        public async Task<IActionResult> Update([FromForm] UpdateBrandCommand updateBrandCommand)
         {
             UpdatedBrandResponse response = await Mediator.Send(updateBrandCommand);
             return Ok(response);

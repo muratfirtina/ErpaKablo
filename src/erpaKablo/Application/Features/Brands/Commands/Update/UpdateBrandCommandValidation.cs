@@ -8,7 +8,7 @@ public class UpdateBrandCommandValidation : AbstractValidator<UpdateBrandCommand
     {
         RuleFor(p => p.Name)
             .NotEmpty().WithMessage("Brand name is required.")
-            .MinimumLength(1).WithMessage("Brand name must be at least 1 characters.")
+            .MinimumLength(1).WithMessage("Brand name must be at least 1 character.")
             .MaximumLength(20).WithMessage("Brand name cannot exceed 20 characters.");
             
         RuleFor(p => p.Id)
