@@ -410,5 +410,6 @@ FodyWeavers.xsd
 #appsettings
 appsettings.json
 appsettings.Production.json
+appsettings.Development.json
 RolePermissionFilter.cs
 wwwroot/
