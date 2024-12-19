@@ -153,9 +153,12 @@ namespace WebAPI.Controllers
         [Consumes("multipart/form-data")]
         [Authorize(AuthenticationSchemes = "Admin")]
         [AuthorizeDefinition(ActionType = ActionType.Updating, Definition = "Update Product", Menu = AuthorizeDefinitionConstants.Products)]
-        public async Task<IActionResult> UploadDescriptionImage(IFormFile image)
+        public async Task<IActionResult> UploadDescriptionImage(
+            IFormFile image,
+            [FromForm] string? altText = null,
+            [FromForm] string? title = null)
         {
-            var command = new UploadDescriptionImageCommand(image);
+            var command = new UploadDescriptionImageCommand(image, altText, title);
             var response = await Mediator.Send(command);
             return Ok(response);
         }

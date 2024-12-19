@@ -12,6 +12,7 @@ using Infrastructure.Services.Notifications;
 using Infrastructure.Services.Security.KeyVault;
 using Infrastructure.Services.Security.Models;
 using Infrastructure.Services.Security.Models.Alert;
+using Infrastructure.Services.Seo;
 using Infrastructure.Services.Token;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -120,6 +121,8 @@ public static class SecurityServiceRegistration
         // Monitoring
         app.UseMiddleware<RequestTimingMiddleware>();
         app.UseMiddleware<AdvancedMetricsMiddleware>();
+
+        app.UseMiddleware<ImageOptimizationMiddleware>();
 
         return app;
     }

@@ -131,7 +131,10 @@ public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>
         var uploadedImage = await _storageService.UploadAsync("categories", category.Id, request.NewCategoryImage);
         foreach (var file in uploadedImage)
         {
-            var categoryImageFile = new CategoryImageFile(file.fileName, file.entityType, file.path, file.storageType);
+            var categoryImageFile = new CategoryImageFile(file.fileName, file.entityType, file.path, file.storageType)
+            {
+                Format = file.format
+            };
             category.CategoryImageFiles?.Add(categoryImageFile);
         }
     }

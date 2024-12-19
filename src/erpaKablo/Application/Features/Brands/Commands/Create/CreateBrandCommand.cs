@@ -40,8 +40,11 @@ public class CreateBrandCommand : IRequest<CreatedBrandResponse>
                 var uploadResult = await _storageService.UploadAsync("brands", brand.Id, request.BrandImage);
                 if (uploadResult.Any())
                 {
-                    var (fileName, path, _, storageType,url) = uploadResult.First();
+                    var (fileName, path, _, storageType,url,format) = uploadResult.First();
                     var brandImageFile = new BrandImageFile(fileName, "brands", path, storageType);
+                    {
+                        brandImageFile.Format = format;
+                    }
                     brand.BrandImageFiles = new List<BrandImageFile> { brandImageFile };
                     await _brandRepository.UpdateAsync(brand);
                 }

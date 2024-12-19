@@ -20,4 +20,10 @@ public static class AuthorizeDefinitionConstants
     public const string PhoneNumbers = "Phone Numbers";
     public const string Assets = "Assets";
     public const string Newsletters = "Newsletters";
+    public const string StaticPages = "Static Pages";
+    public const string Sitemaps = "Sitemaps";
+    public const string ProductsSitemap = "Products Sitemap";
+    public const string CategoriesSitemap = "Categories Sitemap";
+    public const string BrandsSitemap = "Brands Sitemap";
+    public const string StaticPagesSitemap = "Static Pages Sitemap";
 }

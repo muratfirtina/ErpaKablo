@@ -14,6 +14,7 @@ using Infrastructure.Services.Cache;
 using Infrastructure.Services.Configurations;
 using Infrastructure.Services.Mail;
 using Infrastructure.Services.Monitoring;
+using Infrastructure.Services.Seo;
 using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Cloudinary;
 using Infrastructure.Services.Storage.Google;
@@ -56,6 +57,9 @@ public static class InfrastructureServiceRegistration
         
         services.Configure<NewsletterSettings>(configuration.GetSection("Newsletter"));
         services.AddScoped<INewsletterService, NewsletterService>();
+        
+        services.AddScoped<IImageSeoService, ImageSeoService>();
+        services.AddScoped<ISitemapService, SitemapService>();
         // Quartz yapılandırması
         services.AddQuartz(q =>
         {

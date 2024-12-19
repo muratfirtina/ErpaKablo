@@ -38,7 +38,10 @@
 
     <ItemGroup>
         <Folder Include="Controllers\"/>
-        <Folder Include="wwwroot\" />
+        <Folder Include="wwwroot\brands\" />
+        <Folder Include="wwwroot\categories\" />
+        <Folder Include="wwwroot\description-images\" />
+        <Folder Include="wwwroot\products\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -221,6 +224,20 @@
       <_ContentIncludedByDefault Remove="wwwroot\products\descirptiondeneme-3123-e96e25db25634eca\kb4ictmp-ekbmp9f2f4452-8721-46b8-99c5-0076a1ebe255150103373444647394376291453454345-20241211082515.jpg" />
       <_ContentIncludedByDefault Remove="wwwroot\products\descriptionludeneme3-123-dd15a872763041b5\ayakkabi-logo-20241210132846.jpeg" />
       <_ContentIncludedByDefault Remove="wwwroot\products\kdadkadkahdkah-21312-d3456a7dc0af47a0\camper-pelotas-kahve3-20241211102021.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\products\ayriayridescption6-23423-c4e0be48f95e47dc\dasdasdasdadqqqq-20241211153947.jpeg" />
+      <_ContentIncludedByDefault Remove="wwwroot\products\cokresimlidesc1-234-c5ce23fcc55d4e98\suhortum5-20241211154303.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\products\deneme1-11123213-ebb643f46fe14a47\products-googlestoragedeneme2-112312-ab80db1662444c27-uekdbo5r-s5lmp182dcb72-e385-4af4-8605-f2771cd37ef9154300080702534545358545046874722-20241207114534-20241209110941.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\products\resimlidescption-1231-52554f1dffb14a85\camper-pelotas-kahve1-20241211133116.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\products\resimlidescption1-1231-743f56190b2f407e\suhortum5-20241211135210.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\products\resimlidescption3-12312-94845ad0afb44fe2\camper-pelotas-siyah2-20241211140452.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\products\resimlidescption4-3123-f2b20dc479f949a5\camper-pelotas-kahve1-20241211151740.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\products\resimlidescption5-3212-d73d9d19be9e4378\camper-pelotas-siyah3-20241211153521.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\description-images\8e33f8ba-23a2-44c9-85bc-1c262c3ab3aa\camper-pelotas-siyah4-20241211154247.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\description-images\454f25ac-ad40-4fa8-ae00-8be029de60e6\suhortum5-20241211151718.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\description-images\9405ee8f-63d1-46bb-8184-ef0842e270f8\tedarik-20241211153936.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\description-images\ea07926b-0024-4004-8e80-07379e18d1b3\datalankablolari-20241211153850.jpg" />
+      <_ContentIncludedByDefault Remove="wwwroot\description-images\ozel-indirimler-jpeg\ozel-indirimler-20241211134901.jpeg" />
+      <_ContentIncludedByDefault Remove="wwwroot\brands\3m-72c35e4b0d474e61\3m-20241209110715.png" />
     </ItemGroup>
 
     <ItemGroup>

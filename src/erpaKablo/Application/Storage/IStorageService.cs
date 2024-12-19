@@ -5,7 +5,7 @@ namespace Application.Storage;
 
 public interface IStorageService
 {
-    Task<List<(string fileName, string path, string entityType, string storageType, string url)>> UploadAsync(string entityType, string path, List<IFormFile> files);
+    Task<List<(string fileName, string path, string entityType, string storageType, string url,string format)>> UploadAsync(string entityType, string path, List<IFormFile> files);
         
     Task<List<T>?> GetFiles<T>(string entityId, string entityType, string? preferredStorage = null) 
         where T : ImageFile, new();

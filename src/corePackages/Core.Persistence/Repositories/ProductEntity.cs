@@ -6,15 +6,15 @@ public abstract class ProductEntity<TId> : IEntity<TId>, IEntityTimestamps
     public DateTime CreatedDate { get; set; }
     public DateTime? UpdatedDate { get; set; }
     public DateTime? DeletedDate { get; set; }
-    
-    public ProductEntity()
+
+    protected ProductEntity()
     {
         Id = default!;
     }
-    
-    protected ProductEntity(string? name , string? sku)
-    {
-        Id = (TId)(object)IdGenerator.GenerateIdwithSku(name,sku);
-    }
 
-}   
+    protected ProductEntity(string? name, string? sku)
+    {
+        Id = (TId)(object)IdGenerator.GenerateIdwithSku(name, sku);
+        CreatedDate = DateTime.UtcNow;
+    }
+}  

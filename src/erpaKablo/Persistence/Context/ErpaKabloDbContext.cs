@@ -27,6 +27,7 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<BrandImageFile> BrandImageFiles { get; set; }
     public DbSet<CarouselImageFile> CarouselImageFiles { get; set; }
     public DbSet<ImageFile> ImageFiles { get; set; }
+    public DbSet<ImageVersion> ImageVersions { get; set; }
     public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Order> Orders { get; set; }
@@ -52,6 +53,7 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         builder.Entity<Category>().HasQueryFilter(c => !c.DeletedDate.HasValue);
         builder.Entity<Feature>().HasQueryFilter(f => !f.DeletedDate.HasValue);
         builder.Entity<ImageFile>().HasQueryFilter(i => !i.DeletedDate.HasValue);
+        builder.Entity<ImageVersion>().HasQueryFilter(iv => !iv.DeletedDate.HasValue);
         builder.Entity<FeatureValue>().HasQueryFilter(fv => !fv.DeletedDate.HasValue);
         builder.Entity<ProductFeatureValue>().HasQueryFilter(pfv => !pfv.Product.DeletedDate.HasValue);
         builder.Entity<Cart>().HasQueryFilter(c => !c.DeletedDate.HasValue);
