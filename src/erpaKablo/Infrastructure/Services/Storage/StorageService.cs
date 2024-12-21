@@ -138,7 +138,7 @@ public class StorageService : IStorageService
     private class UploadTask
     {
         public IStorageProvider? Provider { get; init; }
-        public List<(string fileName, string path, string containerName)>? Result { get; set; }
+        public List<(string fileName, string path, string containerName, string url, string format)>? Result { get; set; }
     }
 
     private async Task<UploadTask> UploadToProvider(

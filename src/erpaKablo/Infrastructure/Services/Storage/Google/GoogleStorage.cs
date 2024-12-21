@@ -51,17 +51,21 @@ public class GoogleStorage : IGoogleStorage
     }
 
     // Implement your storage methods here
-    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(
-        string entityType, string path, string fileName, MemoryStream fileStream)
+    public async Task<List<(string fileName, string path, string containerName, string url, string format)>> UploadFileToStorage(
+        string entityType, 
+        string path, 
+        string fileName, 
+        MemoryStream fileStream)
     {
-        var results = new List<(string fileName, string path, string containerName)>();
+        var results = new List<(string fileName, string path, string containerName, string url, string format)>();
         try
         {
             var objectName = $"{entityType}/{path}/{fileName}";
-
             await _storageClient.UploadObjectAsync(_bucketName, objectName, null, fileStream);
-            
-            results.Add((fileName, $"{_baseUrl}{objectName}", entityType));
+        
+            var format = Path.GetExtension(fileName).TrimStart('.').ToLower();
+            var url = $"{_baseUrl}/{objectName}";
+            results.Add((fileName, path, entityType, url, format));
         }
         catch (Exception ex)
         {

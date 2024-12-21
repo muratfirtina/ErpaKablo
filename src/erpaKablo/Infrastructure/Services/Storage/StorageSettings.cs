@@ -10,6 +10,7 @@ public class StorageSettings
         public ProviderSettings LocalStorage { get; set; }
         public ProviderSettings Cloudinary { get; set; }
         public ProviderSettings Google { get; set; }
+        public ProviderSettings Yandex { get; set; }
     }
 
     public class ProviderSettings

@@ -2,6 +2,7 @@ using Application.Storage;
 using Application.Storage.Cloudinary;
 using Application.Storage.Google;
 using Application.Storage.Local;
+using Application.Storage.Yandex;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -32,6 +33,8 @@ public class StorageProviderFactory : IStorageProviderFactory
                 (IStorageProvider)_serviceProvider.GetRequiredService<ICloudinaryStorage>(),
             "google" when HasValidUrl("Google") => 
                 (IStorageProvider)_serviceProvider.GetRequiredService<IGoogleStorage>(),
+            /*"yandex" when HasValidUrl("Yandex") => 
+                (IStorageProvider)_serviceProvider.GetRequiredService<IYandexStorage>(),*/
             _ => (IStorageProvider)_serviceProvider.GetRequiredService<ILocalStorage>() // Fallback to local
         };
     }
@@ -42,7 +45,10 @@ public class StorageProviderFactory : IStorageProviderFactory
         {
             ("localstorage", () => HasValidUrl("LocalStorage") ? GetProvider("localstorage") : null),
             ("cloudinary", () => HasValidUrl("Cloudinary") ? GetProvider("cloudinary") : null),
-            ("google", () => HasValidUrl("Google") ? GetProvider("google") : null)
+            ("google", () => HasValidUrl("Google") ? GetProvider("google") : null),
+            /*
+            ("yandex", () => HasValidUrl("Yandex") ? GetProvider("yandex") : null)
+        */
         };
 
         return providers
@@ -59,6 +65,9 @@ public class StorageProviderFactory : IStorageProviderFactory
             "LocalStorage" => providers.LocalStorage?.Url != null,
             "Cloudinary" => providers.Cloudinary?.Url != null,
             "Google" => providers.Google?.Url != null,
+            /*
+            "Yandex" => providers.Yandex?.Url != null,
+            */
             _ => false
         };
     }

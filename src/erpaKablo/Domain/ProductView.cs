@@ -10,4 +10,9 @@ public class ProductView : Entity<string>
     public string UserId { get; set; }
     public AppUser User { get; set; }
     public DateTime VisitDate { get; set; }
+    
+    public ProductView() : base("ProductView")
+    {
+        
+    }
 }

@@ -261,9 +261,9 @@ public class UnifiedMailService : IMailService
         // Social media links - Cloudinary'den ikon URL'lerini al
         var socialLinks = new[]
         {
-            ("Facebook", socialMedia["Facebook"], $"{cloudinaryUrl}/social-media/icons/facebook.png"),
-            ("Twitter", socialMedia["Twitter"], $"{cloudinaryUrl}/social-media/icons/twitter.png"),
-            ("LinkedIn", socialMedia["LinkedIn"], $"{cloudinaryUrl}/social-media/icons/linkedin.png")
+            
+            ("LinkedIn", socialMedia["LinkedIn"], $"{cloudinaryUrl}/social-media/icons/linkedin.png"),
+            ("WhatsApp", socialMedia["WhatsApp"], $"{cloudinaryUrl}/social-media/icons/whatsapp.png"),
         };
 
         sb.AppendLine("<div style='margin-top: 20px;'>");

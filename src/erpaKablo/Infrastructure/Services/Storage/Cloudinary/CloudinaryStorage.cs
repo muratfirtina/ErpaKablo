@@ -36,9 +36,14 @@ public class CloudinaryStorage : ICloudinaryStorage
         _cloudinary = new CloudinaryDotNet.Cloudinary(account);
     }
 
-    public async Task<List<(string fileName, string path, string containerName)>> UploadFileToStorage(string entityType, string path, string fileName, MemoryStream fileStream)
+    public async Task<List<(string fileName, string path, string containerName, string url, string format)>> UploadFileToStorage(
+        string entityType, 
+        string path, 
+        string fileName, 
+        MemoryStream fileStream)
     {
-        var datas = new List<(string fileName, string path, string containerName)>();
+        var datas = new List<(string fileName, string path, string containerName, string url, string format)>();
+    
         ImageUploadParams imageUploadParams = new()
         {
             File = new FileDescription(fileName, stream: fileStream),
@@ -46,20 +51,20 @@ public class CloudinaryStorage : ICloudinaryStorage
             UniqueFilename = false,
             Overwrite = false
         };
-        
+    
         imageUploadParams.Folder = $"{entityType}/{path}";
         imageUploadParams.PublicId = Path.GetFileNameWithoutExtension(fileName);
-        
+    
         var uploadResult = await _cloudinary.UploadAsync(imageUploadParams);
-        
+    
         if (uploadResult.Error == null)
         {
-            datas.Add((fileName, uploadResult.SecureUrl.ToString(), entityType));
+            var format = Path.GetExtension(fileName).TrimStart('.').ToLower();
+            datas.Add((fileName, path, entityType, uploadResult.SecureUrl.ToString(), format));
         }
-        
+    
         return datas;
     }
-
     public async Task DeleteAsync(string entityType, string path, string fileName)
     {
         var publicId = GetPublicId($"{entityType}/{path}/{fileName}");

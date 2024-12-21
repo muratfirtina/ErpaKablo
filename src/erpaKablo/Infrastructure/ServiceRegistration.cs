@@ -5,6 +5,7 @@ using Application.Storage;
 using Application.Storage.Cloudinary;
 using Application.Storage.Google;
 using Application.Storage.Local;
+using Application.Storage.Yandex;
 using Application.Tokens;
 using Infrastructure.BackgroundJobs;
 using Infrastructure.Enums;
@@ -19,6 +20,7 @@ using Infrastructure.Services.Storage;
 using Infrastructure.Services.Storage.Cloudinary;
 using Infrastructure.Services.Storage.Google;
 using Infrastructure.Services.Storage.Local;
+using Infrastructure.Services.Storage.Yandex;
 using Infrastructure.Services.Token;
 using Infrastructure.Settings.Models.Newsletter;
 using Microsoft.Extensions.Configuration;
@@ -43,6 +45,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ILocalStorage, LocalStorage>();
         services.AddScoped<ICloudinaryStorage, CloudinaryStorage>();
         services.AddScoped<IGoogleStorage, GoogleStorage>();
+        //services.AddScoped<IYandexStorage, YandexStorage>();
         
         // Storage factory ve service
         services.AddScoped<IStorageProviderFactory, StorageProviderFactory>();
