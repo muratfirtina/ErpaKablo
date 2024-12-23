@@ -1,3 +1,4 @@
+using Application.Abstraction.Services;
 using Application.Features.Carts.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -14,55 +15,38 @@ namespace Persistence.Services;
 public class CartService : ICartService
 {
     private readonly IProductRepository _productRepository;
-    private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly UserManager<AppUser> _userManager;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ICartRepository _cartRepository;
     private readonly ICartItemRepository _cartItemRepository;
+    private readonly IStockReservationRepository _stockReservationRepository;
+    private readonly IStockReservationService _stockReservationService;
 
     public CartService(
-        IHttpContextAccessor httpContextAccessor,
-        UserManager<AppUser> userManager,
+        ICurrentUserService currentUserService,
         ICartRepository cartRepository,
         ICartItemRepository cartItemRepository,
-        IProductRepository productRepository)
+        IProductRepository productRepository, IStockReservationRepository stockReservationRepository, IStockReservationService stockReservationService)
     {
-        _httpContextAccessor = httpContextAccessor;
-        _userManager = userManager;
+        _currentUserService = currentUserService;
         _cartRepository = cartRepository;
         _cartItemRepository = cartItemRepository;
         _productRepository = productRepository;
+        _stockReservationRepository = stockReservationRepository;
+        _stockReservationService = stockReservationService;
     }
 
-    // 1. Kullanıcıyı doğrulayan metod
-    private async Task<AppUser?> GetCurrentUserAsync()
+    private async Task<Cart> GetOrCreateCartAsync()
     {
-        var userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name;
-        if (!string.IsNullOrEmpty(userName))
-        {
-            AppUser? user = await _userManager.Users
-                .FirstOrDefaultAsync(u => u.UserName == userName);
-
-            if (user == null)
-            {
-                throw new Exception("User not found.");
-            }
-
-            return user;
-        }
-        throw new Exception("Unexpected error occurred.");
-    }
-
-    // 2. Sepeti bulan veya oluşturan metod
-    private async Task<Cart> GetOrCreateCartAsync(AppUser user)
-    {
+        var userId = await _currentUserService.GetCurrentUserIdAsync();
+        
         var cartWithoutOrder = await _cartRepository.GetAsync(
-            predicate: c => c.UserId == user.Id && c.Order == null,
+            predicate: c => c.UserId == userId && c.Order == null,
             include: c => c.Include(c => c.Order)
         );
 
         if (cartWithoutOrder == null)
         {
-            cartWithoutOrder = new Cart { UserId = user.Id };
+            cartWithoutOrder = new Cart { UserId = userId };
             await _cartRepository.AddAsync(cartWithoutOrder);
         }
 
@@ -71,8 +55,8 @@ public class CartService : ICartService
 
     public async Task<List<CartItem?>> GetCartItemsAsync()
     {
-        AppUser? user = await GetCurrentUserAsync();
-        Cart? cart = await GetOrCreateCartAsync(user);
+        Cart? cart = await GetOrCreateCartAsync();
+        
         var result = await _cartRepository.GetAsync(
             predicate: c => c.Id == cart.Id,
             include: c => c
@@ -84,7 +68,9 @@ public class CartService : ICartService
                 .ThenInclude(p => p.Brand)
                 .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Product)
-                .ThenInclude(p => p.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
+                .ThenInclude(p => p.ProductFeatureValues)
+                .ThenInclude(x => x.FeatureValue)
+                .ThenInclude(x => x.Feature)
         );
 
         return result?.CartItems?.ToList() ?? new List<CartItem?>();
@@ -92,28 +78,24 @@ public class CartService : ICartService
 
     public async Task AddItemToCartAsync(CreateCartItemDto cartItem)
     {
-        AppUser? user = await GetCurrentUserAsync();
-        Cart? cart = await GetOrCreateCartAsync(user);
+        Cart? cart = await GetOrCreateCartAsync();
 
         var product = await _productRepository.GetAsync(predicate: p => p.Id == cartItem.ProductId);
-    
-        // Toplam talep edilen miktar + mevcut sepetteki miktar kontrolü
+        if (product == null)
+            throw new Exception("Product not found.");
+
         var existingCartItem = await _cartItemRepository.GetAsync(
             predicate: ci => ci.CartId == cart.Id && ci.ProductId == cartItem.ProductId);
 
-        int totalRequestedQuantity = cartItem.Quantity; // Yeni eklenecek miktar
+        int totalRequestedQuantity = cartItem.Quantity;
         if (existingCartItem != null)
-            totalRequestedQuantity += existingCartItem.Quantity; // Mevcut miktar
+            totalRequestedQuantity += existingCartItem.Quantity;
 
-        // Stok kontrolü
         if (totalRequestedQuantity > product.Stock)
-        {
             throw new Exception("Product stock is not enough.");
-        }
 
         if (existingCartItem != null)
         {
-            // Mevcut ürünün miktarını güncelle
             existingCartItem.Quantity = totalRequestedQuantity;
             if (!cartItem.IsChecked)
                 existingCartItem.IsChecked = false;
@@ -121,7 +103,6 @@ public class CartService : ICartService
         }
         else
         {
-            // Yeni ürün ekle
             await _cartItemRepository.AddAsync(new CartItem
             {
                 CartId = cart.Id,
@@ -134,15 +115,14 @@ public class CartService : ICartService
 
     public async Task UpdateQuantityAsync(UpdateCartItemDto cartItem)
     {
-        var _cartItem = await _cartItemRepository.GetAsync(predicate: ci => ci.Id == cartItem.CartItemId);
+        var _cartItem = await _cartItemRepository.GetAsync(
+            predicate: ci => ci.Id == cartItem.CartItemId,
+            include: i => i.Include(ci => ci.Product));
+            
         if (_cartItem == null)
             throw new Exception("Cart item not found.");
 
-        var product = await _productRepository.GetAsync(predicate: p => p.Id == _cartItem.ProductId);
-        if (product == null)
-            throw new Exception("Product not found.");
-
-        if (cartItem.Quantity > product.Stock || cartItem.Quantity < 0)
+        if (cartItem.Quantity > _cartItem.Product.Stock || cartItem.Quantity < 0)
             throw new Exception("Invalid quantity.");
 
         if (cartItem.Quantity == 0)
@@ -177,18 +157,17 @@ public class CartService : ICartService
 
     public async Task<Cart?> GetUserActiveCart()
     {
-        AppUser? user = await GetCurrentUserAsync();
-        Cart? cart = await GetOrCreateCartAsync(user);
+        Cart? cart = await GetOrCreateCartAsync();
 
         return await _cartRepository.GetAsync(
             predicate: c => c.Id == cart.Id,
             include: c => c
                 .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Product)
-                .ThenInclude(p => p.Brand) // Brand bilgisini include ediyoruz
+                .ThenInclude(p => p.Brand)
                 .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Product)
-                .ThenInclude(p => p.ProductImageFiles) // ProductImageFiles'ı include ediyoruz
+                .ThenInclude(p => p.ProductImageFiles)
                 .Include(c => c.User)
         );
     }
@@ -202,5 +181,19 @@ public class CartService : ICartService
             return true;
         }
         return false;
+    }
+
+    public async Task<(string CartId, string UserId)> GetCartInfoAsync(string cartItemId)
+    {
+        var userId = await _currentUserService.GetCurrentUserIdAsync();
+        var cartItem = await _cartItemRepository.GetAsync(
+            predicate: ci => ci.Id == cartItemId,
+            include: i => i.Include(ci => ci.Cart)
+        );
+
+        if (cartItem == null || cartItem.Cart == null)
+            throw new Exception("Cart item or cart not found.");
+
+        return (cartItem.CartId, userId);
     }
 }

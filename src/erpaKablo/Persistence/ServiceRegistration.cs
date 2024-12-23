@@ -6,6 +6,7 @@ using Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Persistence.BackgroundJob;
 using Persistence.Context;
 using Persistence.DbConfiguration;
 using Persistence.Repositories;
@@ -43,6 +44,8 @@ public static class ServiceRegistration
             })
             .AddIdentityCookies();
         
+        
+        services.AddHostedService<StockReservationCleanupService>();
         // Repository'leri ekleyin
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -60,6 +63,7 @@ public static class ServiceRegistration
         services.AddScoped<ICompletedOrderRepository, CompletedOrderRepository>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IInternalAuthentication, AuthService>();
         services.AddScoped<IRoleService, RoleService>();
@@ -74,9 +78,8 @@ public static class ServiceRegistration
         services.AddScoped<IImageVersionRepository, ImageVersionRepository>();
         services.AddScoped<IContactRepository, ContactRepository>();
         services.AddScoped<IContactService, ContactService>();
-        
-
-        
+        services.AddScoped<IStockReservationService, StockReservationService>();
+        services.AddScoped<IStockReservationRepository, StockReservationRepository>();
         
         return services;
     }

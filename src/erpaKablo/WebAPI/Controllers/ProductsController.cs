@@ -5,15 +5,20 @@ using Application.Enums;
 using Application.Features.Products.Commands.Create;
 using Application.Features.Products.Commands.DecriptionImageUpload;
 using Application.Features.Products.Commands.Delete;
+using Application.Features.Products.Commands.TrackProductView;
 using Application.Features.Products.Commands.Update;
 using Application.Features.Products.Dtos.FilterDto;
+using Application.Features.Products.Queries.GetBestSelling;
 using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
 using Application.Features.Products.Queries.GetMostLikedProducts;
-using Application.Features.Products.Queries.GetRandomProductsByProductId;
-using Application.Features.Products.Queries.GetRandomProductsForBrand;
+using Application.Features.Products.Queries.GetMostViewed;
 using Application.Features.Products.Queries.GetRandoms;
+using Application.Features.Products.Queries.GetRandoms.GetRandomByCategory;
+using Application.Features.Products.Queries.GetRandoms.GetRandomProducts;
+using Application.Features.Products.Queries.GetRandoms.GetRandomProductsByProductId;
+using Application.Features.Products.Queries.GetRandoms.GetRandomProductsForBrand;
 using Application.Features.Products.Queries.SearchAndFilter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter.GetAvailableFilter;
@@ -158,6 +163,40 @@ namespace WebAPI.Controllers
         {
             var response = await Mediator.Send(command);
             return Ok(response);
+        }
+        
+        [HttpGet("most-viewed")]
+        public async Task<IActionResult> GetMostViewedProducts([FromQuery] int count = 10)
+        {
+            var query = new GetMostViewedProductsQuery { Count = count };
+            var products = await Mediator.Send(query);
+            return Ok(products);
+        }
+        
+        [HttpPost("track-view/{productId}")]
+        [Authorize(AuthenticationSchemes = "Admin")]
+        [AuthorizeDefinition(ActionType = ActionType.Writing, Definition = "Track Product View", Menu = AuthorizeDefinitionConstants.Products)]
+        public async Task<IActionResult> TrackProductView([FromRoute] string productId)
+        {
+            var command = new TrackProductViewCommand { ProductId = productId };
+            await Mediator.Send(command);
+            return Ok();
+        }
+        
+        [HttpGet("best-selling")]
+        public async Task<IActionResult> GetBestSellingProducts([FromQuery] int count = 10)
+        {
+            var query = new GetBestSellingProductsQuery { Count = count };
+            var products = await Mediator.Send(query);
+            return Ok(products);
+        }
+
+        [HttpGet("random")]
+        public async Task<IActionResult> GetRandomProducts([FromQuery] int count = 10)
+        {
+            var query = new GetRandomProductsQuery { Count = count };
+            var products = await Mediator.Send(query);
+            return Ok(products);
         }
     }
 }

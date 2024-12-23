@@ -1,11 +1,13 @@
 using Application.Abstraction.Services;
 using Application.Abstraction.Services.HubServices;
+using Application.Events.OrderEvetns;
 using Application.Extensions;
 using Application.Features.Carts.Dtos;
 using Application.Features.Orders.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using MassTransit;
 using MediatR;
 
 namespace Application.Features.Orders.Commands.Create;
@@ -19,18 +21,20 @@ public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandRespo
     public class ConvertCartToOrderCommandHandler : IRequestHandler<ConvertCartToOrderCommand, ConvertCartToOrderCommandResponse>
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly IMailService _mailService;
-        private readonly IMapper _mapper;
         private readonly IOrderHubService _orderHubService;
-        private readonly IStorageService _storageService;
 
-        public ConvertCartToOrderCommandHandler(IMapper mapper, IOrderRepository orderRepository, IMailService mailService, IOrderHubService orderHubService, IStorageService storageService)
+        public ConvertCartToOrderCommandHandler(
+            IOrderRepository orderRepository,
+            IPublishEndpoint publishEndpoint,
+            IMailService mailService,
+            IOrderHubService orderHubService)
         {
-            _mapper = mapper;
             _orderRepository = orderRepository;
+            _publishEndpoint = publishEndpoint;
             _mailService = mailService;
             _orderHubService = orderHubService;
-            _storageService = storageService;
         }
 
         public async Task<ConvertCartToOrderCommandResponse> Handle(ConvertCartToOrderCommand request, CancellationToken cancellationToken)
@@ -45,27 +49,23 @@ public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandRespo
             {
                 throw new Exception("Sepet siparişe dönüştürülemedi.");
             }
-    
-            await _orderHubService.OrderCreatedMessageAsync(orderDto.OrderId, "Sipariş oluşturuldu.");
 
-            try
+            // OrderCreated eventini yayınla
+            await _publishEndpoint.Publish(new OrderCreatedEvent
             {
-        
-                await _mailService.SendCreatedOrderEmailAsync(
-                    to: orderDto.Email,
-                    orderCode: orderDto.OrderCode,
-                    orderDescription: orderDto.Description,
-                    orderAddress: orderDto.UserAddress,
-                    orderCreatedDate: orderDto.OrderDate,
-                    userName: orderDto.UserName,
-                    orderCartItems: orderDto.OrderItems,
-                    orderTotalPrice: orderDto.TotalPrice
-                );
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to send order confirmation email: {ex.Message}");
-            }
+                OrderId = orderDto.OrderId,
+                OrderCode = orderDto.OrderCode,
+                Email = orderDto.Email,
+                UserName = orderDto.UserName,
+                OrderDate = orderDto.OrderDate,
+                OrderItems = orderDto.OrderItems,
+                UserAddress = orderDto.UserAddress,
+                TotalPrice = orderDto.TotalPrice,
+                Description = orderDto.Description
+            }, cancellationToken);
+
+            // SignalR bildirimi
+            await _orderHubService.OrderCreatedMessageAsync(orderDto.OrderId, "Sipariş oluşturuldu.");
 
             return new ConvertCartToOrderCommandResponse
             {

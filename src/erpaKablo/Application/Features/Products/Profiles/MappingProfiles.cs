@@ -4,12 +4,15 @@ using Application.Features.Products.Commands.Delete;
 using Application.Features.Products.Commands.Update;
 using Application.Features.Products.Dtos;
 using Application.Features.Products.Dtos.FilterDto;
+using Application.Features.Products.Queries.GetBestSelling;
 using Application.Features.Products.Queries.GetByDynamic;
 using Application.Features.Products.Queries.GetById;
 using Application.Features.Products.Queries.GetList;
 using Application.Features.Products.Queries.GetMostLikedProducts;
-using Application.Features.Products.Queries.GetRandomProductsByProductId;
-using Application.Features.Products.Queries.GetRandomProductsForBrand;
+using Application.Features.Products.Queries.GetMostViewed;
+using Application.Features.Products.Queries.GetRandoms.GetRandomProducts;
+using Application.Features.Products.Queries.GetRandoms.GetRandomProductsByProductId;
+using Application.Features.Products.Queries.GetRandoms.GetRandomProductsForBrand;
 using Application.Features.Products.Queries.SearchAndFilter;
 using Application.Features.Products.Queries.SearchAndFilter.Filter;
 using Application.Features.Products.Queries.SearchAndFilter.Search;
@@ -193,5 +196,37 @@ public class MappingProfiles : Profile
         CreateMap<List<Product>, GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse>>()
             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
 
+        // Domain.Product -> GetMostViewedProductQueryResponse eşlemesi
+        CreateMap<Domain.Product, GetMostViewedProductQueryResponse>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src =>
+            src.ProductImageFiles.FirstOrDefault(pif => pif.Showcase)));
+            
+
+        // Listeyi GetListResponse türüne eşle
+        CreateMap<List<Domain.Product>, GetListResponse<GetMostViewedProductQueryResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
+        
+        CreateMap<Product, GetRandomProductsQueryResponse>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => 
+                src.ProductImageFiles
+                .FirstOrDefault(pif => pif.Showcase)));
+        
+        CreateMap<List<Product>, GetListResponse<GetRandomProductsQueryResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
+        
+        CreateMap<Product, GetBestSellingProductsQueryResponse>()
+            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+            .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.Brand.Name))
+            .ForMember(dest => dest.ShowcaseImage, opt => opt.MapFrom(src => 
+                src.ProductImageFiles
+                .FirstOrDefault(pif => pif.Showcase)));
+        
+        CreateMap<List<Product>, GetListResponse<GetBestSellingProductsQueryResponse>>()
+            .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src));
     }
+    
 }

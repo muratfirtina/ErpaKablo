@@ -1,4 +1,3 @@
-using Application.Extensions;
 using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
@@ -7,7 +6,7 @@ using Core.Application.Responses;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Application.Features.Products.Queries.GetRandomProductsForBrand;
+namespace Application.Features.Products.Queries.GetRandoms.GetRandomProductsForBrand;
 
 public class GetRandomProductsForBrandByProductIdQuery : IRequest<GetListResponse<GetRandomProductsForBrandByProductIdQueryResponse>>
 {

@@ -121,7 +121,7 @@ public class UserService: IUserService
         return new List<RoleDto>();
     }
     
-    private async Task<AppUser?> GetCurrentUserAsync()
+    public async Task<AppUser?> GetCurrentUserAsync()
     {
         var userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name;
         if (!string.IsNullOrEmpty(userName))

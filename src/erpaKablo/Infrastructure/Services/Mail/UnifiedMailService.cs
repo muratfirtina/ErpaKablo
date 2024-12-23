@@ -12,6 +12,8 @@ using Infrastructure.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
+using RateLimitExceededException = Infrastructure.Consumers.RateLimitExceededException;
+using ThrottlingException = Infrastructure.Consumers.ThrottlingException;
 
 namespace Infrastructure.Services.Mail;
 

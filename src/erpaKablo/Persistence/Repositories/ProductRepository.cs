@@ -256,4 +256,27 @@ public class ProductRepository : EfRepositoryBase<Product, string, ErpaKabloDbCo
 
         return options;
     }
+    
+    public async Task<List<Product>> GetBestSellingProducts(int count)
+    {
+        return await Context.Products
+            .AsNoTracking()
+            .Include(p => p.ProductImageFiles.Where(pif => pif.Showcase))
+            .Where(p => Context.OrderItems.Any(oi => oi.ProductId == p.Id))
+            .OrderByDescending(p => Context.OrderItems
+                .Where(oi => oi.ProductId == p.Id)
+                .Sum(oi => oi.Quantity))
+            .Take(count)
+            .ToListAsync();
+    }
+
+    public async Task<List<Product>> GetRandomProducts(int count)
+    {
+        return await Context.Products
+            .AsNoTracking()
+            .Include(p => p.ProductImageFiles.Where(pif => pif.Showcase))
+            .OrderBy(x => Guid.NewGuid()) // Random sıralama için
+            .Take(count)
+            .ToListAsync();
+    }
 }

@@ -11,6 +11,7 @@ namespace Application.Abstraction.Services;
 
 public interface IUserService
 {
+    Task<AppUser?> GetCurrentUserAsync();
     Task<AppUser> GetUserByUsernameAsync(string userName);
     Task UpdateRefreshTokenAsync(string refreshToken, AppUser user, DateTime accessTokenDateTime, int refreshTokenLifetime);
     Task UpdateForgotPasswordAsync(string userId, string resetToken, string newPassword);

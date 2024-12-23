@@ -1,4 +1,3 @@
-using Application.Extensions;
 using Application.Extensions.ImageFileExtensions;
 using Application.Features.Products.Queries.GetList;
 using Application.Repositories;
@@ -8,7 +7,7 @@ using Core.Application.Responses;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Application.Features.Products.Queries.GetRandoms;
+namespace Application.Features.Products.Queries.GetRandoms.GetRandomByCategory;
 
 public class GetRandomProductsByCategoryQuery : IRequest<GetListResponse<GetAllProductQueryResponse>>
 {

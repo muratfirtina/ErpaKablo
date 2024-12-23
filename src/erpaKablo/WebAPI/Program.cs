@@ -3,14 +3,18 @@ using System.Text;
 using Application;
 using Application.Extensions;
 using Azure.Identity;
+using HealthChecks.UI.Client;
 using Infrastructure;
+using Infrastructure.Consumers;
 using Infrastructure.Middleware.DDosProtection;
 using Infrastructure.Middleware.Monitoring;
 using Infrastructure.Middleware.RateLimiting;
 using Infrastructure.Middleware.Security;
 using Infrastructure.Services.Monitoring;
 using Infrastructure.Services.Security;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.IdentityModel.Tokens;
 using Persistence;
@@ -91,6 +95,90 @@ builder.Services.AddSignalRServices();
 
 // Prometheus Metrics
 builder.Services.AddMetricServer(options => { options.Port = 9100; });
+
+builder.Services.AddMassTransit(x =>
+{
+    // Consumer'ları kaydet
+    x.AddConsumer<OrderCreatedEventConsumer>();
+    x.AddConsumer<CartUpdatedEventConsumer>();
+    x.AddConsumer<StockUpdatedEventConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        // RabbitMQ bağlantı ayarları
+        cfg.Host(builder.Configuration["RabbitMQ:Host"], "/", h =>
+        {
+            h.Username(builder.Configuration["RabbitMQ:Username"]);
+            h.Password(builder.Configuration["RabbitMQ:Password"]);
+        });
+
+        // OrderCreated queue yapılandırması
+        cfg.ReceiveEndpoint(builder.Configuration["RabbitMQ:Queues:OrderCreated"], e =>
+        {
+            // Consumer'ı yapılandır
+            e.ConfigureConsumer<OrderCreatedEventConsumer>(context);
+
+            // Retry policy
+            e.UseMessageRetry(r =>
+            {
+                r.Interval(
+                    int.Parse(builder.Configuration["RabbitMQ:RetryCount"]), 
+                    TimeSpan.FromSeconds(double.Parse(builder.Configuration["RabbitMQ:RetryInterval"]))
+                );
+            });
+
+            // Prefetch count
+            e.PrefetchCount = int.Parse(builder.Configuration["RabbitMQ:PrefetchCount"]);
+        });
+
+        // CartUpdated queue yapılandırması
+        cfg.ReceiveEndpoint(builder.Configuration["RabbitMQ:Queues:CartUpdated"], e =>
+        {
+            e.ConfigureConsumer<CartUpdatedEventConsumer>(context);
+            e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(2)));
+        });
+
+        // StockUpdated queue yapılandırması
+        cfg.ReceiveEndpoint(builder.Configuration["RabbitMQ:Queues:StockUpdated"], e =>
+        {
+            e.ConfigureConsumer<StockUpdatedEventConsumer>(context);
+            e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(2)));
+        });
+
+        // Global hata yakalama
+        cfg.UseMessageRetry(r =>
+        {
+            r.Incremental(3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2));
+        });
+
+        // Circuit breaker
+        cfg.UseCircuitBreaker(cb =>
+        {
+            cb.TrackingPeriod = TimeSpan.FromMinutes(1);
+            cb.TripThreshold = 15;
+            cb.ActiveThreshold = 10;
+            cb.ResetInterval = TimeSpan.FromMinutes(5);
+        });
+    });
+});
+builder.Services.AddHealthChecks()
+    .AddRabbitMQ(
+        async serviceProvider =>
+        {
+            var factory = new RabbitMQ.Client.ConnectionFactory
+            {
+                HostName = builder.Configuration["RabbitMQ:Host"],
+                UserName = builder.Configuration["RabbitMQ:Username"],
+                Password = builder.Configuration["RabbitMQ:Password"],
+                VirtualHost = builder.Configuration["RabbitMQ:VirtualHost"] ?? "/",
+                Port = builder.Configuration.GetValue<int>("RabbitMQ:Port", 5672)
+            };
+            return await factory.CreateConnectionAsync();
+        },
+        "RabbitMQ Health Check",
+        tags: new[] { "rabbitmq", "messagebroker" },
+        timeout: TimeSpan.FromSeconds(5)
+    );
 
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -217,6 +305,18 @@ app.UseSerilogRequestLogging(options =>
 
 // API Routes
 app.MapControllers();
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false,
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.MapHubs();
 

@@ -3,9 +3,9 @@ using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Core.Application.Responses;
 
-namespace Application.Features.Products.Queries.GetRandomProductsForBrand;
+namespace Application.Features.Products.Queries.GetRandoms.GetRandomProductsByProductId;
 
-public class GetRandomProductsForBrandByProductIdQueryResponse : IResponse, IHasShowcaseImage
+public class GetRandomProductsByProductIdQueryResponse:IResponse , IHasShowcaseImage
 {
     public string Id { get; set; }
     public string Name { get; set; }
@@ -17,7 +17,7 @@ public class GetRandomProductsForBrandByProductIdQueryResponse : IResponse, IHas
     public string BrandName { get; set; }
     public string Sku { get; set; }
     public string VaryantGroupID { get; set; }
-    public int Stock { get; set; }
+    public int Stock{ get; set; }
     public decimal Price { get; set; }
     public bool IsLiked { get; set; }
     public ICollection<ProductFeatureValueDto>? ProductFeatureValues { get; set; }

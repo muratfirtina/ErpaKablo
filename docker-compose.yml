@@ -67,12 +67,29 @@ services:
     depends_on:
       - prometheus
     restart: always
+    
+  # RabbitMQ Configuration
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # AMQP protocol port
+      - "15672:15672"  # Management UI port
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=123456
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - erpaKabloNetwork
+    restart: always
 
 # Volume tanımlamaları
 volumes:
   elasticsearch-data:  # Elasticsearch için kalıcı veri depolama
   prometheus-data:     # Prometheus için kalıcı veri depolama
   grafana-data:       # Grafana için kalıcı veri depolama
+  rabbitmq-data:      # RabbitMQ için kalıcı veri depolama
 
 # Network tanımlaması
 networks:
