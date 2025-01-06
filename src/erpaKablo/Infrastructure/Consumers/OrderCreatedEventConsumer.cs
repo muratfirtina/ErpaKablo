@@ -29,27 +29,42 @@ public class OrderCreatedEventConsumer : IConsumer<OrderCreatedEvent>
 
         try
         {
-            // Mail gönderimi
-            await _mailService.SendCreatedOrderEmailAsync(
-                order.Email,
-                order.OrderCode,
-                order.Description,
-                order.UserAddress,
-                order.OrderDate,
-                order.UserName,
-                order.OrderItems,
-                order.TotalPrice
-            );
+            // Mail ve SignalR işlemleri ayrı ayrı try-catch bloklarında
+            try
+            {
+                await _mailService.SendCreatedOrderEmailAsync(
+                    order.Email,
+                    order.OrderCode,
+                    order.Description,
+                    order.UserAddress,
+                    order.OrderDate,
+                    order.UserName,
+                    order.OrderItems,
+                    order.TotalPrice
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error sending email for order {order.OrderId}");
+                // Mail gönderilemese bile devam et
+            }
 
-            // SignalR bildirimi
-            await _orderHubService.OrderCreatedMessageAsync(order.OrderId, "Sipariş oluşturuldu.");
+            try
+            {
+                await _orderHubService.OrderCreatedMessageAsync(order.OrderId, "Sipariş oluşturuldu.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error sending SignalR notification for order {order.OrderId}");
+                // SignalR bildirimi gönderilemese bile devam et
+            }
 
-            _logger.LogInformation($"Order {order.OrderId} processing completed successfully");
+            _logger.LogInformation($"Order {order.OrderId} processing completed");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error processing order {order.OrderId}");
-            throw; // MassTransit retry mekanizmasını tetikler
+            _logger.LogError(ex, $"Critical error processing order {order.OrderId}");
+            throw; // Sadece kritik hatalarda retry mekanizması tetiklensin
         }
     }
 }

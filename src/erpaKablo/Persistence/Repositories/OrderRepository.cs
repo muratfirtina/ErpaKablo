@@ -18,6 +18,7 @@ using Core.Persistence.Repositories;
 using Domain;
 using Domain.Enum;
 using Domain.Identity;
+using Domain.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -473,5 +474,26 @@ public class OrderRepository : EfRepositoryBase<Order, string, ErpaKabloDbContex
             await transaction.RollbackAsync();
             throw;
         }
+    }
+    
+    public async Task<OrderChanges> GetChanges(string orderId)
+    {
+        var changeTracker = Context.ChangeTracker;
+        var orderEntry = changeTracker.Entries<Order>()
+            .FirstOrDefault(e => e.Entity.Id == orderId);
+
+        if (orderEntry == null)
+            return new OrderChanges();
+
+        return new OrderChanges
+        {
+            PreviousStatus = (OrderStatus?)orderEntry.OriginalValues["Status"],
+            PreviousTotalPrice = (decimal?)orderEntry.OriginalValues["TotalPrice"],
+            PreviousAdminNote = (string?)orderEntry.OriginalValues["AdminNote"],
+            PreviousItems = await Context.OrderItems
+                .AsNoTracking()
+                .Where(i => i.OrderId == orderId)
+                .ToListAsync()
+        };
     }
 }

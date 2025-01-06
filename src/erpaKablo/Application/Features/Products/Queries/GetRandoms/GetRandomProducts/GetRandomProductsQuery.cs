@@ -2,6 +2,7 @@ using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
 using Domain;
@@ -10,9 +11,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetRandoms.GetRandomProducts;
 
-public class GetRandomProductsQuery : IRequest<GetListResponse<GetRandomProductsQueryResponse>>
+public class GetRandomProductsQuery : IRequest<GetListResponse<GetRandomProductsQueryResponse>>, ICachableRequest
 {
     public int Count { get; set; } = 20;
+    
+    public string CacheKey => "GetRandomProductsQuery";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
 
     public class GetRandomProductsQueryHandler : IRequestHandler<GetRandomProductsQuery, GetListResponse<GetRandomProductsQueryResponse>>
     {

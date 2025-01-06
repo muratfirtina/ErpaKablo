@@ -1,10 +1,11 @@
 using Application.Services;
 using AutoMapper;
+using Core.Application.Pipelines.Transaction;
 using MediatR;
 
 namespace Application.Features.Newsletters.Commands.Subscribe;
 
-public class SubscribeCommand : IRequest<SubscribeResponse>
+public class SubscribeCommand : IRequest<SubscribeResponse>,ITransactionalRequest
 {
     public string Email { get; set; }
     

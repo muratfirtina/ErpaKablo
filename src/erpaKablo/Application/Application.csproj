@@ -28,9 +28,6 @@
         <Folder Include="Dtos\Elasticsearch\" />
         <Folder Include="Features\AuthorizationEndpoint\Commands\" />
         <Folder Include="Features\Carts\Rules\" />
-        <Folder Include="Features\Descriptions\Dtos\" />
-        <Folder Include="Features\Descriptions\Profiles\" />
-        <Folder Include="Features\Descriptions\Rules\" />
         <Folder Include="Features\OrderItems\Const\" />
         <Folder Include="Features\OrderItems\Rules\" />
         <Folder Include="Features\Orders\Consts\" />
@@ -44,7 +41,6 @@
         <Folder Include="Features\ProductLikes\Dtos\" />
         <Folder Include="Features\ProductLikes\Rules\" />
         <Folder Include="Features\Roles\Commands\" />
-        <Folder Include="Features\Search\Profiles\" />
         <Folder Include="Features\UserAddresses\Consts\" />
         <Folder Include="Features\UserAddresses\Rules\" />
     </ItemGroup>

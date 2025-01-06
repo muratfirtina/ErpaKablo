@@ -1,4 +1,4 @@
-namespace Infrastructure.Services.Token;
+namespace Infrastructure.Services.Security.Models;
 
 public class TokenSettings
 {

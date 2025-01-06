@@ -3,6 +3,7 @@ using Application.Features.Products.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -11,9 +12,14 @@ using MediatR;
 
 namespace Application.Features.ProductLikes.Queries.GetProductsUserLiked;
 
-public class GetUserLikedProductsQuery : IRequest<GetListResponse<GetUserLikedProductsQueryResponse>>
+public class GetUserLikedProductsQuery : IRequest<GetListResponse<GetUserLikedProductsQueryResponse>>, ICachableRequest
 {
     public PageRequest PageRequest { get; set; }
+    
+    public string CacheKey => $"GetUserLikedProductsQuery-{PageRequest.PageIndex}-{PageRequest.PageSize}";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "ProductLikes";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
 
     public class GetUserLikedProductsQueryHandler : IRequestHandler<GetUserLikedProductsQuery, GetListResponse<GetUserLikedProductsQueryResponse>>
     {

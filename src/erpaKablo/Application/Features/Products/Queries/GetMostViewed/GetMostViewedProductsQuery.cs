@@ -2,6 +2,7 @@ using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
 using Domain;
@@ -10,9 +11,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetMostViewed;
 
-public class GetMostViewedProductsQuery : IRequest<GetListResponse<GetMostViewedProductQueryResponse>>
+public class GetMostViewedProductsQuery : IRequest<GetListResponse<GetMostViewedProductQueryResponse>>, ICachableRequest
 {
     public int Count { get; set; } = 10;
+    public string CacheKey => "MostViewedProducts";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "ProductViews";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(20);
 
     public class GetMostViewedProductsQueryHandler : IRequestHandler<GetMostViewedProductsQuery, GetListResponse<GetMostViewedProductQueryResponse>>
     {

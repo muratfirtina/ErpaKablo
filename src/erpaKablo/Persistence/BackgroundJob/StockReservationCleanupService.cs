@@ -25,30 +25,36 @@ public class StockReservationCleanupService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        
         var checkIntervalStr = _configuration["StockReservation:CleanupIntervalSeconds"];
         var checkInterval = !string.IsNullOrEmpty(checkIntervalStr) && int.TryParse(checkIntervalStr, out int interval) 
             ? interval 
             : DefaultCheckIntervalSeconds;
-        
-        while (!stoppingToken.IsCancellationRequested)
+    
+        try
         {
-            _logger.LogInformation("Starting stock reservation cleanup check at: {time}", DateTimeOffset.Now);
-
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                using (var scope = _serviceProvider.CreateScope())
+                _logger.LogInformation("Starting stock reservation cleanup check at: {time}", DateTimeOffset.Now);
+
+                try
                 {
-                    var stockReservationService = scope.ServiceProvider.GetRequiredService<IStockReservationService>();
-                    await stockReservationService.ReleaseExpiredReservationsAsync();
+                    using (var scope = _serviceProvider.CreateScope())
+                    {
+                        var stockReservationService = scope.ServiceProvider.GetRequiredService<IStockReservationService>();
+                        await stockReservationService.ReleaseExpiredReservationsAsync();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while cleaning up expired stock reservations");
-            }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogError(ex, "Error occurred while cleaning up expired stock reservations");
+                }
 
-            await Task.Delay(TimeSpan.FromSeconds(checkInterval), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(checkInterval), stoppingToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Stock reservation cleanup service is shutting down gracefully...");
         }
     }
 }

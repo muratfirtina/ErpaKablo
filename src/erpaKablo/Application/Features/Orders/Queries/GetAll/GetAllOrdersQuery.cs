@@ -1,5 +1,6 @@
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -9,9 +10,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Orders.Queries.GetAll;
 
-public class GetAllOrdersQuery : IRequest<GetListResponse<GetAllOrdersQueryResponse>>
+public class GetAllOrdersQuery : IRequest<GetListResponse<GetAllOrdersQueryResponse>>,ICachableRequest
 {
     public PageRequest PageRequest { get; set; }
+    public string CacheKey => "GetAllOrdersQuery";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Orders";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(5);
     
     public class GetAllOrdersQueryHandler : IRequestHandler<GetAllOrdersQuery, GetListResponse<GetAllOrdersQueryResponse>>
     {
@@ -32,6 +37,7 @@ public class GetAllOrdersQuery : IRequest<GetListResponse<GetAllOrdersQueryRespo
                 include: o => o
                     .Include(o => o.OrderItems)
                     .Include(o => o.User),
+                orderBy: o => o.OrderBy(o => o.CreatedDate),
                 cancellationToken: cancellationToken);
             
             GetListResponse<GetAllOrdersQueryResponse> response = _mapper.Map<GetListResponse<GetAllOrdersQueryResponse>>(orders);

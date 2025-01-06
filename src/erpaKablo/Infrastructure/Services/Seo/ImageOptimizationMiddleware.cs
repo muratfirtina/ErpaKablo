@@ -1,17 +1,18 @@
 using Application.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Services.Seo;
 
 public class ImageOptimizationMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IImageSeoService _imageSeoService;
+    private readonly IServiceProvider _serviceProvider;
 
-    public ImageOptimizationMiddleware(RequestDelegate next, IImageSeoService imageSeoService)
+    public ImageOptimizationMiddleware(RequestDelegate next, IServiceProvider serviceProvider)
     {
         _next = next;
-        _imageSeoService = imageSeoService;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -19,11 +20,16 @@ public class ImageOptimizationMiddleware
         // Eğer istek bir görsel için ise
         if (IsImageRequest(context.Request.Path))
         {
-            var acceptHeader = context.Request.Headers["Accept"].ToString();
-            string bestFormat = DetermineBestFormat(acceptHeader);
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var imageSeoService = scope.ServiceProvider.GetRequiredService<IImageSeoService>();
+                
+                var acceptHeader = context.Request.Headers["Accept"].ToString();
+                string bestFormat = DetermineBestFormat(acceptHeader);
 
-            // URL'i format bazlı versiyon için güncelle
-            ModifyRequestForFormat(context, bestFormat);
+                // URL'i format bazlı versiyon için güncelle
+                ModifyRequestForFormat(context, bestFormat);
+            }
         }
 
         await _next(context);
@@ -34,7 +40,7 @@ public class ImageOptimizationMiddleware
         return path.StartsWithSegments("/images") ||
                path.Value?.EndsWith(".jpg") == true ||
                path.Value?.EndsWith(".png") == true ||
-               path.Value?.EndsWith(".webp") == true||
+               path.Value?.EndsWith(".webp") == true ||
                path.Value?.EndsWith(".avif") == true;
     }
 

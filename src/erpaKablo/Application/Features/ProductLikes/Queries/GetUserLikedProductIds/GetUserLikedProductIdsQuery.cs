@@ -1,12 +1,17 @@
 using Application.Repositories;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.ProductLikes.Queries.GetUserLikedProductIds;
 
-public class GetUserLikedProductIdsQuery : IRequest<GetUserLikedProductIdsResponse>
+public class GetUserLikedProductIdsQuery : IRequest<GetUserLikedProductIdsResponse>, ICachableRequest
 {
     public string? SearchProductIds { get; set; }
-
+    public string CacheKey => "UserLikedProductIds";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "ProductLikes";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
+    
     public class GetUserLikedProductIdsQueryHandler : IRequestHandler<GetUserLikedProductIdsQuery, GetUserLikedProductIdsResponse>
     {
         private readonly IProductLikeRepository _productLikeRepository;

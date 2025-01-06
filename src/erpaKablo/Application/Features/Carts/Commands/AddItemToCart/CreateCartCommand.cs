@@ -1,12 +1,14 @@
 using Application.Events.OrderEvetns;
 using Application.Features.Carts.Dtos;
 using Application.Services;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Pipelines.Transaction;
 using MassTransit;
 using MediatR;
 
 namespace Application.Features.Carts.Commands.AddItemToCart;
 
-public class CreateCartCommand : IRequest<CreatedCartResponse>
+public class CreateCartCommand : IRequest<CreatedCartResponse>, ICacheRemoverRequest
 {
     public CreateCartCommand(CreateCartItemDto createCartItem)
     {
@@ -14,6 +16,10 @@ public class CreateCartCommand : IRequest<CreatedCartResponse>
     }
 
     public CreateCartItemDto CreateCartItem { get; set; }
+    
+    public string CacheKey => "";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Carts";
 
     public class CreateCartCommandHandler : IRequestHandler<CreateCartCommand, CreatedCartResponse>
     {

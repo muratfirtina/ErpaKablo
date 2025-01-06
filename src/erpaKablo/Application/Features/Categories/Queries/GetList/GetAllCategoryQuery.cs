@@ -13,13 +13,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Extensions;
 using Application.Storage;
+using Core.Application.Pipelines.Caching;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Queries.GetList
 {
-    public class GetAllCategoryQuery : IRequest<GetListResponse<GetAllCategoryQueryResponse>>
+    public class GetAllCategoryQuery : IRequest<GetListResponse<GetAllCategoryQueryResponse>>,ICachableRequest
     {
         public PageRequest PageRequest { get; set; }
+
+        public string CacheKey => $"GetAllCategoryQuery({PageRequest.PageIndex},{PageRequest.PageSize})";
+        public bool BypassCache { get; }
+        public string? CacheGroupKey => "Categories";
+        public TimeSpan? SlidingExpiration => TimeSpan.FromDays(5);
         
         public class GetAllCategoryQueryHandler : IRequestHandler<GetAllCategoryQuery, GetListResponse<GetAllCategoryQueryResponse>>
         {

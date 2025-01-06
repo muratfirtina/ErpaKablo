@@ -4,6 +4,8 @@ using Application.Features.Brands.Rules;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Pipelines.Transaction;
 using Core.CrossCuttingConcerns.Exceptions;
 using Domain;
 using MediatR;
@@ -12,12 +14,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Brands.Commands.Update;
 
-public class UpdateBrandCommand : IRequest<UpdatedBrandResponse>
+public class UpdateBrandCommand : IRequest<UpdatedBrandResponse>,ITransactionalRequest,ICacheRemoverRequest
 {
     public string Id { get; set; }
     public string Name { get; set; }
     public List<IFormFile>? BrandImage { get; set; }
     public bool RegenerateId { get; set; } = true;
+    
+    public string CacheKey => "";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "GetBrands";
 }
 
 public class UpdateBrandCommandHandler : IRequestHandler<UpdateBrandCommand, UpdatedBrandResponse>

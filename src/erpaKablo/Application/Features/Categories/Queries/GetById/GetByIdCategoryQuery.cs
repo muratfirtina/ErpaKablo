@@ -3,6 +3,7 @@ using Application.Features.Categories.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.CrossCuttingConcerns.Exceptions;
 using Domain;
 using MediatR;
@@ -10,9 +11,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Queries.GetById;
 
-public class GetByIdCategoryQuery : IRequest<GetByIdCategoryResponse>
+public class GetByIdCategoryQuery : IRequest<GetByIdCategoryResponse>,ICachableRequest
 {
     public string Id { get; set; }
+
+    public string CacheKey => $"GetByIdCategoryQuery({Id})";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Categories";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromDays(5);
     
     public class GetByIdCategoryQueryHandler : IRequestHandler<GetByIdCategoryQuery, GetByIdCategoryResponse>
     {

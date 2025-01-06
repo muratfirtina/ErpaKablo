@@ -1,6 +1,7 @@
 using Application.Consts;
 using Application.CustomAttributes;
 using Application.Enums;
+using Application.Features.Newsletters.Commands.SendMonthly;
 using Application.Features.Newsletters.Commands.Subscribe;
 using Application.Features.Newsletters.Commands.Unsubscribe;
 using Application.Features.Newsletters.Queries.GetList;

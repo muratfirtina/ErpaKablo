@@ -1,10 +1,11 @@
 using Application.Services;
 using AutoMapper;
+using Core.Application.Pipelines.Transaction;
 using MediatR;
 
 namespace Application.Features.Newsletters.Commands.Unsubscribe;
 
-public class UnsubscribeCommand : IRequest<UnsubscribeResponse>
+public class UnsubscribeCommand : IRequest<UnsubscribeResponse>,ITransactionalRequest
 {
     public string Email { get; set; }
     

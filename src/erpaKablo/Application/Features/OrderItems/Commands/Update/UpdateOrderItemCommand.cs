@@ -4,10 +4,11 @@ using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Core.Application.Pipelines.Transaction;
 
 namespace Application.Features.OrderItems.Commands.Update
 {
-    public class UpdateOrderItemCommand : IRequest<bool>
+    public class UpdateOrderItemCommand : IRequest<bool>,ITransactionalRequest
     {
         public string Id { get; set; }  // OrderItem ID
         public int Quantity { get; set; }  // Güncellenecek miktar

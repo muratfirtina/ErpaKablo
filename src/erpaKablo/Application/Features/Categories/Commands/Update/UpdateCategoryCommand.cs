@@ -3,6 +3,8 @@ using Application.Features.Categories.Rules;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Pipelines.Transaction;
 using Core.CrossCuttingConcerns.Exceptions;
 using Domain;
 using MediatR;
@@ -11,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Commands.Update;
 
-public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>
+public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>,ITransactionalRequest, ICacheRemoverRequest
 {
     public string Id { get; set; }
     public string? Name { get; set; }
@@ -21,7 +23,11 @@ public class UpdateCategoryCommand : IRequest<UpdatedCategoryResponse>
     public List<string>? FeatureIds { get; set; }
     public List<IFormFile>? NewCategoryImage { get; set; }
     public bool RemoveExistingImage { get; set; }
-
+    
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Categories";
+    
     public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryCommand, UpdatedCategoryResponse>
     {
         private readonly ICategoryRepository _categoryRepository;

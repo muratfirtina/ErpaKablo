@@ -1,11 +1,16 @@
 using Application.Repositories;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.PhoneNumbers.Commands.Delete;
 
-public class DeletePhoneNumberCommand : IRequest<DeletedPhoneNumberCommandResponse>
+public class DeletePhoneNumberCommand : IRequest<DeletedPhoneNumberCommandResponse>,ICacheRemoverRequest
 {
     public string Id { get; set; }
+
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "PhoneNumbers";
 
     public class DeletePhoneNumberCommandHandler : IRequestHandler<DeletePhoneNumberCommand, DeletedPhoneNumberCommandResponse>
     {

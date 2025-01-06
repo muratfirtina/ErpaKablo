@@ -4,6 +4,8 @@ using Application.Features.Brands.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Requests;
 using Core.Application.Responses;
 using Domain;
 using MediatR;
@@ -11,9 +13,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Brands.Queries.GetBrandsByIds;
 
-public class GetBrandsByIdsQuery : IRequest<GetListResponse<GetBrandsByIdsQueryResponse>>
+public class GetBrandsByIdsQuery : IRequest<GetListResponse<GetBrandsByIdsQueryResponse>>, ICachableRequest
 {
     public List<string> Ids { get; set; }
+    public string CacheKey => $"GetBrandsByIdsQuery({string.Join(",", Ids)})";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "GetBrands";
+    public TimeSpan? SlidingExpiration { get; }
    
     public class GetBrandsByIdsQueryHandler : IRequestHandler<GetBrandsByIdsQuery, GetListResponse<GetBrandsByIdsQueryResponse>>
     {

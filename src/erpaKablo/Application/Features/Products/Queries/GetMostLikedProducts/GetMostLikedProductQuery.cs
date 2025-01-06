@@ -3,6 +3,7 @@ using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
 using Domain;
@@ -11,9 +12,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetMostLikedProducts;
 
-public class GetMostLikedProductQuery : IRequest<GetListResponse<GetMostLikedProductQueryResponse>>
+public class GetMostLikedProductQuery : IRequest<GetListResponse<GetMostLikedProductQueryResponse>>, ICachableRequest
 {
     public int Count { get; set; } = 10;
+    public string CacheKey => "MostLikedProducts";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "ProductLikes";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(20);
     
     public class GetMostLikedProductQueryHandler : IRequestHandler<GetMostLikedProductQuery, GetListResponse<GetMostLikedProductQueryResponse>>
     {

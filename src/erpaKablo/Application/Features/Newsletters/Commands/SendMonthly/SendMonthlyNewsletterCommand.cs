@@ -1,8 +1,11 @@
 using Application.Services;
+using Core.Application.Pipelines.Transaction;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-public class SendMonthlyNewsletterCommand : IRequest<Unit>
+namespace Application.Features.Newsletters.Commands.SendMonthly;
+
+public class SendMonthlyNewsletterCommand : IRequest<Unit>,ITransactionalRequest
 {
     public bool IsTest { get; set; } = false;  // Test modu için parametre
 

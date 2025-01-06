@@ -1,11 +1,16 @@
 using Application.Repositories;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.ProductLikes.Commands.AddProductLike;
 
-public class AddProductLikeCommand : IRequest<AddProductLikeResponse>
+public class AddProductLikeCommand : IRequest<AddProductLikeResponse>, ICacheRemoverRequest
 {
     public string ProductId { get; set; }
+
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "ProductLikes";
     
     public class AddProductLikeCommandHandler : IRequestHandler<AddProductLikeCommand, AddProductLikeResponse>
     {

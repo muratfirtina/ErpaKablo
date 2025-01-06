@@ -1,5 +1,3 @@
-using Infrastructure.Services.Token;
-
 namespace Infrastructure.Services.Security.Models;
 
 public class SecuritySettings

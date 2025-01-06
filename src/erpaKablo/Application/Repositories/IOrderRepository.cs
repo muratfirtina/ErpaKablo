@@ -7,6 +7,7 @@ using Core.Persistence.Paging;
 using Core.Persistence.Repositories;
 using Domain;
 using Domain.Enum;
+using Domain.Model;
 
 namespace Application.Repositories;
 
@@ -25,4 +26,6 @@ public interface IOrderRepository: IAsyncRepository<Order, string>, IRepository<
         string? adminNote, 
         string? adminUserName,
         List<(string OrderItemId, decimal? UpdatedPrice, int? LeadTime)> itemUpdates);
+
+    Task<OrderChanges> GetChanges(string orderId);
 }

@@ -3,6 +3,7 @@ using Application.Features.Categories.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -12,9 +13,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Queries.GetMainCategories;
 
-public class GetMainCategoiesQuery : IRequest<GetListResponse<GetMainCategoriesResponse>>
+public class GetMainCategoiesQuery : IRequest<GetListResponse<GetMainCategoriesResponse>>, ICachableRequest
 {
     public PageRequest PageRequest { get; set; }
+
+    public string CacheKey => $"GetMainCategoiesQuery({PageRequest.PageIndex},{PageRequest.PageSize})";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Categories";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromDays(180);
 
     public class
         GetMainCategoriesQueryHandler : IRequestHandler<GetMainCategoiesQuery,

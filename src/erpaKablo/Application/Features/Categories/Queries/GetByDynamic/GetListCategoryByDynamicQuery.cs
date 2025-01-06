@@ -6,6 +6,7 @@ using Application.Features.Products.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -16,10 +17,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Queries.GetByDynamic;
 
-public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCategoryByDynamicDto>>
+public class GetListCategoryByDynamicQuery : IRequest<GetListResponse<GetListCategoryByDynamicDto>>,ICachableRequest
 {
     public PageRequest PageRequest { get; set; }
     public DynamicQuery DynamicQuery { get; set; }
+
+    public string CacheKey => $"GetListCategoryByDynamicQuery({PageRequest.PageIndex},{PageRequest.PageSize})";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Categories";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromDays(5);
 
     public class GetListByDynamicCategoryQueryHandler : IRequestHandler<GetListCategoryByDynamicQuery,
         GetListResponse<GetListCategoryByDynamicDto>>

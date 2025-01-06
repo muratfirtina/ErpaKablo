@@ -3,26 +3,33 @@ using Application.Features.Products.Queries.GetList;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetRandoms.GetRandomByCategory;
 
-public class GetRandomProductsByCategoryQuery : IRequest<GetListResponse<GetAllProductQueryResponse>>
+public class GetRandomProductsByCategoryQuery : IRequest<GetListResponse<GetAllProductQueryResponse>>, ICachableRequest
 {
     public string CategoryId { get; set; }
     public int Count { get; set; }
+    public string CacheKey => "GetRandomProductsByCategoryQuery";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
 }
 
-public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandomProductsByCategoryQuery, GetListResponse<GetAllProductQueryResponse>>
+public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandomProductsByCategoryQuery,
+    GetListResponse<GetAllProductQueryResponse>>
 {
     private readonly IProductRepository _productRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly IStorageService _storageService;
     private readonly IMapper _mapper;
 
-    public GetRandomProductsByCategoryQueryHandler(IProductRepository productRepository, ICategoryRepository categoryRepository, IMapper mapper, IStorageService storageService)
+    public GetRandomProductsByCategoryQueryHandler(IProductRepository productRepository,
+        ICategoryRepository categoryRepository, IMapper mapper, IStorageService storageService)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
@@ -30,7 +37,8 @@ public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandom
         _storageService = storageService;
     }
 
-    public async Task<GetListResponse<GetAllProductQueryResponse>> Handle(GetRandomProductsByCategoryQuery request, CancellationToken cancellationToken)
+    public async Task<GetListResponse<GetAllProductQueryResponse>> Handle(GetRandomProductsByCategoryQuery request,
+        CancellationToken cancellationToken)
     {
         var categoryIds = await GetAllSubcategoryIds(request.CategoryId);
 
@@ -38,6 +46,7 @@ public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandom
             predicate: p => categoryIds.Contains(p.CategoryId),
             include: p => p.Include(x => x.Category)
                 .Include(x => x.Brand)
+                .Include(x => x.ProductFeatureValues).ThenInclude(x => x.FeatureValue).ThenInclude(x => x.Feature)
                 .Include(x => x.ProductImageFiles.Where(pif => pif.Showcase)),
             cancellationToken: cancellationToken
         );
@@ -81,5 +90,4 @@ public class GetRandomProductsByCategoryQueryHandler : IRequestHandler<GetRandom
             }
         }
     }
-    
 }

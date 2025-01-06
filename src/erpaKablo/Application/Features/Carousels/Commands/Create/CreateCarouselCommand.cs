@@ -1,17 +1,23 @@
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Domain;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.Carousels.Commands.Create;
 
-public class CreateCarouselCommand : IRequest<CreatedCarouselResponse>
+public class CreateCarouselCommand : IRequest<CreatedCarouselResponse>,ICacheRemoverRequest
 {
     public string? Name { get; set; }
     public string? Description { get; set; }
     public int? Order { get; set; }
+    
+    public string CacheKey => "";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Carousels";
+    
     public List<IFormFile>? CarouselImageFiles { get; set; }
     
     public class CreateCarouselCommandHandler : IRequestHandler<CreateCarouselCommand, CreatedCarouselResponse>
@@ -37,7 +43,8 @@ public class CreateCarouselCommand : IRequest<CreatedCarouselResponse>
                     Name = x.fileName,
                     EntityType = "carousels",
                     Path = x.path,
-                    Storage = x.storageType
+                    Storage = x.storageType,
+                    Format = x.format
                 }).ToList();
             }
         

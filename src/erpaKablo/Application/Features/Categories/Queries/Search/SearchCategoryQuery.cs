@@ -3,14 +3,20 @@ using Application.Features.Categories.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using MediatR;
 
 namespace Application.Features.Categories.Queries.Search;
 
-public class SearchCategoryQuery : IRequest<GetListResponse<CategoryDto>>
+public class SearchCategoryQuery : IRequest<GetListResponse<CategoryDto>>, ICachableRequest
 {
     public string SearchTerm { get; set; }
+
+    public string CacheKey => $"SearchCategoryQuery({SearchTerm})";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Categories";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
 
     public class SearchCategoryQueryHandler : IRequestHandler<SearchCategoryQuery, GetListResponse<CategoryDto>>
     {

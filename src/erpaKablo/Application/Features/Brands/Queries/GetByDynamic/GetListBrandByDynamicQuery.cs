@@ -5,6 +5,7 @@ using Application.Features.Brands.Rules;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -15,10 +16,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Brands.Queries.GetByDynamic;
 
-public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandByDynamicQueryResponse>>
+public class GetListBrandByDynamicQuery : IRequest<GetListResponse<GetListBrandByDynamicQueryResponse>>, ICachableRequest
 {
     public PageRequest PageRequest { get; set; }
     public DynamicQuery DynamicQuery { get; set; }
+    public string CacheKey => $"GetBrandsByDynamicQuery({PageRequest.PageIndex},{PageRequest.PageSize})";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "GetBrands";
+    public TimeSpan? SlidingExpiration { get; }
     
     public class GetListByDynamicBrandQueryHandler : IRequestHandler<GetListBrandByDynamicQuery, GetListResponse<GetListBrandByDynamicQueryResponse>>
     {

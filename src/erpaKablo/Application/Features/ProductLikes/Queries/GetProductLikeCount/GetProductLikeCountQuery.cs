@@ -1,11 +1,17 @@
 using Application.Repositories;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.ProductLikes.Queries.GetProductLikeCount;
 
-public class GetProductLikeCountQuery : IRequest<GetProductLikeCountQueryResponse>
+public class GetProductLikeCountQuery : IRequest<GetProductLikeCountQueryResponse>,ICachableRequest
 {
     public string ProductId { get; set; }
+    
+    public string CacheKey => $"ProductLikeCount-{ProductId}";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "ProductLikes";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(10);
     
     public class GetProductLikeCountQueryHandler : IRequestHandler<GetProductLikeCountQuery, GetProductLikeCountQueryResponse>
     {

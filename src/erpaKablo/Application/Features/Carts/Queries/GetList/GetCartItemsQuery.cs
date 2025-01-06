@@ -4,13 +4,18 @@ using Application.Features.ProductImageFiles.Dtos;
 using Application.Features.Products.Dtos;
 using Application.Services;
 using Application.Storage;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using MediatR;
 
 namespace Application.Features.Carts.Queries.GetList;
 
-public class GetCartItemsQuery : IRequest<List<GetCartItemsQueryResponse>>
+public class GetCartItemsQuery : IRequest<List<GetCartItemsQueryResponse>>,ICachableRequest
 {
+    public string CacheKey => "";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Carts";
+    public TimeSpan? SlidingExpiration { get; } = TimeSpan.FromMinutes(30);
     public class GetCartItemsQueryHandler : IRequestHandler<GetCartItemsQuery, List<GetCartItemsQueryResponse>>
     {
         private readonly ICartService _cartService;

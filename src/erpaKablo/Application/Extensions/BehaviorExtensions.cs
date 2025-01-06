@@ -10,6 +10,7 @@ public static class BehaviorExtensions
     {
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(MetricsBehavior<,>));
         
+        
         // Diğer behavior'ları da buraya ekleyebilirsiniz
         // Örneğin: Validation, Logging, Caching vb.
         

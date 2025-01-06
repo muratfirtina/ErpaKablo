@@ -5,6 +5,7 @@ using Application.Features.Products.Rules;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -15,11 +16,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetByDynamic;
 
-public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProductByDynamicDto>>
+public class GetListProductByDynamicQuery : IRequest<GetListResponse<GetListProductByDynamicDto>>,ICachableRequest
 {
     public PageRequest PageRequest { get; set; }
     public DynamicQuery DynamicQuery { get; set; }
-    
+    public string CacheKey => "GetListProductByDynamicQuery";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
     public class GetListByDynamicProductQueryHandler : IRequestHandler<GetListProductByDynamicQuery, GetListResponse<GetListProductByDynamicDto>>
     {
         private readonly IProductRepository _productRepository;

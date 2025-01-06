@@ -1,7 +1,4 @@
 using Application.Abstraction.Services;
-using Application.Abstraction.Services.Configurations;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using StackExchange.Redis;
@@ -10,49 +7,69 @@ namespace Infrastructure.Services.Cache;
 
 public class RedisCacheService : ICacheService
 {
-    private readonly IDistributedCache _distributedCache;
     private readonly IDatabase _redisDb;
     private readonly ILogger<RedisCacheService> _logger;
     private readonly IMetricsService _metrics;
-    private readonly ConnectionMultiplexer _redis;
 
     public RedisCacheService(
-        IDistributedCache distributedCache,
-        IConfiguration configuration,
+        IConnectionMultiplexer connectionMultiplexer,
         ILogger<RedisCacheService> logger,
-        IMetricsService metrics,
-        IKeyVaultService keyVaultService)
+        IMetricsService metrics)
     {
-        _distributedCache = distributedCache;
-        _logger = logger;
-        _metrics = metrics;
-
-        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+        _redisDb = connectionMultiplexer.GetDatabase() ?? throw new ArgumentNullException(nameof(connectionMultiplexer));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         
-        // Redis bağlantı string'ini ortama göre al
-        string redisConnection;
-        if (environment.Equals("Production", StringComparison.OrdinalIgnoreCase))
-        {
-            // Production ortamında KeyVault'tan al
-            redisConnection = keyVaultService.GetSecretAsync("RedisConnection").Result;
-            if (string.IsNullOrEmpty(redisConnection))
-            {
-                throw new InvalidOperationException("Redis connection string not found in KeyVault");
-            }
-        }
-        else
-        {
-            // Development ortamında configuration'dan al
-            redisConnection = configuration.GetConnectionString("Redis");
-            if (string.IsNullOrEmpty(redisConnection))
-            {
-                throw new InvalidOperationException("Redis connection string not found in configuration");
-            }
-        }
+        _logger.LogInformation("Initializing Redis Cache Service");
+    }
 
-        _logger.LogInformation("Connecting to Redis in {Environment} environment", environment);
-        _redis = ConnectionMultiplexer.Connect(redisConnection);
-        _redisDb = _redis.GetDatabase();
+    public async Task<(bool success, T value)> TryGetValueAsync<T>(string key)
+    {
+        try
+        {
+            var redisValue = await _redisDb.StringGetAsync(key);
+            if (!redisValue.IsNull)
+            {
+                _metrics?.IncrementCacheHit(key);
+                var value = JsonConvert.DeserializeObject<T>(redisValue);
+                return (true, value);
+            }
+
+            _metrics?.IncrementCacheMiss(key);
+            return (false, default);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in TryGetValueAsync for key: {Key}", key);
+            return (false, default);
+        }
+    }
+
+    public async Task SetAsync<T>(string key, T value, TimeSpan expiration)
+    {
+        try
+        {
+            var serializedValue = JsonConvert.SerializeObject(value);
+            await _redisDb.StringSetAsync(key, serializedValue, expiration);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SetAsync for key: {Key}", key);
+            throw;
+        }
+    }
+
+    public async Task<bool> RemoveAsync(string key)
+    {
+        try
+        {
+            return await _redisDb.KeyDeleteAsync(key);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in RemoveAsync for key: {Key}", key);
+            throw;
+        }
     }
 
     public async Task<Dictionary<string, T>> GetManyAsync<T>(IEnumerable<string> keys)
@@ -64,21 +81,28 @@ public class RedisCacheService : ICacheService
             batch.Execute();
 
             var results = await Task.WhenAll(tasks);
-            var response = keys.Zip(results, (key, value) => new { key, value })
-                .Where(x => !x.value.IsNull)
-                .ToDictionary(
-                    x => x.key,
-                    x => JsonConvert.DeserializeObject<T>(x.value)
-                );
+            var response = new Dictionary<string, T>();
 
-            foreach (var key in response.Keys)
+            foreach (var pair in keys.Zip(results, (key, value) => new { key, value }))
             {
-                _metrics.IncrementCacheHit(key);
-            }
-
-            foreach (var key in keys.Except(response.Keys))
-            {
-                _metrics.IncrementCacheMiss(key);
+                if (!pair.value.IsNull)
+                {
+                    try
+                    {
+                        var deserializedValue = JsonConvert.DeserializeObject<T>(pair.value);
+                        response[pair.key] = deserializedValue;
+                        _metrics.IncrementCacheHit(pair.key);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to deserialize value for key: {Key}", pair.key);
+                        _metrics.IncrementCacheMiss(pair.key);
+                    }
+                }
+                else
+                {
+                    _metrics.IncrementCacheMiss(pair.key);
+                }
             }
 
             return response;
@@ -118,22 +142,14 @@ public class RedisCacheService : ICacheService
     {
         try
         {
-            var value = await _redisDb.StringGetAsync(key);
-            if (!value.IsNull)
+            var result = await TryGetValueAsync<T>(key);
+            if (result.success)
             {
-                _metrics.IncrementCacheHit(key);
-                return JsonConvert.DeserializeObject<T>(value);
+                return result.value;
             }
 
-            _metrics.IncrementCacheMiss(key);
             var newValue = await factory();
-
-            await _redisDb.StringSetAsync(
-                key,
-                JsonConvert.SerializeObject(newValue),
-                expiry ?? TimeSpan.FromHours(1)
-            );
-
+            await SetAsync(key, newValue, expiry ?? TimeSpan.FromHours(1));
             return newValue;
         }
         catch (Exception ex)

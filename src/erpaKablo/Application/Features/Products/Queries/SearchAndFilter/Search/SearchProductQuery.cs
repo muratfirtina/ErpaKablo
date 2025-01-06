@@ -6,6 +6,7 @@ using Application.Features.ProductImageFiles.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -14,10 +15,14 @@ using MediatR;
 
 namespace Application.Features.Products.Queries.SearchAndFilter.Search;
 
-public class SearchProductQuery : IRequest<SearchResponse>
+public class SearchProductQuery : IRequest<SearchResponse>, ICachableRequest
 {
     public string SearchTerm { get; set; }
     public PageRequest PageRequest { get; set; }
+    public string CacheKey => $"SearchProductQuery_{SearchTerm}_{PageRequest.PageIndex}_{PageRequest.PageSize}";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
 
     public class SearchProductQueryHandler : IRequestHandler<SearchProductQuery, SearchResponse>
     {

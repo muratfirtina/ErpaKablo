@@ -3,6 +3,7 @@ using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -15,12 +16,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Orders.Queries.GetOrdersByUser;
-public class GetOrdersByUserQuery : IRequest<GetListResponse<GetOrdersByUserQueryResponse>>
+public class GetOrdersByUserQuery : IRequest<GetListResponse<GetOrdersByUserQueryResponse>>,ICachableRequest
 {
    public PageRequest PageRequest { get; set; }
    public string? SearchTerm { get; set; }
    public string? DateRange { get; set; }
    public OrderStatus OrderStatus { get; set; }
+
+   public string CacheKey => $"GetOrdersByUserQuery({PageRequest},{SearchTerm},{DateRange},{OrderStatus})";
+   public bool BypassCache { get; }
+   public string? CacheGroupKey => "Orders";
+   public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
    
    public class GetOrdersByUserQueryHandler : IRequestHandler<GetOrdersByUserQuery, GetListResponse<GetOrdersByUserQueryResponse>>
    {
@@ -78,4 +84,6 @@ public class GetOrdersByUserQuery : IRequest<GetListResponse<GetOrdersByUserQuer
            }
        }
    }
+
+   
 }

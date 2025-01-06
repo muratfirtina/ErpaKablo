@@ -3,6 +3,7 @@ using Application.Features.Categories.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Domain;
@@ -11,10 +12,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Queries.GetCategoriesByIds;
 
-public class GetCategoriesByIdsQuery : IRequest<GetListResponse<GetCategoriesByIdsQueryResponse>>
+public class GetCategoriesByIdsQuery : IRequest<GetListResponse<GetCategoriesByIdsQueryResponse>>,ICachableRequest
 {
     public List<string> Ids { get; set; }
     
+    public string CacheKey => $"GetCategoriesByIdsQuery({string.Join(",",Ids)})";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Categories";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromDays(5);
     public class GetCategoriesByIdsQueryHandler : IRequestHandler<GetCategoriesByIdsQuery, GetListResponse<GetCategoriesByIdsQueryResponse>>
     {
         private readonly ICategoryRepository _categoryRepository;

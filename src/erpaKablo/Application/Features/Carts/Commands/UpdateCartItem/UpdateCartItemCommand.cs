@@ -1,16 +1,23 @@
 using Application.Events.OrderEvetns;
 using Application.Repositories;
 using Application.Services;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Pipelines.Transaction;
 using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Carts.Commands.UpdateCartItem;
 
-public class UpdateCartItemCommand : IRequest<UpdateCartItemResponse>
+public class UpdateCartItemCommand : IRequest<UpdateCartItemResponse>, ICacheRemoverRequest
 {
     public string CartItemId { get; set; }
     public bool IsChecked { get; set; } = true;
+    
+    public string CacheKey => "";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Carts";
+    
     
     public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemCommand, UpdateCartItemResponse>
     {

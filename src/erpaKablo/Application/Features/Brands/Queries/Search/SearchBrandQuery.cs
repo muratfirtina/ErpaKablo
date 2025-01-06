@@ -3,14 +3,19 @@ using Application.Features.Brands.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using MediatR;
 
 namespace Application.Features.Brands.Queries.Search;
 
-public class SearchBrandQuery : IRequest<GetListResponse<BrandDto>>
+public class SearchBrandQuery : IRequest<GetListResponse<BrandDto>>, ICachableRequest
 {
     public string SearchTerm { get; set; }
+    public string CacheKey => $"SearchBrandQuery({SearchTerm})";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "GetBrands";
+    public TimeSpan? SlidingExpiration { get; }
 
     public class SearchBrandQueryHandler : IRequestHandler<SearchBrandQuery, GetListResponse<BrandDto>>
     {

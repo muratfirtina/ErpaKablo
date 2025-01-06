@@ -2,6 +2,7 @@ using Application.Extensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using Domain;
 using MediatR;
@@ -9,9 +10,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Queries.GetSubCategoriesByCategoryId;
 
-public class GetSubCategoriesByCategoryIdQuery : IRequest<GetListResponse<GetSubCategoriesByCategoryIdQueryReponse>>
+public class GetSubCategoriesByCategoryIdQuery : IRequest<GetListResponse<GetSubCategoriesByCategoryIdQueryReponse>>,ICachableRequest
 {
     public string ParentCategoryId { get; set; }
+
+    public string CacheKey => $"GetSubCategoriesByCategoryIdQuery({ParentCategoryId})";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Categories";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromDays(180);
     
     public class GetSubCategoriesByCategoryIdQueryHandler : IRequestHandler<GetSubCategoriesByCategoryIdQuery, GetListResponse<GetSubCategoriesByCategoryIdQueryReponse>>
     {

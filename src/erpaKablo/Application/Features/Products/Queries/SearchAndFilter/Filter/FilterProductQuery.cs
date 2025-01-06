@@ -4,6 +4,7 @@ using Application.Features.ProductImageFiles.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -12,12 +13,17 @@ using MediatR;
 
 namespace Application.Features.Products.Queries.SearchAndFilter.Filter;
 
-public class FilterProductWithPaginationQuery : IRequest<GetListResponse<FilterProductQueryResponse>>
+public class FilterProductWithPaginationQuery : IRequest<GetListResponse<FilterProductQueryResponse>>, ICachableRequest
 {
     public string SearchTerm { get; set; }
     public PageRequest PageRequest { get; set; }
     public Dictionary<string, List<string>> Filters { get; set; }
     public string SortOrder { get; set; }  = "default";
+    
+    public string CacheKey => $"FilterProductWithPaginationQuery_{SearchTerm}_{PageRequest.PageIndex}_{PageRequest.PageSize}_{SortOrder}";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
 
     public class FilterProductQueryHandler : IRequestHandler<FilterProductWithPaginationQuery, GetListResponse<FilterProductQueryResponse>>
     {

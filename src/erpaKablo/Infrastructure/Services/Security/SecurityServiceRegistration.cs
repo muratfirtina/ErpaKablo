@@ -1,5 +1,6 @@
 using Application.Abstraction.Services;
 using Application.Abstraction.Services.Configurations;
+using Application.Services;
 using Infrastructure.Middleware.DDosProtection;
 using Infrastructure.Middleware.Monitoring;
 using Infrastructure.Middleware.RateLimiting;
@@ -9,16 +10,16 @@ using Infrastructure.Services.Mail;
 using Infrastructure.Services.Monitoring;
 using Infrastructure.Services.Monitoring.Alerts;
 using Infrastructure.Services.Notifications;
+using Infrastructure.Services.Security.Encryption;
 using Infrastructure.Services.Security.KeyVault;
 using Infrastructure.Services.Security.Models;
 using Infrastructure.Services.Security.Models.Alert;
 using Infrastructure.Services.Seo;
-using Infrastructure.Services.Token;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
+
 
 namespace Infrastructure.Services.Security;
 
@@ -32,7 +33,6 @@ public static class SecurityServiceRegistration
         ConfigureSettings(services, configuration);
         
         // Service Registrations
-        ConfigureCacheServices(services, configuration);
         ConfigureSecurityServices(services);
         ConfigureMonitoringServices(services);
         ConfigureCommunicationServices(services);
@@ -52,32 +52,13 @@ public static class SecurityServiceRegistration
         services.Configure<EmailSettings>(configuration.GetSection("Email"));
         services.Configure<AlertSettings>(configuration.GetSection("Monitoring:Alerts"));
     }
-
-    private static void ConfigureCacheServices(IServiceCollection services, IConfiguration configuration)
-    {
-        // Redis Configuration
-        var redisConnection = configuration.GetConnectionString("Redis");
-        if (string.IsNullOrEmpty(redisConnection))
-        {
-            throw new InvalidOperationException("Redis connection string is not configured");
-        }
-
-        services.AddStackExchangeRedisCache(options =>
-        {
-            options.Configuration = redisConnection;
-            options.InstanceName = "ErpaKablo_";
-        });
-
-        services.AddSingleton(sp =>
-            ConnectionMultiplexer.Connect(redisConnection));
-
-        services.AddSingleton<ICacheService, RedisCacheService>();
-    }
+    
 
     private static void ConfigureSecurityServices(IServiceCollection services)
     {
+        services.AddSingleton<IKeyVaultInitializationService, KeyVaultInitializationService>();
+        services.AddSingleton<ICacheEncryptionService, CacheEncryptionService>();
         services.AddSingleton<IKeyVaultService, KeyVaultService>();
-        services.AddSingleton<SlidingWindowRateLimiter>();
         services.AddScoped<ILogService, LogService>();
     }
 

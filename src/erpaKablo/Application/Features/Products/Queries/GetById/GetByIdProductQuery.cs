@@ -8,6 +8,7 @@ using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
 using AutoMapper.Internal;
+using Core.Application.Pipelines.Caching;
 using Core.Persistence.Paging;
 using Domain;
 using Domain.Identity;
@@ -18,9 +19,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetById;
 
-public class GetByIdProductQuery : IRequest<GetByIdProductResponse>
+public class GetByIdProductQuery : IRequest<GetByIdProductResponse>,ICachableRequest
 {
     public string Id { get; set; }
+    public string CacheKey => "GetByIdProductQuery";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
 
     public class GetByIdProductQueryHandler : IRequestHandler<GetByIdProductQuery, GetByIdProductResponse>
     {

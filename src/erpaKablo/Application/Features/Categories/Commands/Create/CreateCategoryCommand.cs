@@ -3,6 +3,8 @@ using Application.Features.Categories.Rules;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Pipelines.Transaction;
 using Core.CrossCuttingConcerns.Exceptions;
 using Domain;
 using MediatR;
@@ -10,7 +12,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Application.Features.Categories.Commands.Create;
 
-public class CreateCategoryCommand : IRequest<CreatedCategoryResponse>
+public class CreateCategoryCommand : IRequest<CreatedCategoryResponse>, ITransactionalRequest,ICacheRemoverRequest
 {
     public string Name { get; set; }
     public string? Title { get; set; }
@@ -18,7 +20,9 @@ public class CreateCategoryCommand : IRequest<CreatedCategoryResponse>
     public List<string>? FeatureIds { get; set; }
     public List<IFormFile>? CategoryImage { get; set; }
     
-    
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Categories";
     
     public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand, CreatedCategoryResponse>
     {

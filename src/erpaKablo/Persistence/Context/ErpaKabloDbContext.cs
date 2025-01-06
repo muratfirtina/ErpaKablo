@@ -46,6 +46,7 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
     public DbSet<NewsletterLog> NewsletterLogs { get; set; }
     public DbSet<Contact> Contacts { get; set; }
     public DbSet<StockReservation> StockReservations { get; set; }
+    public DbSet<OutboxMessage> OutboxMessages { get; set; }
     
     
     protected override void OnModelCreating(ModelBuilder builder)
@@ -163,6 +164,28 @@ public class ErpaKabloDbContext : IdentityDbContext<AppUser,AppRole,string>
         { 
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => e.Level);
+        });
+        
+        builder.Entity<OutboxMessage>(entity =>
+        {
+            entity.ToTable("OutboxMessages");
+            
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Type)
+                .IsRequired()
+                .HasMaxLength(200);
+            
+            entity.Property(e => e.Data)
+                .IsRequired();
+
+            entity.Property(e => e.Status)
+                .HasConversion<int>();
+
+            // Important indexes for performance
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ProcessedAt);
+            entity.HasIndex(e => e.CreatedDate);
         });
         
         

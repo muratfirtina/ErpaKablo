@@ -146,6 +146,25 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Contacts",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Email = table.Column<string>(type: "text", nullable: false),
+                    Subject = table.Column<string>(type: "text", nullable: false),
+                    Message = table.Column<string>(type: "text", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Contacts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Features",
                 columns: table => new
                 {
@@ -198,6 +217,26 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OutboxMessages",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Type = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Data = table.Column<string>(type: "text", nullable: false),
+                    ProcessedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    Error = table.Column<string>(type: "text", nullable: true),
+                    RetryCount = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OutboxMessages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SecurityLogs",
                 columns: table => new
                 {
@@ -221,6 +260,25 @@ namespace Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SecurityLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StockReservations",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    ProductId = table.Column<string>(type: "text", nullable: false),
+                    CartItemId = table.Column<string>(type: "text", nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    ExpirationTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StockReservations", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -811,12 +869,19 @@ namespace Persistence.Migrations
                     EntityType = table.Column<string>(type: "text", nullable: false),
                     Path = table.Column<string>(type: "text", nullable: false),
                     Storage = table.Column<string>(type: "text", nullable: false),
-                    Discriminator = table.Column<string>(type: "character varying(21)", maxLength: 21, nullable: false),
-                    BrandImageFile_Alt = table.Column<string>(type: "text", nullable: true),
-                    CarouselId = table.Column<string>(type: "text", nullable: true),
+                    Title = table.Column<string>(type: "text", nullable: true),
                     Alt = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    License = table.Column<string>(type: "text", nullable: true),
+                    GeoLocation = table.Column<string>(type: "text", nullable: true),
+                    Caption = table.Column<string>(type: "text", nullable: true),
+                    Width = table.Column<int>(type: "integer", nullable: false),
+                    Height = table.Column<int>(type: "integer", nullable: false),
+                    Format = table.Column<string>(type: "text", nullable: false),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    Discriminator = table.Column<string>(type: "character varying(21)", maxLength: 21, nullable: false),
+                    CarouselId = table.Column<string>(type: "text", nullable: true),
                     Showcase = table.Column<bool>(type: "boolean", nullable: true),
-                    ProductImageFile_Alt = table.Column<string>(type: "text", nullable: true),
                     CartItemId = table.Column<string>(type: "text", nullable: true),
                     OrderItemId = table.Column<string>(type: "text", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
@@ -886,6 +951,36 @@ namespace Persistence.Migrations
                     table.ForeignKey(
                         name: "FK_CategoryCategoryImageFile_ImageFiles_CategoryImageFilesId",
                         column: x => x.CategoryImageFilesId,
+                        principalTable: "ImageFiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ImageVersions",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    ImageFileId = table.Column<string>(type: "text", nullable: false),
+                    Size = table.Column<string>(type: "text", nullable: false),
+                    Width = table.Column<int>(type: "integer", nullable: false),
+                    Height = table.Column<int>(type: "integer", nullable: false),
+                    Format = table.Column<string>(type: "text", nullable: false),
+                    Path = table.Column<string>(type: "text", nullable: false),
+                    Storage = table.Column<string>(type: "text", nullable: false),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    IsWebpVersion = table.Column<bool>(type: "boolean", nullable: false),
+                    IsAvifVersion = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                    DeletedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ImageVersions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ImageVersions_ImageFiles_ImageFileId",
+                        column: x => x.ImageFileId,
                         principalTable: "ImageFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -1034,6 +1129,11 @@ namespace Persistence.Migrations
                 column: "OrderItemId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ImageVersions_ImageFileId",
+                table: "ImageVersions",
+                column: "ImageFileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Newsletters_UserId",
                 table: "Newsletters",
                 column: "UserId");
@@ -1068,6 +1168,21 @@ namespace Persistence.Migrations
                 name: "IX_Orders_UserId",
                 table: "Orders",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessages_CreatedDate",
+                table: "OutboxMessages",
+                column: "CreatedDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessages_ProcessedAt",
+                table: "OutboxMessages",
+                column: "ProcessedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessages_Status",
+                table: "OutboxMessages",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PhoneNumbers_UserId",
@@ -1172,13 +1287,22 @@ namespace Persistence.Migrations
                 name: "CompletedOrders");
 
             migrationBuilder.DropTable(
+                name: "Contacts");
+
+            migrationBuilder.DropTable(
                 name: "FilterOptions");
+
+            migrationBuilder.DropTable(
+                name: "ImageVersions");
 
             migrationBuilder.DropTable(
                 name: "NewsletterLogs");
 
             migrationBuilder.DropTable(
                 name: "Newsletters");
+
+            migrationBuilder.DropTable(
+                name: "OutboxMessages");
 
             migrationBuilder.DropTable(
                 name: "ProductFeatureValues");
@@ -1194,6 +1318,9 @@ namespace Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "SecurityLogs");
+
+            migrationBuilder.DropTable(
+                name: "StockReservations");
 
             migrationBuilder.DropTable(
                 name: "Endpoints");

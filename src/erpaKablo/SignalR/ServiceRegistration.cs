@@ -11,9 +11,15 @@ public static class ServiceRegistration
     {
         services.AddTransient<IOrderHubService, OrderHubService>();
         services.AddSignalR(options =>
-        {
-            options.EnableDetailedErrors = true;
-        });
-        
+            {
+                options.EnableDetailedErrors = true;
+                options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+                options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+                options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+            })
+            .AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.PropertyNamingPolicy = null;
+            });
     }
 }

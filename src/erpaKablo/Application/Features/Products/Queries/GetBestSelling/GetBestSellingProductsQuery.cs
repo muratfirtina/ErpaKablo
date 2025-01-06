@@ -2,15 +2,20 @@ using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using Domain;
 using MediatR;
 
 namespace Application.Features.Products.Queries.GetBestSelling;
 
-public class GetBestSellingProductsQuery : IRequest<GetListResponse<GetBestSellingProductsQueryResponse>>
+public class GetBestSellingProductsQuery : IRequest<GetListResponse<GetBestSellingProductsQueryResponse>>,ICachableRequest
 {
     public int Count { get; set; } = 10;
+    public string CacheKey => "BestSellingProducts";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Orders";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromDays(1);
 
     public class GetBestSellingProductsQueryHandler : IRequestHandler<GetBestSellingProductsQuery, GetListResponse<GetBestSellingProductsQueryResponse>>
     {

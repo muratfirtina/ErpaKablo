@@ -1,10 +1,12 @@
 using Application.Abstraction.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
 namespace SignalR.Hubs;
 
+[Authorize(AuthenticationSchemes = "Admin")]
 public class OrderHub : Hub
 {
     private readonly ILogger<OrderHub> _logger;
@@ -25,6 +27,8 @@ public class OrderHub : Hub
     {
         try
         {
+            await base.OnConnectedAsync(); // İlk önce base'i çağırıyoruz
+
             var username = _httpContextAccessor.HttpContext?.User?.Identity?.Name;
             if (!string.IsNullOrEmpty(username))
             {
@@ -33,13 +37,23 @@ public class OrderHub : Hub
                 {
                     await Groups.AddToGroupAsync(Context.ConnectionId, "Admins");
                     _logger.LogInformation($"User {username} added to Admins group");
-                    await base.OnConnectedAsync();
                 }
+                else 
+                {
+                    _logger.LogWarning($"Non-admin user {username} attempted to connect");
+                    throw new HubException("Only admin users can connect to this hub");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Anonymous user attempted to connect");
+                throw new HubException("Authentication required");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in OnConnectedAsync");
+            throw; // Hatayı fırlatıyoruz ki client tarafı bu hatayı alabilsin
         }
     }
 

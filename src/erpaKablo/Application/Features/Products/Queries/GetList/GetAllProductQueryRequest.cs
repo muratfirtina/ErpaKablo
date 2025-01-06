@@ -4,6 +4,7 @@ using Application.Features.ProductImageFiles.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -13,9 +14,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetList;
 
-public class GetAllProductQuery : IRequest<GetListResponse<GetAllProductQueryResponse>>
+public class GetAllProductQuery : IRequest<GetListResponse<GetAllProductQueryResponse>>, ICachableRequest
 {
     public PageRequest PageRequest { get; set; }
+    public string CacheKey => "GetAllProductQuery";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
+    
 
     public class
         GetAllProductQueryHandler : IRequestHandler<GetAllProductQuery, GetListResponse<GetAllProductQueryResponse>>

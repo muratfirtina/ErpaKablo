@@ -1,14 +1,18 @@
 using Application.Features.Products.Rules;
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Domain;
 using MediatR;
 
 namespace Application.Features.Products.Commands.Delete;
 
-public class DeleteProductCommand : IRequest<DeletedProductResponse>
+public class DeleteProductCommand : IRequest<DeletedProductResponse>, ICacheRemoverRequest
 {
     public string Id { get; set; }
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
     
     public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, DeletedProductResponse>
     {

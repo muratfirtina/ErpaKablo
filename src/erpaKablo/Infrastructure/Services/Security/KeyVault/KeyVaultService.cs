@@ -1,9 +1,9 @@
-using System.Security;
+using Application.Abstraction.Services;
 using Application.Abstraction.Services.Configurations;
+using Application.Services;
 using Azure;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -12,21 +12,30 @@ namespace Infrastructure.Services.Security.KeyVault;
 public class KeyVaultService : IKeyVaultService
 {
     private readonly SecretClient? _secretClient;
-    private readonly IMemoryCache _cache;
+    private readonly ICacheService _cache;
     private readonly ILogger<KeyVaultService> _logger;
     private readonly IConfiguration _configuration;
-    private const int CacheTimeInMinutes = 5;
+    private readonly ICacheEncryptionService _cacheEncryption;
+
+    private static readonly HashSet<string> SensitiveKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "JwtSecurityKey",
+        "JwtIssuer",
+        "JwtAudience"
+    };
 
     public KeyVaultService(
         IConfiguration configuration,
-        IMemoryCache cache,
-        ILogger<KeyVaultService> logger)
+        ICacheService cache,
+        ILogger<KeyVaultService> logger,
+        ICacheEncryptionService cacheEncryption)
     {
         _configuration = configuration;
         _cache = cache;
         _logger = logger;
+        _cacheEncryption = cacheEncryption;
 
-        if (_configuration.GetValue<bool>("UseAzureKeyVault", false))
+        if (_configuration.GetValue<bool>("UseAzureKeyVault", true))
         {
             var keyVaultUrl = _configuration["AzureKeyVault:VaultUri"];
             if (!string.IsNullOrEmpty(keyVaultUrl))
@@ -41,31 +50,44 @@ public class KeyVaultService : IKeyVaultService
     {
         var cacheKey = $"KeyVault_{secretName}";
         
-        if (_cache.TryGetValue(cacheKey, out string cachedValue))
+        var (success, cachedValue) = await _cache.TryGetValueAsync<string>(cacheKey);
+        if (success)
         {
             _logger.LogDebug("Cache hit for secret: {SecretName}", secretName);
+            if (SensitiveKeys.Contains(secretName))
+            {
+                return await _cacheEncryption.DecryptFromCache(cachedValue);
+            }
             return cachedValue;
         }
 
         try
         {
+            string value;
             if (_secretClient != null)
             {
                 var secret = await _secretClient.GetSecretAsync(secretName);
-                var value = secret.Value.Value;
-                _cache.Set(cacheKey, value, TimeSpan.FromMinutes(CacheTimeInMinutes));
+                value = secret.Value.Value;
+            }
+            else
+            {
+                value = _configuration[secretName];
+                if (string.IsNullOrEmpty(value))
+                {
+                    _logger.LogWarning("Secret not found in configuration: {SecretName}", secretName);
+                    return string.Empty;
+                }
+            }
+
+            if (SensitiveKeys.Contains(secretName))
+            {
+                var encryptedValue = await _cacheEncryption.EncryptForCache(value);
+                await _cache.SetAsync(cacheKey, encryptedValue, TimeSpan.FromMinutes(5));
                 return value;
             }
 
-            var configValue = _configuration[secretName];
-            if (string.IsNullOrEmpty(configValue))
-            {
-                _logger.LogWarning("Secret not found in configuration: {SecretName}", secretName);
-                return string.Empty;
-            }
-
-            _cache.Set(cacheKey, configValue, TimeSpan.FromMinutes(CacheTimeInMinutes));
-            return configValue;
+            await _cache.SetAsync(cacheKey, value, TimeSpan.FromMinutes(5));
+            return value;
         }
         catch (Exception ex)
         {
@@ -76,11 +98,23 @@ public class KeyVaultService : IKeyVaultService
 
     public async Task<Dictionary<string, string>> GetSecretsAsync(string[] secretNames)
     {
+        var cacheKeys = secretNames.Select(name => $"KeyVault_{name}").ToArray();
+        var cachedSecrets = await _cache.GetManyAsync<string>(cacheKeys);
+
         var results = new Dictionary<string, string>();
-        foreach (var secretName in secretNames)
+        for (int i = 0; i < secretNames.Length; i++)
         {
+            var secretName = secretNames[i];
+            var cacheKey = cacheKeys[i];
+
             try
             {
+                if (cachedSecrets.TryGetValue(cacheKey, out string cachedValue))
+                {
+                    results[secretName] = cachedValue;
+                    continue;
+                }
+
                 var value = await GetSecretAsync(secretName);
                 results[secretName] = value;
             }
@@ -120,7 +154,7 @@ public class KeyVaultService : IKeyVaultService
                 await _secretClient.SetSecretAsync(secretName, value);
                 _logger.LogInformation("Secret set successfully: {SecretName}", secretName);
             }
-            _cache.Remove($"KeyVault_{secretName}");
+            await _cache.RemoveAsync($"KeyVault_{secretName}");
         }
         catch (Exception ex)
         {
@@ -131,10 +165,9 @@ public class KeyVaultService : IKeyVaultService
 
     public async Task SetSecretsAsync(Dictionary<string, string> secrets, bool recoverIfDeleted = false)
     {
-        foreach (var secret in secrets)
-        {
-            await SetSecretAsync(secret.Key, secret.Value, recoverIfDeleted);
-        }
+        var tasks = secrets.Select(secret => 
+            SetSecretAsync(secret.Key, secret.Value, recoverIfDeleted));
+        await Task.WhenAll(tasks);
     }
 
     public async Task<Dictionary<string, string>> GetAllSecretsAsync()
@@ -185,7 +218,7 @@ public class KeyVaultService : IKeyVaultService
                 await _secretClient.StartDeleteSecretAsync(secretName);
                 _logger.LogInformation("Secret deleted successfully: {SecretName}", secretName);
             }
-            _cache.Remove($"KeyVault_{secretName}");
+            await _cache.RemoveAsync($"KeyVault_{secretName}");
         }
         catch (Exception ex)
         {
@@ -197,7 +230,7 @@ public class KeyVaultService : IKeyVaultService
     public async Task<Dictionary<string, bool>> DeleteSecretsAsync(string[] secretNames)
     {
         var results = new Dictionary<string, bool>();
-        foreach (var secretName in secretNames)
+        var tasks = secretNames.Select(async secretName =>
         {
             try
             {
@@ -208,7 +241,9 @@ public class KeyVaultService : IKeyVaultService
             {
                 results[secretName] = false;
             }
-        }
+        });
+
+        await Task.WhenAll(tasks);
         return results;
     }
 }

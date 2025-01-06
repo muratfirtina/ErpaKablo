@@ -1,16 +1,21 @@
 using Application.Features.PhoneNumbers.Dtos;
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.PhoneNumbers.Commands.Update;
 
-public class UpdatePhoneNumberCommand : IRequest<UpdatedPhoneNumberCommandResponse>
+public class UpdatePhoneNumberCommand : IRequest<UpdatedPhoneNumberCommandResponse>,ICacheRemoverRequest
 {
     public string Id { get; set; }
     public string Name { get; set; }
     public string Number { get; set; }
     public bool IsDefault { get; set; }
+    
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "PhoneNumbers";
 
     public class UpdatePhoneNumberCommandHandler : IRequestHandler<UpdatePhoneNumberCommand, UpdatedPhoneNumberCommandResponse>
     {

@@ -2,15 +2,22 @@ using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Queries.GetRandoms.GetRandomProductsByProductId;
 
-public class GetRandomProductsByProductIdQuery : IRequest<GetListResponse<GetRandomProductsByProductIdQueryResponse>>
+public class GetRandomProductsByProductIdQuery : IRequest<GetListResponse<GetRandomProductsByProductIdQueryResponse>>, ICachableRequest
 {
     public string ProductId { get; set; }
+    
+    public string CacheKey => "GetRandomProductsByProductIdQuery";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
+
     
     public class GetRandomProductsByProductIdQueryHandler : IRequestHandler<GetRandomProductsByProductIdQuery, GetListResponse<GetRandomProductsByProductIdQueryResponse>>
     {

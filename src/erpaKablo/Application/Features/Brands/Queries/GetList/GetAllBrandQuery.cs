@@ -4,6 +4,7 @@ using Application.Features.ProductImageFiles.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -13,9 +14,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Brands.Queries.GetList;
 
-public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryResponse>>
+public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryResponse>>,ICachableRequest
 {
     public PageRequest PageRequest { get; set; }
+    
+    public string CacheKey => $"GetListBrandQuery({PageRequest.PageIndex},{PageRequest.PageSize})";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "GetBrands";
+    public TimeSpan? SlidingExpiration { get; }
     
     public class GetAllBrandQueryHandler : IRequestHandler<GetAllBrandQuery, GetListResponse<GetAllBrandQueryResponse>>
     {
@@ -49,6 +55,7 @@ public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryRespons
                     size: request.PageRequest.PageSize,
                     include: x => x.Include(x => x.BrandImageFiles)
                                  .Include(x => x.Products),
+                    orderBy: x => x.OrderBy(x => x.Name),
                     cancellationToken: cancellationToken
                 );
                 GetListResponse<GetAllBrandQueryResponse> response = _mapper.Map<GetListResponse<GetAllBrandQueryResponse>>(brands);
@@ -57,4 +64,5 @@ public class GetAllBrandQuery : IRequest<GetListResponse<GetAllBrandQueryRespons
             }
         }
     }
+    
 }

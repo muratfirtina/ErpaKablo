@@ -280,6 +280,22 @@ public class PrometheusMetricsService : IMetricsService
                 Buckets = new[] { 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0 }
             });
         #endregion
+        
+        _cacheHits = Metrics.CreateCounter(
+            "cache_hits_total",
+            "Total number of cache hits",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "cache_key", "cache_type" }
+            });
+
+        _cacheMisses = Metrics.CreateCounter(
+            "cache_misses_total",
+            "Total number of cache misses",
+            new CounterConfiguration
+            {
+                LabelNames = new[] { "cache_key", "cache_type" }
+            });
     }
     
     #region Auth Metrics Implementation
@@ -405,6 +421,8 @@ public class PrometheusMetricsService : IMetricsService
         _sessionDuration.WithLabels(userType).Observe(duration);
     }
     #endregion
+    
+    
 
     #region General Metrics Implementation
     public void IncrementRateLimitHit(string clientIp, string path, string userId = "anonymous")
@@ -424,12 +442,27 @@ public class PrometheusMetricsService : IMetricsService
 
     public void IncrementCacheHit(string cacheKey, string cacheType = "redis")
     {
-        _cacheHits.WithLabels(cacheKey, cacheType).Inc();
+        try
+        {
+            _cacheHits?.WithLabels(cacheKey, cacheType).Inc();
+        }
+        catch (Exception ex)
+        {
+            // Metrik hatalarını logla ama uygulamayı kesme
+            Console.WriteLine($"Error recording cache hit metric: {ex.Message}");
+        }
     }
 
     public void IncrementCacheMiss(string cacheKey, string cacheType = "redis")
     {
-        _cacheMisses.WithLabels(cacheKey, cacheType).Inc();
+        try
+        {
+            _cacheMisses?.WithLabels(cacheKey, cacheType).Inc();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error recording cache miss metric: {ex.Message}");
+        }
     }
 
     public void IncrementAlertCounter(string alertType, Dictionary<string, string> labels)

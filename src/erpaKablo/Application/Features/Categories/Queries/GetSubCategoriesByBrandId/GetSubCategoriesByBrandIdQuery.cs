@@ -2,6 +2,7 @@ using Application.Extensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Domain;
@@ -10,9 +11,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Categories.Queries.GetSubCategoriesByBrandId;
 
-public class GetSubCategoriesByBrandIdQuery : IRequest<GetListResponse<GetSubCategoriesByBrandIdQueryReponse>>
+public class GetSubCategoriesByBrandIdQuery : IRequest<GetListResponse<GetSubCategoriesByBrandIdQueryReponse>>,ICachableRequest
 {
     public string BrandId { get; set; }
+
+    public string CacheKey => $"GetSubCategoriesByBrandIdQuery({BrandId})";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Categories";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromDays(180);
 
     
     public class GetSubCategoriesByBrandIdQueryHandler : IRequestHandler<GetSubCategoriesByBrandIdQuery, GetListResponse<GetSubCategoriesByBrandIdQueryReponse>>

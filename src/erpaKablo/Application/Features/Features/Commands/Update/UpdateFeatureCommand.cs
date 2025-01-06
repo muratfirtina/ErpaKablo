@@ -1,13 +1,14 @@
 using Application.Features.Features.Rules;
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Transaction;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Features.Commands.Update
 {
-    public class UpdateFeatureCommand : IRequest<UpdatedFeatureResponse>
+    public class UpdateFeatureCommand : IRequest<UpdatedFeatureResponse>,ITransactionalRequest
     {
         public string Id { get; set; }
         public string Name { get; set; }

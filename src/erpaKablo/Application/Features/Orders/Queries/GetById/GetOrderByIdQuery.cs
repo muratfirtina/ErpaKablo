@@ -3,14 +3,20 @@ using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Orders.Queries.GetById;
 
-public class GetOrderByIdQuery : IRequest<GetOrderByIdQueryResponse>
+public class GetOrderByIdQuery : IRequest<GetOrderByIdQueryResponse>,ICachableRequest
 {
     public string Id { get; set; }
+
+    public string CacheKey => $"GetOrderByIdQuery({Id})";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Orders";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(5);
 
     public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery, GetOrderByIdQueryResponse>
     {

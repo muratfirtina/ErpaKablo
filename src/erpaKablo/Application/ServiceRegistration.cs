@@ -1,4 +1,6 @@
 using System.Reflection;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Pipelines.Transaction;
 using Core.Application.Rules;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +14,9 @@ public static class ServiceRegistration
         services.AddMediatR(configuration =>
         {
             configuration.RegisterServicesFromAssembly(typeof(ServiceRegistration).Assembly);
+            configuration.AddOpenBehavior(typeof(TransactionScopeBehavior<,>));
+            configuration.AddOpenBehavior(typeof(CachingBehavior<,>));
+            configuration.AddOpenBehavior(typeof(CacheRemovingBehavior<,>));
 
         });
         services.AddAutoMapper(Assembly.GetExecutingAssembly());

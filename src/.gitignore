@@ -399,6 +399,23 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Visual Studio settings
+
+
+# Rider settings
+
+*.sln.iml
+
+# User-specific files
+
+# Custom settings files
+
+# VS Code directories
 
 .DS_Store
 .gitattributes

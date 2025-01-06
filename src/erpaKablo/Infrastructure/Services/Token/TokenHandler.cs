@@ -4,44 +4,92 @@ using System.Security.Cryptography;
 using Application.Tokens;
 using Domain.Identity;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Application.Abstraction.Services.Configurations;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Token;
 
 public class TokenHandler : ITokenHandler
 {
-    private readonly IConfiguration _configuration;
     private readonly UserManager<AppUser> _userManager;
     private readonly RoleManager<AppRole> _roleManager;
+    private readonly IKeyVaultService _keyVaultService;
+    private readonly ILogger<TokenHandler> _logger;
 
-    public TokenHandler(IConfiguration configuration, 
-                       UserManager<AppUser> userManager,
-                       RoleManager<AppRole> roleManager)
+    // Cache'lenmiş güvenlik anahtarı için özel field
+    private SymmetricSecurityKey _cachedSecurityKey;
+    private DateTime _securityKeyLastRefresh = DateTime.MinValue;
+    private const int KeyRefreshIntervalMinutes = 60;
+
+    public TokenHandler(
+        UserManager<AppUser> userManager,
+        RoleManager<AppRole> roleManager,
+        IKeyVaultService keyVaultService,
+        ILogger<TokenHandler> logger)
     {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
+        _keyVaultService = keyVaultService ?? throw new ArgumentNullException(nameof(keyVaultService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public Application.Dtos.Token.Token CreateAccessToken(int second, AppUser appUser)
+    private async Task<SymmetricSecurityKey> GetSecurityKeyAsync()
     {
-        var securityKey = _configuration["Security:Token:SecurityKey"];
-        if (string.IsNullOrEmpty(securityKey))
-            throw new InvalidOperationException("Security key is not configured");
+        // Cache'lenmiş anahtarı kontrol et
+        if (_cachedSecurityKey != null && 
+            DateTime.UtcNow.Subtract(_securityKeyLastRefresh).TotalMinutes < KeyRefreshIntervalMinutes)
+        {
+            return _cachedSecurityKey;
+        }
 
-        var issuer = _configuration["Security:Token:Issuer"];
-        var audience = _configuration["Security:Token:Audience"];
+        try
+        {
+            // Key Vault'tan JWT anahtarını al
+            var jwtKey = await _keyVaultService.GetSecretAsync("JwtSecurityKey");
+            
+            if (string.IsNullOrEmpty(jwtKey))
+            {
+                _logger.LogWarning("JWT key not found in Key Vault, falling back to environment variable");
+                // Yedek olarak environment variable'dan al
+                jwtKey = Environment.GetEnvironmentVariable("JWT_SECURITY_KEY");
+            }
 
-        Application.Dtos.Token.Token token = new();
-        
-        SymmetricSecurityKey symmetricSecurityKey = new(System.Text.Encoding.UTF8.GetBytes(securityKey));
-        SigningCredentials signingCredentials = new(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+            if (string.IsNullOrEmpty(jwtKey))
+            {
+                throw new InvalidOperationException("JWT security key is not configured in either Key Vault or environment variables");
+            }
 
-        // Get user roles
-        var userRoles =  _userManager.GetRolesAsync(appUser);
+            var keyBytes = System.Text.Encoding.UTF8.GetBytes(jwtKey);
+            if (keyBytes.Length * 8 < 256)
+            {
+                throw new InvalidOperationException(
+                    $"Security key must be at least 32 characters long. Current length: {keyBytes.Length * 8} bits");
+            }
 
-        // Create claims list
+            // Cache'i güncelle
+            _cachedSecurityKey = new SymmetricSecurityKey(keyBytes);
+            _securityKeyLastRefresh = DateTime.UtcNow;
+
+            return _cachedSecurityKey;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving JWT key");
+            throw;
+        }
+    }
+
+    public async Task<Application.Dtos.Token.Token> CreateAccessTokenAsync(int second, AppUser appUser)
+    {
+        var token = new Application.Dtos.Token.Token();
+
+        var securityKey = await GetSecurityKeyAsync();
+        var signingCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        // Get user roles asynchronously
+        var userRoles = await _userManager.GetRolesAsync(appUser);
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, appUser.Id),
@@ -50,13 +98,19 @@ public class TokenHandler : ITokenHandler
         };
 
         // Add role claims
-        foreach (var userRole in userRoles.Result)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, userRole));
-        }
-        
+        claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+        // Get issuer and audience from Key Vault
+        var issuer = await _keyVaultService.GetSecretAsync("JwtIssuer") 
+            ?? Environment.GetEnvironmentVariable("JWT_ISSUER")
+            ?? throw new InvalidOperationException("JWT issuer is not configured");
+            
+        var audience = await _keyVaultService.GetSecretAsync("JwtAudience")
+            ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+            ?? throw new InvalidOperationException("JWT audience is not configured");
+
         token.Expiration = DateTime.UtcNow.AddSeconds(second);
-        JwtSecurityToken securityToken = new(
+        var securityToken = new JwtSecurityToken(
             issuer: issuer,
             audience: audience,
             expires: token.Expiration,
@@ -64,18 +118,18 @@ public class TokenHandler : ITokenHandler
             signingCredentials: signingCredentials,
             claims: claims
         );
-        
-        JwtSecurityTokenHandler tokenHandler = new();
+
+        var tokenHandler = new JwtSecurityTokenHandler();
         token.AccessToken = tokenHandler.WriteToken(securityToken);
         token.RefreshToken = CreateRefreshToken();
-        
+
         return token;
     }
 
-    public  Application.Dtos.Token.Token CreateAccessToken(AppUser user)
+    public Task<Application.Dtos.Token.Token> CreateAccessTokenAsync(AppUser user)
     {
-        var accessTokenLifetime = _configuration.GetValue<int>("Security:JwtSettings:AccessTokenLifetimeMinutes", 120);
-        return CreateAccessToken(accessTokenLifetime * 60, user);
+        // Varsayılan token süresi 120 dakika
+        return CreateAccessTokenAsync(120 * 60, user);
     }
 
     public string CreateRefreshToken()

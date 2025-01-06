@@ -3,10 +3,11 @@ using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Core.Application.Pipelines.Transaction;
 
 namespace Application.Features.OrderItems.Commands.Delete
 {
-    public class DeleteOrderItemCommand : IRequest<bool>
+    public class DeleteOrderItemCommand : IRequest<bool>,ITransactionalRequest
     {
         public string Id { get; set; }  // Silinecek OrderItem ID'si
 

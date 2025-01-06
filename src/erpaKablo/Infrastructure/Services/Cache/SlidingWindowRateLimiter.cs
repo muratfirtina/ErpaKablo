@@ -13,15 +13,21 @@ public class SlidingWindowRateLimiter
     private readonly SemaphoreSlim _throttler;
 
     public SlidingWindowRateLimiter(
-        ConnectionMultiplexer redis,
+        IConnectionMultiplexer connectionMultiplexer,
         ILogger<SlidingWindowRateLimiter> logger,
         IConfiguration configuration)
     {
-        _redisDb = redis.GetDatabase();
+        ArgumentNullException.ThrowIfNull(connectionMultiplexer);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        _redisDb = connectionMultiplexer.GetDatabase();
         _logger = logger;
-        _windowSize = TimeSpan.Parse(configuration.GetValue<string>("Security:RateLimiting:WindowSize") ?? "01:00:00");
+        
+        _windowSize = TimeSpan.Parse(
+            configuration.GetValue<string>("Security:RateLimiting:WindowSize") ?? "01:00:00");
         _limit = configuration.GetValue<int>("Security:RateLimiting:RequestsPerHour", 1000);
-        _throttler = new SemaphoreSlim(100, 100); // Concurrent request limiter
+        _throttler = new SemaphoreSlim(100, 100);
     }
 
     public async Task<(bool IsAllowed, int CurrentCount, TimeSpan? RetryAfter)> CheckRateLimitAsync(string key)

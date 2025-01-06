@@ -20,7 +20,6 @@ namespace Persistence.Repositories
         // OrderItem'ı silme ve stoğu geri yükleme işlemi
         public async Task<bool> RemoveOrderItemAsync(string? orderItemId)
         {
-            using var transaction = await Context.Database.BeginTransactionAsync();  // Transaction başlat
 
             try
             {
@@ -40,12 +39,11 @@ namespace Persistence.Repositories
 
                 // OrderItem'ı sil
                 await DeleteAsync(orderItem);
-                await transaction.CommitAsync();  // Transaction'ı commit et
+                
                 return true;
             }
             catch
             {
-                await transaction.RollbackAsync();  // Hata olursa rollback yap
                 throw;
             }
         }
@@ -53,7 +51,6 @@ namespace Persistence.Repositories
         // OrderItem'ın miktarını güncelleme ve stoğu kontrol etme işlemi
         public async Task<bool> UpdateOrderItemQuantityAsync(string orderItemId, int newQuantity)
         {
-            using var transaction = await Context.Database.BeginTransactionAsync();  // Transaction başlat
 
             try
             {
@@ -79,19 +76,16 @@ namespace Persistence.Repositories
                 // OrderItem'ı güncelle
                 orderItem.Quantity = newQuantity;
                 await UpdateAsync(orderItem);
-
-                await transaction.CommitAsync();  // Transaction'ı commit et
+                
                 return true;
             }
             catch
             {
-                await transaction.RollbackAsync();  // Hata olursa rollback yap
                 throw;
             }
         }
         public async Task<bool> UpdateOrderItemDetailsAsync(string orderItemId, decimal? updatedPrice, int? leadTime)
         {
-            using var transaction = await Context.Database.BeginTransactionAsync();
 
             try
             {
@@ -113,12 +107,10 @@ namespace Persistence.Repositories
                 }
 
                 await UpdateAsync(orderItem);
-                await transaction.CommitAsync();
                 return true;
             }
             catch
             {
-                await transaction.RollbackAsync();
                 throw;
             }
         }

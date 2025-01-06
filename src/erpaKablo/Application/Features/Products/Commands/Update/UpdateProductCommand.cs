@@ -5,6 +5,7 @@ using Application.Repositories;
 using Application.Services;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Domain;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Products.Commands.Update;
 
-public class UpdateProductCommand : IRequest<UpdatedProductResponse>
+public class UpdateProductCommand : IRequest<UpdatedProductResponse>, ICacheRemoverRequest
 {
     public string Id { get; set; }
     public string Name { get; set; }
@@ -30,6 +31,10 @@ public class UpdateProductCommand : IRequest<UpdatedProductResponse>
     public List<IFormFile>? NewProductImages { get; set; }
     public List<string>? ExistingImageIds { get; set; }
     public int? ShowcaseImageIndex { get; set; }
+    
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
     
 
     public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, UpdatedProductResponse>

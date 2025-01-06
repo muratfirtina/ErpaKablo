@@ -1,18 +1,22 @@
-using Application.Extensions;
 using Application.Extensions.ImageFileExtensions;
-using Application.Features.Brands.Dtos;
-using Application.Features.Brands.Queries.GetById;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.CrossCuttingConcerns.Exceptions;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-public class GetByIdBrandQuery : IRequest<GetByIdBrandResponse>
+namespace Application.Features.Brands.Queries.GetById;
+
+public class GetByIdBrandQuery : IRequest<GetByIdBrandResponse>,ICachableRequest
 {
     public string Id { get; set; }
+    public string CacheKey => $"GetByIdBrandQuery({Id})";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "GetBrands";
+    public TimeSpan? SlidingExpiration { get; }
     
     public class GetByIdBrandQueryHandler : IRequestHandler<GetByIdBrandQuery, GetByIdBrandResponse>
     {

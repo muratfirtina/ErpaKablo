@@ -1,14 +1,18 @@
 using Application.Features.Categories.Rules;
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Domain;
 using MediatR;
 
 namespace Application.Features.Categories.Commands.Delete;
 
-public class DeleteCategoryCommand : IRequest<DeletedCategoryResponse>
+public class DeleteCategoryCommand : IRequest<DeletedCategoryResponse>,ICacheRemoverRequest
 {
     public string Id { get; set; }
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Categories";
     
     public class DeleteCategoryCommandHandler : IRequestHandler<DeleteCategoryCommand, DeletedCategoryResponse>
     {

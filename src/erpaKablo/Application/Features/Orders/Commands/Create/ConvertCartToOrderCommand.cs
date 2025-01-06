@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Application.Abstraction.Services;
 using Application.Abstraction.Services.HubServices;
 using Application.Events.OrderEvetns;
@@ -7,38 +8,41 @@ using Application.Features.Orders.Dtos;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Pipelines.Transaction;
+using Domain;
 using MassTransit;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Features.Orders.Commands.Create;
 
-public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandResponse>
+public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandResponse>,ITransactionalRequest,ICacheRemoverRequest
 {
     public string? AddressId { get; set; }
     public string? PhoneNumberId { get; set; }
     public string? Description { get; set; }
+    
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Orders";
 
     public class ConvertCartToOrderCommandHandler : IRequestHandler<ConvertCartToOrderCommand, ConvertCartToOrderCommandResponse>
     {
         private readonly IOrderRepository _orderRepository;
-        private readonly IPublishEndpoint _publishEndpoint;
-        private readonly IMailService _mailService;
-        private readonly IOrderHubService _orderHubService;
+        private readonly IOutboxRepository _outboxRepository;
+        private readonly ILogger<ConvertCartToOrderCommandHandler> _logger;
 
-        public ConvertCartToOrderCommandHandler(
-            IOrderRepository orderRepository,
-            IPublishEndpoint publishEndpoint,
-            IMailService mailService,
-            IOrderHubService orderHubService)
+        public ConvertCartToOrderCommandHandler(IOrderRepository orderRepository, IOutboxRepository outboxRepository, ILogger<ConvertCartToOrderCommandHandler> logger)
         {
             _orderRepository = orderRepository;
-            _publishEndpoint = publishEndpoint;
-            _mailService = mailService;
-            _orderHubService = orderHubService;
+            _outboxRepository = outboxRepository;
+            _logger = logger;
         }
 
         public async Task<ConvertCartToOrderCommandResponse> Handle(ConvertCartToOrderCommand request, CancellationToken cancellationToken)
         {
+            // 1. Sipariş oluşturma (Transaction içinde)
             (bool succeeded, OrderDto? orderDto) = await _orderRepository.ConvertCartToOrderAsync(
                 request.AddressId,
                 request.PhoneNumberId,
@@ -50,22 +54,24 @@ public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandRespo
                 throw new Exception("Sepet siparişe dönüştürülemedi.");
             }
 
-            // OrderCreated eventini yayınla
-            await _publishEndpoint.Publish(new OrderCreatedEvent
-            {
-                OrderId = orderDto.OrderId,
-                OrderCode = orderDto.OrderCode,
-                Email = orderDto.Email,
-                UserName = orderDto.UserName,
-                OrderDate = orderDto.OrderDate,
-                OrderItems = orderDto.OrderItems,
-                UserAddress = orderDto.UserAddress,
-                TotalPrice = orderDto.TotalPrice,
-                Description = orderDto.Description
-            }, cancellationToken);
+            // 2. Event'i Outbox'a kaydet (Transaction içinde)
+            var outboxMessage = new OutboxMessage(
+                nameof(OrderCreatedEvent),
+                JsonSerializer.Serialize(new OrderCreatedEvent
+                {
+                    OrderId = orderDto.OrderId,
+                    OrderCode = orderDto.OrderCode,
+                    OrderDate = orderDto.OrderDate,
+                    Description = request.Description,
+                    UserAddress = orderDto.UserAddress,
+                    UserName = orderDto.UserName,
+                    OrderItems = orderDto.OrderItems,
+                    TotalPrice = orderDto.TotalPrice,
+                    Email = orderDto.Email
+                })
+            );
 
-            // SignalR bildirimi
-            await _orderHubService.OrderCreatedMessageAsync(orderDto.OrderId, "Sipariş oluşturuldu.");
+            await _outboxRepository.AddAsync(outboxMessage);
 
             return new ConvertCartToOrderCommandResponse
             {
@@ -73,4 +79,5 @@ public class ConvertCartToOrderCommand : IRequest<ConvertCartToOrderCommandRespo
             };
         }
     }
+    
 }

@@ -1,15 +1,21 @@
 using Application.Events.OrderEvetns;
 using Application.Repositories;
 using Application.Services;
+using Core.Application.Pipelines.Caching;
+using Core.Application.Pipelines.Transaction;
 using MassTransit;
 using MediatR;
 
 namespace Application.Features.Carts.Commands.UpdateQuantity;
 
-public class UpdateQuantityCommand : IRequest<UpdateQuantityResponse>
+public class UpdateQuantityCommand : IRequest<UpdateQuantityResponse>, ICacheRemoverRequest
 {
     public string CartItemId { get; set; }
     public int Quantity { get; set; }
+
+    public string CacheKey => "";
+    public bool BypassCache { get; }
+    public string? CacheGroupKey => "Carts";
     
     public class UpdateQuantityCommandHandler : IRequestHandler<UpdateQuantityCommand, UpdateQuantityResponse>
     {

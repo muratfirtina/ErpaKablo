@@ -3,6 +3,7 @@ using Application.Extensions.ImageFileExtensions;
 using Application.Repositories;
 using Application.Storage;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Requests;
 using Core.Application.Responses;
 using Core.Persistence.Dynamic;
@@ -12,10 +13,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Orders.Queries.GetOrdersByDynamic;
 
-public class GetOrdersByDynamicQuery : IRequest<GetListResponse<GetOrdersByDynamicQueryResponse>>
+public class GetOrdersByDynamicQuery : IRequest<GetListResponse<GetOrdersByDynamicQueryResponse>>,ICachableRequest
 {
    public PageRequest PageRequest { get; set; }
    public DynamicQuery DynamicQuery { get; set; }
+
+   public string CacheKey => $"GetOrdersByDynamicQuery({DynamicQuery})";
+   public bool BypassCache { get; }
+   public string? CacheGroupKey => "Orders";
+   public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
    
    public class GetOrdersByDynamicQueryHandler : IRequestHandler<GetOrdersByDynamicQuery, GetListResponse<GetOrdersByDynamicQueryResponse>>
    {

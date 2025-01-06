@@ -2,6 +2,7 @@ using Application.Storage.Google;
 using Domain;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
+using Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -12,27 +13,25 @@ public class GoogleStorage : IGoogleStorage
     private readonly StorageClient _storageClient;
     private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
     private readonly string _baseUrl;
-    private readonly string _bucketName = "tumdeximages";
+    private readonly string _bucketName;
+    private readonly IConfiguration _configuration;
 
-
-    public GoogleStorage(IConfiguration configuration, IOptionsSnapshot<StorageSettings> storageSettings)
+    public GoogleStorage(
+        IConfiguration configuration, 
+        IOptionsSnapshot<StorageSettings> storageSettings)
     {
+        _configuration = configuration;
         _storageSettings = storageSettings ?? throw new ArgumentNullException(nameof(storageSettings));
         
-        var googleSettings = configuration.GetSection("Storage:Providers:Google").Get<GoogleStorageSettings>();
-        if (googleSettings == null)
-        {
-            throw new InvalidOperationException("Google Storage settings are not properly configured in appsettings.json");
-        }
-
-        _baseUrl = googleSettings.Url ?? throw new InvalidOperationException("Google Storage URL is not configured");
-
-        // Credential dosyasının yolunu kontrol et
-        var credentialsPath = googleSettings.CredentialsFilePath;
-        if (string.IsNullOrEmpty(credentialsPath))
-        {
-            throw new InvalidOperationException("Google Storage credentials file path is not configured");
-        }
+        // Key Vault'tan Google Storage ayarlarını al
+        _bucketName = configuration.GetSecretFromKeyVault("GoogleStorageBucketName") ?? 
+                      throw new InvalidOperationException("Google Storage bucket name not found in Key Vault");
+            
+        _baseUrl = configuration.GetSecretFromKeyVault("GoogleStorageUrl") ?? 
+                   throw new InvalidOperationException("Google Storage URL not found in Key Vault");
+            
+        var credentialsPath = configuration.GetSecretFromKeyVault("GoogleStorageCredentialsPath") ?? 
+                              throw new InvalidOperationException("Google Storage credentials path not found in Key Vault");
 
         if (!File.Exists(credentialsPath))
         {
@@ -49,8 +48,8 @@ public class GoogleStorage : IGoogleStorage
             throw new InvalidOperationException($"Failed to initialize Google Storage client: {ex.Message}", ex);
         }
     }
+    
 
-    // Implement your storage methods here
     public async Task<List<(string fileName, string path, string containerName, string url, string format)>> UploadFileToStorage(
         string entityType, 
         string path, 
@@ -80,7 +79,6 @@ public class GoogleStorage : IGoogleStorage
         try
         {
             var objectName = $"{entityType}/{path}/{fileName}";
-
             await _storageClient.DeleteObjectAsync(_bucketName, objectName);
         }
         catch (Exception ex)
@@ -91,37 +89,36 @@ public class GoogleStorage : IGoogleStorage
 
     public async Task<List<T>?> GetFiles<T>(string entityId, string entityType) where T : ImageFile, new()
     {
-        var baseUrl = _storageSettings.Value.Providers.Google.Url;
-        var prefix = $"{entityType}/{entityId}/";
-        var objects = _storageClient.ListObjects(_bucketName, prefix);
-
-        List<T> files = new List<T>();
-
-        foreach (var obj in objects)
+        try
         {
-            var file = new T
+            var prefix = $"{entityType}/{entityId}/";
+            var objects = _storageClient.ListObjects(_bucketName, prefix);
+
+            return objects.Select(obj => new T
             {
                 Id = Path.GetFileNameWithoutExtension(obj.Name),
                 Name = Path.GetFileName(obj.Name),
                 Path = Path.GetDirectoryName(obj.Name),
                 EntityType = entityType,
                 Storage = "Google",
-                Url = $"{baseUrl}/{obj.Name}"
-            };
-            files.Add(file);
+                Url = $"{_baseUrl}/{obj.Name}"
+            }).ToList();
         }
-
-        return files;
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to get files from Google Storage: {ex.Message}", ex);
+        }
     }
 
     public bool HasFile(string entityType, string path, string fileName)
     {
         try
         {
-            var bucketName = _bucketName;
             var objectName = $"{entityType}/{path}/{fileName}";
-
-            var obj = _storageClient.GetObject(bucketName, objectName, new GetObjectOptions { Projection = Projection.NoAcl });
+            var obj = _storageClient.GetObject(_bucketName, objectName, new GetObjectOptions 
+            { 
+                Projection = Projection.NoAcl 
+            });
             return obj != null;
         }
         catch
@@ -135,10 +132,4 @@ public class GoogleStorage : IGoogleStorage
         return _storageSettings.Value.Providers.Google.Url ?? 
                throw new InvalidOperationException("Google Storage URL is not configured");
     }
-}
-
-public class GoogleStorageSettings
-{
-    public string Url { get; set; }
-    public string CredentialsFilePath { get; set; }
 }

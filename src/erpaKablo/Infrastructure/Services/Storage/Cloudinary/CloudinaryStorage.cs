@@ -3,6 +3,7 @@ using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Domain;
 using Infrastructure.Adapters.Image.Cloudinary;
+using Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -12,99 +13,129 @@ public class CloudinaryStorage : ICloudinaryStorage
 {
     private readonly CloudinaryDotNet.Cloudinary _cloudinary;
     private readonly IOptionsSnapshot<StorageSettings> _storageSettings;
+    private readonly IConfiguration _configuration;
     
-    public CloudinaryStorage(IConfiguration configuration, IOptionsSnapshot<StorageSettings> storageSettings)
+    public CloudinaryStorage(
+        IOptionsSnapshot<StorageSettings> storageSettings,
+        IConfiguration configuration)
     {
         _storageSettings = storageSettings;
+        _configuration = configuration;
         
-        // Storage ayarlarından Cloudinary yapılandırmasını al
-        var cloudinarySettings = configuration
-            .GetSection("Storage:Providers:Cloudinary")
-            .Get<CloudinarySettings>();
+        // Azure Key Vault'tan Cloudinary ayarlarını al
+        var cloudName = configuration.GetSecretFromKeyVault("CloudinaryCloudName") ?? 
+                        throw new InvalidOperationException("Cloudinary Cloud Name not found in Key Vault");
+                        
+        var apiKey = configuration.GetSecretFromKeyVault("CloudinaryApiKey") ?? 
+                     throw new InvalidOperationException("Cloudinary API Key not found in Key Vault");
+                     
+        var apiSecret = configuration.GetSecretFromKeyVault("CloudinaryApiSecret") ?? 
+                        throw new InvalidOperationException("Cloudinary API Secret not found in Key Vault");
 
-        if (cloudinarySettings == null)
-        {
-            throw new InvalidOperationException("Cloudinary settings are not properly configured in appsettings.json");
-        }
-
-        var account = new Account(
-            cloudinarySettings.CloudName,
-            cloudinarySettings.ApiKey,
-            cloudinarySettings.ApiSecret
-        );
-
+        var account = new Account(cloudName, apiKey, apiSecret);
         _cloudinary = new CloudinaryDotNet.Cloudinary(account);
     }
-
+    
+    
     public async Task<List<(string fileName, string path, string containerName, string url, string format)>> UploadFileToStorage(
         string entityType, 
         string path, 
         string fileName, 
         MemoryStream fileStream)
     {
-        var datas = new List<(string fileName, string path, string containerName, string url, string format)>();
-    
-        ImageUploadParams imageUploadParams = new()
+        try 
         {
-            File = new FileDescription(fileName, stream: fileStream),
-            UseFilename = true,
-            UniqueFilename = false,
-            Overwrite = false
-        };
-    
-        imageUploadParams.Folder = $"{entityType}/{path}";
-        imageUploadParams.PublicId = Path.GetFileNameWithoutExtension(fileName);
-    
-        var uploadResult = await _cloudinary.UploadAsync(imageUploadParams);
-    
-        if (uploadResult.Error == null)
-        {
+            var datas = new List<(string fileName, string path, string containerName, string url, string format)>();
+        
+            ImageUploadParams imageUploadParams = new()
+            {
+                File = new FileDescription(fileName, stream: fileStream),
+                UseFilename = true,
+                UniqueFilename = false,
+                Overwrite = false,
+                Folder = $"{entityType}/{path}",
+                PublicId = Path.GetFileNameWithoutExtension(fileName)
+            };
+        
+            var uploadResult = await _cloudinary.UploadAsync(imageUploadParams);
+        
+            if (uploadResult.Error != null)
+            {
+                throw new InvalidOperationException($"Cloudinary upload failed: {uploadResult.Error.Message}");
+            }
+            
             var format = Path.GetExtension(fileName).TrimStart('.').ToLower();
             datas.Add((fileName, path, entityType, uploadResult.SecureUrl.ToString(), format));
+        
+            return datas;
         }
-    
-        return datas;
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to upload file {fileName}", ex);
+        }
     }
+
     public async Task DeleteAsync(string entityType, string path, string fileName)
     {
-        var publicId = GetPublicId($"{entityType}/{path}/{fileName}");
-        if (!string.IsNullOrEmpty(publicId))
+        try 
         {
-            var deletionParams = new DeletionParams(publicId)
+            var publicId = GetPublicId($"{entityType}/{path}/{fileName}");
+            if (!string.IsNullOrEmpty(publicId))
             {
-                ResourceType = ResourceType.Image
-            };
-            await _cloudinary.DestroyAsync(deletionParams);
+                var deletionParams = new DeletionParams(publicId)
+                {
+                    ResourceType = ResourceType.Image
+                };
+                var result = await _cloudinary.DestroyAsync(deletionParams);
+                
+                if (result.Error != null)
+                {
+                    throw new InvalidOperationException($"Cloudinary deletion failed: {result.Error.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to delete file {fileName}", ex);
         }
     }
 
     public async Task<List<T>?> GetFiles<T>(string entityId, string entityType) where T : ImageFile, new()
     {
-        var baseUrl = _storageSettings.Value.Providers.Cloudinary.Url;
-        var searchExpression = $"folder:{entityType}/{entityId}";
-        var searchResult = _cloudinary.Search().Expression(searchExpression).Execute();
-
-        return searchResult.Resources.Select(resource => new T
+        try
         {
-            Id = Path.GetFileNameWithoutExtension(resource.PublicId),
-            Name = Path.GetFileName(resource.PublicId),
-            Path = Path.GetDirectoryName(resource.PublicId),
-            EntityType = entityType,
-            Storage = "Cloudinary",
-            Url = resource.SecureUrl.ToString()
-        }).ToList();
+            var baseUrl = _storageSettings.Value.Providers.Cloudinary.Url;
+            var searchExpression = $"folder:{entityType}/{entityId}";
+            var searchResult = _cloudinary.Search()
+                .Expression(searchExpression)
+                .Execute();
+
+            return searchResult.Resources.Select(resource => new T
+            {
+                Id = Path.GetFileNameWithoutExtension(resource.PublicId),
+                Name = Path.GetFileName(resource.PublicId),
+                Path = Path.GetDirectoryName(resource.PublicId),
+                EntityType = entityType,
+                Storage = "Cloudinary",
+                Url = resource.SecureUrl.ToString()
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to get files for {entityType}/{entityId}", ex);
+        }
     }
 
     public bool HasFile(string entityType, string path, string fileName)
     {
-        var publicId = GetPublicId($"{entityType}/{path}/{fileName}");
-        var getResourceParams = new GetResourceParams(publicId)
-        {
-            ResourceType = ResourceType.Image
-        };
-
         try
         {
+            var publicId = GetPublicId($"{entityType}/{path}/{fileName}");
+            var getResourceParams = new GetResourceParams(publicId)
+            {
+                ResourceType = ResourceType.Image
+            };
+
             var result = _cloudinary.GetResource(getResourceParams);
             return result != null && !string.IsNullOrEmpty(result.PublicId);
         }

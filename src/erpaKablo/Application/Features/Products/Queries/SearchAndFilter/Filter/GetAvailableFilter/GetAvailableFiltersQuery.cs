@@ -1,13 +1,18 @@
 using Application.Features.Products.Dtos.FilterDto;
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.Products.Queries.SearchAndFilter.Filter.GetAvailableFilter;
 
-public class GetAvailableFiltersQuery : IRequest<List<FilterGroupDto>>
+public class GetAvailableFiltersQuery : IRequest<List<FilterGroupDto>>,ICachableRequest
 {
     public string SearchTerm { get; set; }
+    public string CacheKey => "AvailableFilters";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "Products";
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
 }
 
 public class GetAvailableFiltersQueryHandler : IRequestHandler<GetAvailableFiltersQuery, List<FilterGroupDto>>

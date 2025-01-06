@@ -6,6 +6,7 @@ using Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Persistence.BackgroundJob;
 using Persistence.Context;
 using Persistence.DbConfiguration;
@@ -16,37 +17,81 @@ namespace Persistence;
 
 public static class ServiceRegistration
 {
-    public static IServiceCollection AddPersistenceServices(this IServiceCollection services)
+    public static IServiceCollection AddPersistenceServices(
+        this IServiceCollection services,
+        string connectionString,
+        bool isDevelopment)
     {
-        services.AddDbContext<ErpaKabloDbContext>(opt => opt.UseNpgsql(Configuration.ConnectionString));
+        // 1. Veritabanı Bağlamı
+        services.AddDbContext<ErpaKabloDbContext>(options =>
+            DatabaseSettings.ConfigureDatabase(options, connectionString, isDevelopment));
 
+        // 2. Identity Sistemi
+        ConfigureIdentity(services);
+
+        // 3. Background Servisler
+        ConfigureBackgroundServices(services);
+
+        // 4. Repository'ler
+        RegisterRepositories(services);
+
+        return services;
+    }
+
+    private static void ConfigureIdentity(IServiceCollection services)
+    {
         services.AddIdentityCore<AppUser>(options =>
-            {
-                options.Password.RequiredLength = 3;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireDigit = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequireLowercase = false;
-                options.User.RequireUniqueEmail = true;
-            })
-            .AddRoles<AppRole>()
-            .AddEntityFrameworkStores<ErpaKabloDbContext>()
-                .AddTokenProvider<DataProtectorTokenProvider<AppUser>>(TokenOptions.DefaultProvider)
-                .AddTokenProvider<EmailTokenProvider<AppUser>>("Email")
-                .AddTokenProvider<PhoneNumberTokenProvider<AppUser>>("Phone")
-                .AddSignInManager<SignInManager<AppUser>>();    
+        {
+            // Şifre politikası
+            options.Password.RequiredLength = 3;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireDigit = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireLowercase = false;
+            
+            // Kullanıcı politikası
+            options.User.RequireUniqueEmail = true;
+            
+            // Hesap kilitleme politikası
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+        })
+        .AddRoles<AppRole>()
+        .AddEntityFrameworkStores<ErpaKabloDbContext>()
+        .AddDefaultTokenProviders()
+        .AddTokenProvider<DataProtectorTokenProvider<AppUser>>(TokenOptions.DefaultProvider)
+        .AddTokenProvider<EmailTokenProvider<AppUser>>("Email")
+        .AddTokenProvider<PhoneNumberTokenProvider<AppUser>>("Phone")
+        .AddSignInManager<SignInManager<AppUser>>();
 
+        // Authentication şeması yapılandırması
         services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
-                options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
-                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-            })
-            .AddIdentityCookies();
+        {
+            options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
+            options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        })
+        .AddIdentityCookies();
+    }
+
+    private static void ConfigureBackgroundServices(IServiceCollection services)
+    {
+        services.Configure<HostOptions>(options =>
+        {
+            options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+            options.ShutdownTimeout = TimeSpan.FromSeconds(30);
+        });
+        // Veritabanı Migration Servisi
+        services.AddHostedService<DatabaseMigrationService>();
         
-        
+        // İş Yönetimi Servisleri
         services.AddHostedService<StockReservationCleanupService>();
-        // Repository'leri ekleyin
+        services.AddHostedService<OutboxProcessor>();
+        services.AddHostedService<OutboxCleanupService>();
+    }
+
+    private static void RegisterRepositories(IServiceCollection services)
+    {
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IBrandRepository, BrandRepository>();
@@ -80,7 +125,6 @@ public static class ServiceRegistration
         services.AddScoped<IContactService, ContactService>();
         services.AddScoped<IStockReservationService, StockReservationService>();
         services.AddScoped<IStockReservationRepository, StockReservationRepository>();
-        
-        return services;
+        services.AddScoped<IOutboxRepository, OutboxRepository>();
     }
 }
