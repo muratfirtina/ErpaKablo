@@ -12,7 +12,7 @@ public class GetListPhoneNumberQuery : IRequest<GetListResponse<GetListPhoneNumb
     public string CacheKey => "GetListPhoneNumberQuery()";
     public bool BypassCache => false;
     public string? CacheGroupKey => "PhoneNumbers";
-    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(2);
+    public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(5);
     public class GetListPhoneNumberQueryHandler : IRequestHandler<GetListPhoneNumberQuery, GetListResponse<GetListPhoneNumberQueryResponse>>
     {
         private readonly IPhoneNumberRepository _phoneNumberRepository;

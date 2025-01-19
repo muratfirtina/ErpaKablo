@@ -28,12 +28,7 @@ public class GetCurrentUserQuery :IRequest<GetCurrentUserQueryResponse>
                 throw new NotFoundUserExceptions();  // Eğer kullanıcı bulunamazsa hata fırlatıyoruz
             }
 
-            return new GetCurrentUserQueryResponse()
-            {
-                UserName = user.UserName,
-                Email = user.Email,
-                NameSurname = user.NameSurname
-            };
+            return _mapper.Map<GetCurrentUserQueryResponse>(user);
         }
     }
 }

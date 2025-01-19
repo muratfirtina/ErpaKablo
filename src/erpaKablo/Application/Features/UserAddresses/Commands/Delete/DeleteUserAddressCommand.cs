@@ -1,11 +1,15 @@
 using Application.Repositories;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.UserAddresses.Commands.Delete;
 
-public class DeleteUserAddressCommand:IRequest<bool>
+public class DeleteUserAddressCommand:IRequest<bool>,ICacheRemoverRequest
 {
     public string Id { get; set; }
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "UserAddresses";
     
 
 

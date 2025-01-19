@@ -96,6 +96,15 @@ void ConfigureSecurityAndAuth(WebApplicationBuilder builder)
             policy.WithOrigins(builder.Configuration.GetSection("WebAPIConfiguration:AllowedOrigins").Get<string[]>())
                 .AllowAnyHeader()
                 .AllowAnyMethod()
+                .WithExposedHeaders(
+                    "Content-Security-Policy",
+                    "X-Content-Type-Options",
+                    "X-Frame-Options",
+                    "X-XSS-Protection",
+                    //"Strict-Transport-Security",
+                    "Referrer-Policy",
+                    "Permissions-Policy"
+                )
                 .AllowCredentials();
         });
     });

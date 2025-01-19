@@ -1,14 +1,19 @@
 using Application.Features.UserAddresses.Dtos;
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using Core.Application.Responses;
 using MediatR;
 
 namespace Application.Features.UserAddresses.Queries.GetList;
 
-public class GetListUserAddressesQuery : IRequest<GetListResponse<GetListUserAdressesQueryResponse>>
+public class GetListUserAddressesQuery : IRequest<GetListResponse<GetListUserAdressesQueryResponse>>, ICachableRequest
 {
-    
+    public string CacheKey => "UserAddresses";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "UserAddresses";
+    public TimeSpan? SlidingExpiration { get; } = TimeSpan.FromDays(365);
+
     public class GetListUserAddressesQueryHandler : IRequestHandler<GetListUserAddressesQuery, GetListResponse<GetListUserAdressesQueryResponse>>
     {
         private readonly IUserAddressRepository _addressRepository;

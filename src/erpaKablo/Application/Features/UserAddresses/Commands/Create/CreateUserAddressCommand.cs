@@ -1,11 +1,12 @@
 using Application.Features.UserAddresses.Dtos;
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.UserAddresses.Commands.Create;
 
-public class CreateUserAddressCommand : IRequest<CreatedUserAddressCommandResponse>
+public class CreateUserAddressCommand : IRequest<CreatedUserAddressCommandResponse>,ICacheRemoverRequest
 {
     public string Name { get; set; }
     public string AddressLine1 { get; set; }
@@ -15,6 +16,10 @@ public class CreateUserAddressCommand : IRequest<CreatedUserAddressCommandRespon
     public string? PostalCode { get; set; }
     public string Country { get; set; }
     public bool IsDefault { get; set; }
+    
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "UserAddresses";
     
     public class CreateUserAddressCommandHandler : IRequestHandler<CreateUserAddressCommand, CreatedUserAddressCommandResponse>
     {

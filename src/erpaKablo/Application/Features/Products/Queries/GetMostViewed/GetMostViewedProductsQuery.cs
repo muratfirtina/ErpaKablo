@@ -16,7 +16,7 @@ public class GetMostViewedProductsQuery : IRequest<GetListResponse<GetMostViewed
     public int Count { get; set; } = 10;
     public string CacheKey => "MostViewedProducts";
     public bool BypassCache => false;
-    public string? CacheGroupKey => "ProductViews";
+    public string? CacheGroupKey => "Products";
     public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(20);
 
     public class GetMostViewedProductsQueryHandler : IRequestHandler<GetMostViewedProductsQuery, GetListResponse<GetMostViewedProductQueryResponse>>

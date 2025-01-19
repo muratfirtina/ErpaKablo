@@ -12,7 +12,7 @@ public class UserAddress : Entity<string>
     public string? AddressLine1 { get; set; } // Adresin ana kısmı (Sokak, apartman vb.)
     public string? AddressLine2 { get; set; } // Adresin ek kısmı (Daire, kat vb. isteğe bağlı)
     public string? City { get; set; } // Şehir
-    public string? State { get; set; } // İl veya bölge
+    public string? State { get; set; } // İlçe veya bölge
     public string? PostalCode { get; set; } // Posta kodu
     public string? Country { get; set; } // Ülke
     public bool IsDefault { get; set; } // Varsayılan adres olup olmadığını belirtir

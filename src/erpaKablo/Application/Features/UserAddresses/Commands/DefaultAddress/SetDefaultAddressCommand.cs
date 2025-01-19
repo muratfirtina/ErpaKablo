@@ -1,12 +1,16 @@
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.UserAddresses.Commands.DefaultAddress;
 
-public class SetDefaultAddressCommand : IRequest<SetDefaultAddressCommandResponse>
+public class SetDefaultAddressCommand : IRequest<SetDefaultAddressCommandResponse>,ICacheRemoverRequest
 {
     public string Id { get; set; }
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "UserAddresses";
     
     public class SetDefaultAddressCommandHandler : IRequestHandler<SetDefaultAddressCommand, SetDefaultAddressCommandResponse>
     {

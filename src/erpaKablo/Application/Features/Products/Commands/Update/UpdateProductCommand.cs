@@ -170,58 +170,31 @@ public class UpdateProductCommand : IRequest<UpdatedProductResponse>, ICacheRemo
         for (int i = 0; i < request.NewProductImages.Count; i++)
         {
             var image = request.NewProductImages[i];
-            
-            // Görsel optimizasyonu yap
-            using var stream = image.OpenReadStream();
-            var processedImage = await _imageSeoService.ProcessAndOptimizeImage(
-                stream,
-                image.FileName,
-                new ImageProcessingOptionsDto
+        
+            // CreateMultiple'daki gibi doğrudan upload yapalım
+            var uploadedFiles = await _storageService.UploadAsync(
+                "products", 
+                product.Id, 
+                new List<IFormFile> { image });
+
+            if (uploadedFiles.Any())
+            {
+                var uploadedFile = uploadedFiles.First();
+                var productImageFile = new ProductImageFile(
+                    uploadedFile.fileName,
+                    uploadedFile.entityType,
+                    uploadedFile.path,
+                    uploadedFile.storageType)
                 {
-                    AltText = $"{product.Name} {i + 1}",
+                    Alt = $"{product.Name} {i + 1}",
                     Title = product.Title,
                     Description = product.Description,
-                    Path = product.Id,
-                    EntityType = "products"
-                });
+                    Format = uploadedFile.format,
+                    // Diğer özellikleri ekleyin
+                    Showcase = i == request.ShowcaseImageIndex
+                };
 
-            // Her bir optimize edilmiş versiyonu yükle
-            foreach (var version in processedImage.Versions)
-            {
-                using var versionStream = new MemoryStream();
-                await version.Stream.CopyToAsync(versionStream);
-                versionStream.Position = 0;
-
-                var versionFileName = $"{Path.GetFileNameWithoutExtension(image.FileName)}-{version.Size}.{version.Format}";
-                var formFile = new FormFile(
-                    versionStream,
-                    0,
-                    versionStream.Length,
-                    "image",
-                    versionFileName);
-
-                var uploadResult = await _storageService.UploadAsync(
-                    "products",
-                    product.Id,
-                    new List<IFormFile> { formFile }
-                );
-
-                if (uploadResult.Any())
-                {
-                    var uploadedFile = uploadResult.First();
-                    var productImageFile = new ProductImageFile(
-                        uploadedFile.fileName,
-                        uploadedFile.entityType,
-                        uploadedFile.path,
-                        uploadedFile.storageType)
-                    {
-                        Alt = processedImage.SeoMetadata.AltText,
-                        Title = processedImage.SeoMetadata.Title,
-                        Description = processedImage.SeoMetadata.Description
-                    };
-
-                    product.ProductImageFiles?.Add(productImageFile);
-                }
+                product.ProductImageFiles?.Add(productImageFile);
             }
         }
     }

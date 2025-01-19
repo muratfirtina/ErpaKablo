@@ -1,11 +1,12 @@
 using Application.Features.UserAddresses.Dtos;
 using Application.Repositories;
 using AutoMapper;
+using Core.Application.Pipelines.Caching;
 using MediatR;
 
 namespace Application.Features.UserAddresses.Commands.Update;
 
-public class UpdateUserAddressCommand:IRequest<UpdatedUserAddressCommandResponse>
+public class UpdateUserAddressCommand:IRequest<UpdatedUserAddressCommandResponse>,ICacheRemoverRequest
 {
     public string Id { get; set; }
     public string Name { get; set; }
@@ -16,6 +17,10 @@ public class UpdateUserAddressCommand:IRequest<UpdatedUserAddressCommandResponse
     public string PostalCode { get; set; }
     public string Country { get; set; }
     public bool IsDefault { get; set; }
+
+    public string CacheKey => "";
+    public bool BypassCache => false;
+    public string? CacheGroupKey => "UserAddresses";
     
     public class UpdateUserAddressCommandHandler : IRequestHandler<UpdateUserAddressCommand, UpdatedUserAddressCommandResponse>
     {

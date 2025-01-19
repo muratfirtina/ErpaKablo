@@ -17,7 +17,7 @@ public class GetMostLikedProductQuery : IRequest<GetListResponse<GetMostLikedPro
     public int Count { get; set; } = 10;
     public string CacheKey => "MostLikedProducts";
     public bool BypassCache => false;
-    public string? CacheGroupKey => "ProductLikes";
+    public string? CacheGroupKey => "Products";
     public TimeSpan? SlidingExpiration => TimeSpan.FromMinutes(20);
     
     public class GetMostLikedProductQueryHandler : IRequestHandler<GetMostLikedProductQuery, GetListResponse<GetMostLikedProductQueryResponse>>

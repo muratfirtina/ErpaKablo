@@ -1,6 +1,7 @@
 using Application.Features.Roles.Queries.GetUsersByRoleId;
 using Application.Features.Users.Queries.GetAllUsers;
 using Application.Features.Users.Queries.GetByDynamic;
+using Application.Features.Users.Queries.GetCurrentUser;
 using AutoMapper;
 using Core.Application.Responses;
 using Core.Persistence.Paging;
@@ -37,5 +38,8 @@ public class MappingProfiles:Profile
             .ForMember(dest
                 => dest.Items, opt
                 => opt.MapFrom(src => src));
+
+        CreateMap<AppUser, GetCurrentUserQueryResponse>()
+            .ReverseMap();
     }
 }
